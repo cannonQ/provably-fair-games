@@ -4,6 +4,7 @@
   "description": "Blockchain-verified card games using Ergo block hashes for provably fair randomness",
   "private": true,
   "dependencies": {
+    "@supabase/supabase-js": "^2.90.1",
     "axios": "^1.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -15,7 +16,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test"
   },
-"browserslist": {
+  "browserslist": {
     "production": [
       ">0.2%",
       "not dead",
