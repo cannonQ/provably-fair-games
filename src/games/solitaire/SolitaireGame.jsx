@@ -37,6 +37,7 @@ export default function SolitaireGame() {
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitRank, setSubmitRank] = useState(null);
+  const [showGameOver, setShowGameOver] = useState(true);
 
   // Timer effect
   useEffect(() => {
@@ -88,6 +89,7 @@ export default function SolitaireGame() {
     setSubmitError(null);
     setSubmitRank(null);
     setIsStuck(false);
+    setShowGameOver(true);
 
     try {
       const block = await getLatestBlock();
@@ -356,15 +358,29 @@ export default function SolitaireGame() {
       )}
 
       {/* Game Over Modal (Win or Loss) */}
-      {isGameOver && (
+      {isGameOver && showGameOver && (
         <div style={{
           position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
           <div style={{
             backgroundColor: '#fff', color: '#333', padding: '30px', borderRadius: '12px',
-            textAlign: 'center', maxWidth: '600px', width: '95%', maxHeight: '90vh', overflowY: 'auto'
+            textAlign: 'center', maxWidth: '600px', width: '95%', maxHeight: '90vh', overflowY: 'auto',
+            position: 'relative'
           }}>
+            {/* Close Button */}
+            <button
+              onClick={() => setShowGameOver(false)}
+              style={{
+                position: 'absolute', top: '10px', right: '10px',
+                background: 'none', border: 'none', fontSize: '24px',
+                cursor: 'pointer', color: '#999', padding: '5px',
+                lineHeight: 1
+              }}
+              aria-label="Close"
+            >
+              ✕
+            </button>
             <h2 style={{ fontSize: '28px', marginBottom: '15px' }}>
               {state.gameStatus === 'won' ? '🎉 You Won!' : (isStuck ? '😔 No Moves Left' : '🏳️ Game Over')}
             </h2>
