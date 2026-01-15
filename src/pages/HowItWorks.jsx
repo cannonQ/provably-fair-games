@@ -1,8 +1,7 @@
 /**
  * HowItWorks.jsx - Educational Page
  * 
- * Explains provably fair gaming, blockchain RNG, and verification process.
- * Static content - no state needed.
+ * Explains provably fair gaming, blockchain RNG, verification, and leaderboards.
  */
 
 import React from 'react';
@@ -36,8 +35,7 @@ function HowItWorks() {
         <h2 style={styles.sectionTitle}>⛓️ The Solution: Blockchain RNG</h2>
         <p style={styles.text}>
           <strong>Blockchain provides public, unchangeable data.</strong> Every few minutes, 
-          the Ergo blockchain publishes a new block with a unique hash — a random-looking 
-          string of characters determined by miners.
+          the Ergo blockchain publishes a new block with unique data determined by miners.
         </p>
         <ul style={styles.list}>
           <li>Anyone can access it (public)</li>
@@ -58,12 +56,15 @@ function HowItWorks() {
             <h3 style={styles.stepTitle}>You Click "New Game"</h3>
           </div>
           <p style={styles.stepText}>
-            Our system fetches the latest Ergo blockchain block. This block was published 
-            minutes ago by miners — we have no control over its contents.
+            Our system fetches the latest Ergo blockchain block, including transaction data. 
+            This was published minutes ago by miners — we have no control over its contents.
           </p>
           <div style={styles.codeBlock}>
-            Block #1,247,842<br/>
-            Hash: 9f8e7d6c5b4a3...
+            Block #1,700,090<br/>
+            Block Hash: 3f27eb915a...3510a1e0ba<br/>
+            TX Hash: 9c44d92897...f44a02b84f<br/>
+            TX Index: 5 of 6<br/>
+            Timestamp: 1768450201667
           </div>
         </div>
 
@@ -71,16 +72,22 @@ function HowItWorks() {
         <div style={styles.step}>
           <div style={styles.stepHeader}>
             <span style={styles.stepNumber}>2</span>
-            <h3 style={styles.stepTitle}>Generate Random Seed</h3>
+            <h3 style={styles.stepTitle}>Generate Random Seed (Anti-Spoofing)</h3>
           </div>
           <p style={styles.stepText}>
-            We combine the block hash with your unique game ID using a cryptographic hash. 
-            This creates a deterministic seed — the same inputs always produce the same output.
+            We combine <strong>5 independent inputs</strong> using a cryptographic hash. 
+            This makes prediction virtually impossible — an attacker would need to control 
+            the blockchain, predict the timestamp, AND know your game ID.
           </p>
           <div style={styles.codeBlock}>
-            seed = HASH(blockHash + gameId)<br/>
-            seed = HASH("9f8e7d..." + "game-abc123")<br/>
-            seed = "7a2b9c4d..."
+            seed = HASH(blockHash + txHash + timestamp + gameId + txIndex)<br/><br/>
+            5 inputs = virtually impossible to manipulate
+          </div>
+          <div style={styles.infoBox}>
+            <strong>🛡️ Why 5 inputs?</strong><br/>
+            Block hash alone could theoretically be predicted. By adding transaction hash, 
+            timestamp, game ID, and TX index, we create unpredictable entropy that no one 
+            can control or anticipate.
           </div>
         </div>
 
@@ -111,7 +118,8 @@ function HowItWorks() {
           </div>
           <p style={styles.stepText}>
             Cards are dealt from the shuffled deck. The game plays normally — you make 
-            decisions, the AI responds. The shuffle was locked in before play began.
+            decisions, the AI responds (in Garbage), or you play solo (in Solitaire). 
+            The shuffle was locked in before play began.
           </p>
         </div>
 
@@ -119,19 +127,83 @@ function HowItWorks() {
         <div style={styles.step}>
           <div style={styles.stepHeader}>
             <span style={styles.stepNumber}>5</span>
+            <h3 style={styles.stepTitle}>Submit Your Score</h3>
+          </div>
+          <p style={styles.stepText}>
+            When the game ends (win or lose), you can submit your score to the leaderboard. 
+            Your result is linked to the blockchain proof — anyone can verify your game was fair.
+          </p>
+          <div style={styles.codeBlock}>
+            Game ID: SOL-1768455876-x7k2<br/>
+            Cards to Foundation: 42/52<br/>
+            Time: 03:45<br/>
+            Moves: 67<br/>
+            ✓ Submitted to Leaderboard
+          </div>
+        </div>
+
+        {/* Step 6 */}
+        <div style={styles.step}>
+          <div style={styles.stepHeader}>
+            <span style={styles.stepNumber}>6</span>
             <h3 style={styles.stepTitle}>Verify Afterwards</h3>
           </div>
           <p style={styles.stepText}>
-            After the game, you can verify everything. Look up the block on Ergo Explorer, 
-            re-run our shuffle algorithm, and confirm the deck matches. Math doesn't lie.
+            Anyone can verify any game on the leaderboard. Look up the block on Ergo Explorer, 
+            confirm the transaction, re-run our shuffle algorithm, and verify the deck matches.
           </p>
           <div style={styles.codeBlock}>
             ✓ Block exists on blockchain<br/>
-            ✓ Hash matches our record<br/>
+            ✓ Transaction hash matches<br/>
+            ✓ TX index = timestamp % txCount<br/>
             ✓ Re-shuffled deck is identical<br/>
             ✓ VERIFIED FAIR
           </div>
         </div>
+      </section>
+
+      {/* Leaderboards */}
+      <section style={styles.section}>
+        <h2 style={styles.sectionTitle}>🏆 Leaderboards</h2>
+        <p style={styles.text}>
+          Every game you play can be submitted to our public leaderboard. Unlike traditional 
+          leaderboards, every entry is verifiable — click "Verify" on any score to confirm 
+          the game was provably fair.
+        </p>
+        <div style={styles.leaderboardDemo}>
+          <div style={styles.lbHeader}>
+            <span>Rank</span>
+            <span>Player</span>
+            <span>Cards</span>
+            <span>Time</span>
+            <span>Proof</span>
+          </div>
+          <div style={styles.lbRow}>
+            <span>🥇</span>
+            <span>CryptoAce</span>
+            <span style={{color: '#4ade80'}}>52/52 ✓</span>
+            <span>2:34</span>
+            <span style={{color: '#64b5f6'}}>Verify</span>
+          </div>
+          <div style={styles.lbRow}>
+            <span>🥈</span>
+            <span>CardShark</span>
+            <span style={{color: '#4ade80'}}>52/52 ✓</span>
+            <span>3:12</span>
+            <span style={{color: '#64b5f6'}}>Verify</span>
+          </div>
+          <div style={styles.lbRow}>
+            <span>#3</span>
+            <span>Anonymous</span>
+            <span>48/52</span>
+            <span>4:05</span>
+            <span style={{color: '#64b5f6'}}>Verify</span>
+          </div>
+        </div>
+        <p style={styles.textSmall}>
+          <strong>Ranking:</strong> Cards to Foundation → Time → Moves<br/>
+          Both wins and losses can be submitted!
+        </p>
       </section>
 
       {/* Why Trustless */}
@@ -140,7 +212,11 @@ function HowItWorks() {
         <div style={styles.trustGrid}>
           <div style={styles.trustItem}>
             <strong>Block published first</strong>
-            <span>Hash existed before your game — can't be manipulated</span>
+            <span>Data existed before your game — can't be manipulated</span>
+          </div>
+          <div style={styles.trustItem}>
+            <strong>5 independent inputs</strong>
+            <span>Impossible to predict or control all factors</span>
           </div>
           <div style={styles.trustItem}>
             <strong>Deterministic algorithm</strong>
@@ -153,6 +229,10 @@ function HowItWorks() {
           <div style={styles.trustItem}>
             <strong>Public blockchain</strong>
             <span>Permanent, accessible record</span>
+          </div>
+          <div style={styles.trustItem}>
+            <strong>Verifiable leaderboard</strong>
+            <span>Every score can be independently verified</span>
           </div>
         </div>
       </section>
@@ -181,8 +261,16 @@ function HowItWorks() {
         <div style={styles.faq}>
           <h4 style={styles.question}>Can this be rigged?</h4>
           <p style={styles.answer}>
-            No. The block was published by independent miners before your game started. 
-            We have no control over what hash they produce.
+            No. The block and transaction were published by independent miners before your game started. 
+            We combine 5 inputs making prediction virtually impossible.
+          </p>
+        </div>
+        
+        <div style={styles.faq}>
+          <h4 style={styles.question}>What are the 5 anti-spoofing inputs?</h4>
+          <p style={styles.answer}>
+            Block hash, transaction hash, block timestamp, your game ID, and the transaction index. 
+            All combined cryptographically to create the shuffle seed.
           </p>
         </div>
         
@@ -190,8 +278,16 @@ function HowItWorks() {
           <h4 style={styles.question}>How can I verify myself?</h4>
           <p style={styles.answer}>
             Use the <a href="https://explorer.ergoplatform.com" target="_blank" 
-            rel="noopener noreferrer" style={styles.link}>Ergo Explorer</a> to find the block, 
+            rel="noopener noreferrer" style={styles.link}>Ergo Explorer</a> to find the block and transaction, 
             then run our open-source shuffle algorithm with the same inputs.
+          </p>
+        </div>
+
+        <div style={styles.faq}>
+          <h4 style={styles.question}>Can I submit losing games?</h4>
+          <p style={styles.answer}>
+            Yes! The leaderboard ranks by cards to foundation, time, and moves. Even if you don't win, 
+            you can still compete for the best partial completion.
           </p>
         </div>
       </section>
@@ -200,18 +296,11 @@ function HowItWorks() {
       <section style={styles.cta}>
         <h2 style={styles.ctaTitle}>Try It Yourself</h2>
         <p style={styles.ctaText}>
-          Experience provably fair gaming firsthand. Play a game, then verify the shuffle.
+          Experience provably fair gaming firsthand. Play a game, submit your score, then verify the shuffle.
         </p>
         <div style={styles.ctaButtons}>
-          <Link to="/play" style={styles.primaryBtn}>Play Garbage</Link>
-          <a 
-            href="https://github.com/yourusername/provably-fair-games" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            style={styles.secondaryBtn}
-          >
-            View Code on GitHub
-          </a>
+          <Link to="/garbage" style={styles.primaryBtn}>Play Garbage</Link>
+          <Link to="/solitaire" style={styles.primaryBtn}>Play Solitaire</Link>
         </div>
       </section>
     </div>
@@ -254,6 +343,12 @@ const styles = {
     color: '#ccc',
     lineHeight: 1.7,
     margin: '0 0 1rem 0'
+  },
+  textSmall: {
+    color: '#888',
+    fontSize: '0.85rem',
+    lineHeight: 1.6,
+    margin: '1rem 0 0 0'
   },
   list: {
     color: '#ccc',
@@ -304,6 +399,16 @@ const styles = {
     color: '#4ade80',
     lineHeight: 1.6
   },
+  infoBox: {
+    backgroundColor: '#1a2a1a',
+    border: '1px solid #2a4a2a',
+    padding: '0.75rem',
+    borderRadius: '6px',
+    marginTop: '0.75rem',
+    fontSize: '0.85rem',
+    color: '#aaa',
+    lineHeight: 1.6
+  },
   diagram: {
     backgroundColor: '#0d1a0d',
     padding: '1rem',
@@ -325,6 +430,31 @@ const styles = {
     color: '#4ade80',
     padding: '0.5rem 0'
   },
+  
+  // Leaderboard demo
+  leaderboardDemo: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    fontSize: '0.85rem'
+  },
+  lbHeader: {
+    display: 'grid',
+    gridTemplateColumns: '50px 1fr 80px 60px 60px',
+    padding: '0.5rem 0.75rem',
+    backgroundColor: '#0d1117',
+    color: '#888',
+    fontSize: '0.75rem',
+    textTransform: 'uppercase'
+  },
+  lbRow: {
+    display: 'grid',
+    gridTemplateColumns: '50px 1fr 80px 60px 60px',
+    padding: '0.5rem 0.75rem',
+    borderBottom: '1px solid #2a3a5e',
+    color: '#ccc'
+  },
+  
   trustGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -385,14 +515,6 @@ const styles = {
     textDecoration: 'none',
     borderRadius: '8px',
     fontWeight: 'bold'
-  },
-  secondaryBtn: {
-    padding: '0.875rem 2rem',
-    backgroundColor: 'transparent',
-    color: '#a0a0ff',
-    textDecoration: 'none',
-    borderRadius: '8px',
-    border: '2px solid #a0a0ff'
   }
 };
 
