@@ -172,7 +172,8 @@ export default async function handler(req, res) {
         block_height: blockHeight,
         block_hash: blockHash,
         tx_hash: txHash,
-        block_timestamp: blockTimestamp
+        block_timestamp: blockTimestamp,
+        created_at: new Date().toISOString()
       })
       .select()
       .single();
