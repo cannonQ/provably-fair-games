@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
 import GarbageGame from './games/garbage/GarbageGame';
+import SolitaireGame from './games/solitaire/SolitaireGame';
+import SolitaireVerification from './games/solitaire/VerificationPage';
 
 // Main App component with routing
 function App() {
@@ -15,7 +17,8 @@ function App() {
         <header style={styles.header}>
           <Link to="/" style={styles.logo}>🃏 Provably Fair Games</Link>
           <nav style={styles.nav}>
-            <Link to="/play" style={styles.link}>Play</Link>
+            <Link to="/garbage" style={styles.link}>Garbage</Link>
+            <Link to="/solitaire" style={styles.link}>Solitaire</Link>
             <Link to="/how-it-works" style={styles.link}>How It Works</Link>
           </nav>
         </header>
@@ -24,7 +27,10 @@ function App() {
         <main style={styles.main}>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/garbage" element={<GarbageGame />} />
             <Route path="/play" element={<GarbageGame />} />
+            <Route path="/solitaire" element={<SolitaireGame />} />
+            <Route path="/verify/solitaire/:gameId" element={<SolitaireVerification />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
           </Routes>
         </main>
