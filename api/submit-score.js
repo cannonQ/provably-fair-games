@@ -13,8 +13,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://rmutcncnppyzirywzozc.supabase.co',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_K-KApBISA6IiiNE9CCnjNA_3qhuNg8k'
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
 const ERGO_API = 'https://api.ergoplatform.com/api/v1';
@@ -172,7 +172,8 @@ export default async function handler(req, res) {
         block_height: blockHeight,
         block_hash: blockHash,
         tx_hash: txHash,
-        block_timestamp: blockTimestamp
+        block_timestamp: blockTimestamp,
+        created_at: new Date().toISOString()
       })
       .select()
       .single();

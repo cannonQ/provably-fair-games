@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 // Page imports
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
+import LeaderboardPage from './pages/LeaderboardPage';
 import GarbageGame from './games/garbage/GarbageGame';
 import SolitaireGame from './games/solitaire/SolitaireGame';
 import SolitaireVerification from './games/solitaire/VerificationPage';
@@ -19,6 +20,7 @@ function App() {
           <nav style={styles.nav}>
             <Link to="/garbage" style={styles.link}>Garbage</Link>
             <Link to="/solitaire" style={styles.link}>Solitaire</Link>
+            <Link to="/leaderboard" style={styles.link}>Leaderboard</Link>
             <Link to="/how-it-works" style={styles.link}>How It Works</Link>
           </nav>
         </header>
@@ -32,6 +34,7 @@ function App() {
             <Route path="/solitaire" element={<SolitaireGame />} />
             <Route path="/verify/solitaire/:gameId" element={<SolitaireVerification />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/leaderboard" element={<LeaderboardPage />} />
           </Routes>
         </main>
 
