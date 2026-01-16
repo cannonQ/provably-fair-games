@@ -19,13 +19,20 @@ Two-player card game against AI opponent.
 - Jacks are wild, Queens/Kings end your turn
 - First to complete all positions wins
 
+### Yahtzee
+Classic dice game with blockchain-verified randomness.
+- 13 scoring categories across upper and lower sections
+- Three rolls per turn to achieve combinations
+- Strategic scoring for straights, full houses, and Yahtzee
+- Compete for high scores on the global leaderboard
+
 ## Features
 
-- **Blockchain-Verified RNG** - Card shuffles use Ergo block hashes + transaction data as seeds
+- **Blockchain-Verified RNG** - Card shuffles and dice rolls use Ergo block hashes + transaction data as seeds
 - **Anti-Spoofing Protection** - 5 independent inputs (blockHash + txHash + timestamp + gameId + txIndex)
 - **Global Leaderboard** - Compete for high scores with provably fair verification
 - **No Wallet Required** - Read-only blockchain access, no transactions
-- **Fully Verifiable** - Anyone can independently verify any game's shuffle
+- **Fully Verifiable** - Anyone can independently verify any game's randomness
 - **Database Fallback** - Verification works even without localStorage data
 
 ## How It Works
@@ -112,15 +119,18 @@ provably-fair-games/
 ├── api/                    # Vercel serverless functions
 │   ├── submit-score.js     # POST /api/submit-score
 │   ├── leaderboard.js      # GET /api/leaderboard
-│   └── game/[gameId].js    # GET /api/game/:gameId
+│   ├── game/[gameId].js    # GET /api/game/:gameId
+│   └── cron/               # Scheduled jobs
+│       └── daily-leaderboard.js  # Posts top scores to blockchain
 ├── src/
 │   ├── blockchain/         # Ergo API + shuffle algorithm
 │   ├── games/
 │   │   ├── solitaire/      # Solitaire game + verification
-│   │   └── garbage/        # Garbage game + AI
+│   │   ├── garbage/        # Garbage game + AI
+│   │   └── yahtzee/        # Yahtzee game + verification
 │   ├── components/         # Shared UI components
 │   ├── services/           # Leaderboard API client
-│   └── lib/                # Supabase client
+│   └── lib/                # Supabase client + blockchain transactions
 └── public/
 ```
 
@@ -129,8 +139,9 @@ provably-fair-games/
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/submit-score` | POST | Submit score with blockchain verification |
-| `/api/leaderboard?game=solitaire` | GET | Get top scores for a game |
+| `/api/leaderboard?game={game}` | GET | Get top scores for a game (solitaire, garbage, yahtzee) |
 | `/api/game/:gameId` | GET | Get game data for verification |
+| `/api/cron/daily-leaderboard` | POST | Daily cron job - posts top 3 scores per game to blockchain |
 
 ## Verification
 
@@ -145,14 +156,26 @@ Verification works from:
 - **localStorage** (same browser) - full verification with stored seed
 - **Database** (any device) - verification via leaderboard data
 
-## Solitaire Leaderboard Ranking
+## Leaderboard Ranking
 
+### Solitaire
 Scores are ranked by:
 1. **Cards to Foundation** (primary) - 0-52
 2. **Time** (secondary) - faster is better
 3. **Moves** (tertiary) - fewer is better
 
 Both wins (52/52) and partial games can be submitted.
+
+### Yahtzee
+Scores are ranked by:
+1. **Score** (primary) - 0-375 max
+2. **Time** (secondary) - faster is better
+
+### Garbage
+Scores are ranked by:
+1. **Score** (primary)
+2. **Time** (secondary)
+3. **Moves** (tertiary)
 
 ## License
 

@@ -77,18 +77,25 @@ function generateSeed(blockData, gameId) {
 function validateScore(game, score, timeSeconds, moves) {
   // Basic sanity checks
   if (timeSeconds < 1) return { valid: false, reason: 'Invalid time' };
-  if (moves < 0) return { valid: false, reason: 'Invalid moves' };
-  
+
+  // Moves validation (optional for some games like Yahtzee)
+  if (moves !== undefined && moves < 0) return { valid: false, reason: 'Invalid moves' };
+
   if (game === 'solitaire') {
     if (score < 0 || score > 52) return { valid: false, reason: 'Invalid card count' };
     // Minimum moves to get X cards to foundation (rough estimate)
     if (score > 0 && moves < score) return { valid: false, reason: 'Impossible move count' };
   }
-  
+
   if (game === 'garbage') {
     if (score < 0) return { valid: false, reason: 'Invalid score' };
   }
-  
+
+  if (game === 'yahtzee') {
+    // Yahtzee scores range from 0 to 375 (theoretical max with bonuses)
+    if (score < 0 || score > 375) return { valid: false, reason: 'Invalid Yahtzee score' };
+  }
+
   return { valid: true };
 }
 
@@ -112,20 +119,24 @@ export default async function handler(req, res) {
     } = req.body;
 
     // Validate required fields
-    if (!game || !gameId || score === undefined || !timeSeconds || moves === undefined) {
-      return res.status(400).json({ 
+    if (!game || !gameId || score === undefined || !timeSeconds) {
+      return res.status(400).json({
         error: 'Missing required fields',
-        required: ['game', 'gameId', 'score', 'timeSeconds', 'moves']
+        required: ['game', 'gameId', 'score', 'timeSeconds']
       });
     }
 
     // Validate game type
-    if (!['solitaire', 'garbage'].includes(game)) {
+    if (!['solitaire', 'garbage', 'yahtzee'].includes(game)) {
       return res.status(400).json({ error: 'Invalid game type' });
     }
 
     // Validate gameId format
-    const gameIdPattern = game === 'solitaire' ? /^SOL-\d+-\w+$/ : /^GRB-\d+-\w+$/;
+    let gameIdPattern;
+    if (game === 'solitaire') gameIdPattern = /^SOL-\d+-\w+$/;
+    else if (game === 'garbage') gameIdPattern = /^GRB-\d+-\w+$/;
+    else if (game === 'yahtzee') gameIdPattern = /^YAH-\d+-\w+$/;
+
     if (!gameIdPattern.test(gameId)) {
       return res.status(400).json({ error: 'Invalid game ID format' });
     }
@@ -168,7 +179,7 @@ export default async function handler(req, res) {
         player_name: playerName || 'Anonymous',
         score,
         time_seconds: timeSeconds,
-        moves,
+        moves: moves || 0, // Default to 0 for games that don't track moves (like Yahtzee)
         block_height: blockHeight,
         block_hash: blockHash,
         tx_hash: txHash,
