@@ -65,25 +65,20 @@ function YahtzeeGame() {
    * Initialize game - fetch anchor block
    */
   const startGame = useCallback(async () => {
-    if (!playerName.trim()) {
-      setError('Please enter your name');
-      return;
-    }
-    
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const newGameId = generateGameId();
       setGameId(newGameId);
-      
+
       // Fetch anchor block with transaction list
       const anchorBlock = await initializeAnchor();
       setAnchor(anchorBlock);
-      
+
       // Reset trace state for new game
       setTraceState(createInitialTraceState());
-      
+
       // Initialize game state
       setCurrentTurn(1);
       setDice(resetDice());
@@ -92,14 +87,14 @@ function YahtzeeGame() {
       setRollHistory([]);
       setStartTime(Date.now());
       setPhase('rolling');
-      
+
     } catch (err) {
       console.error('Failed to start game:', err);
       setError('Failed to connect to blockchain. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  }, [playerName]);
+  }, []);
 
   /**
    * Handle dice roll - uses block traversal for RNG source
@@ -361,19 +356,9 @@ function YahtzeeGame() {
           <p style={{ color: '#666', marginBottom: '25px' }}>
             Provably fair dice game powered by Ergo blockchain
           </p>
-          
+
           {error && <div style={errorStyle}>{error}</div>}
-          
-          <input
-            type="text"
-            placeholder="Enter your name"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            style={inputStyle}
-            maxLength={20}
-            onKeyDown={(e) => e.key === 'Enter' && startGame()}
-          />
-          
+
           <button
             onClick={startGame}
             style={startButtonStyle}
@@ -381,7 +366,7 @@ function YahtzeeGame() {
           >
             {isLoading ? 'Connecting to Blockchain...' : 'Start Game'}
           </button>
-          
+
           <p style={{ fontSize: '13px', color: '#999', marginTop: '20px' }}>
             Each dice roll is verified using blockchain data.<br />
             No manipulation possible!
@@ -442,7 +427,7 @@ function YahtzeeGame() {
           onScore={handleScore}
           canScore={rollsRemaining < 3 && phase !== 'gameOver'}
           rollsRemaining={rollsRemaining}
-          activePlayer={playerName}
+          activePlayer={playerName || 'Player'}
         />
 
         {/* Block info */}

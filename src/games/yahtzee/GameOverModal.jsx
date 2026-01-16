@@ -204,9 +204,9 @@ function GameOverModal({
           {isHighScore ? '🏆 Amazing Game!' : isExcellent ? '🎉 Great Game!' : '🎲 Game Over!'}
         </div>
 
-        {/* Player name */}
+        {/* Time */}
         <div style={{ color: '#666', marginBottom: '15px' }}>
-          {playerName} • {formatTime(elapsedSeconds)}
+          {formatTime(elapsedSeconds)}
         </div>
 
         {/* Final Score */}
