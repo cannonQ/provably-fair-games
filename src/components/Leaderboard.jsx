@@ -1,7 +1,7 @@
 /**
  * Leaderboard Component
  * 
- * Displays scores ranked by: cards to foundation > time > moves
+ * Displays scores ranked by game-specific criteria
  */
 
 import React, { useState, useEffect } from 'react';
@@ -76,6 +76,38 @@ export default function Leaderboard({ game, currentGameId = null }) {
   }
 
   const isSolitaire = game === 'solitaire';
+  const isYahtzee = game === 'yahtzee';
+
+  const getScoreDisplay = (entry) => {
+    if (isSolitaire) {
+      const isWin = entry.score === 52;
+      return (
+        <span style={{ color: isWin ? '#4caf50' : '#64b5f6', fontWeight: 'bold' }}>
+          {entry.score}/52{isWin && ' ✔'}
+        </span>
+      );
+    }
+    if (isYahtzee) {
+      const isGreat = entry.score >= 250;
+      return (
+        <span style={{ color: isGreat ? '#4caf50' : '#64b5f6', fontWeight: 'bold' }}>
+          {entry.score}
+        </span>
+      );
+    }
+    return (
+      <span style={{ color: '#4ade80', fontWeight: 'bold' }}>
+        {entry.score.toLocaleString()}
+      </span>
+    );
+  };
+
+  const getVerifyLink = (entry) => {
+    if (isYahtzee) {
+      return `/yahtzee/verify?gameId=${entry.game_id}`;
+    }
+    return `/verify/${game}/${entry.game_id}`;
+  };
 
   return (
     <div style={styles.container}>
@@ -87,9 +119,13 @@ export default function Leaderboard({ game, currentGameId = null }) {
       </div>
 
       {isSolitaire && (
-        <p style={styles.subtitle}>
-          Ranked by: Cards → Time → Moves
-        </p>
+        <p style={styles.subtitle}>Ranked by: Cards → Time → Moves</p>
+      )}
+      {isYahtzee && (
+        <p style={styles.subtitle}>Ranked by: Score → Time</p>
+      )}
+      {!isSolitaire && !isYahtzee && (
+        <p style={styles.subtitle}>Ranked by: Score → Time → Moves</p>
       )}
 
       {entries.length === 0 ? (
@@ -103,7 +139,7 @@ export default function Leaderboard({ game, currentGameId = null }) {
                 <th style={styles.th}>Player</th>
                 <th style={styles.th}>{isSolitaire ? 'Cards' : 'Score'}</th>
                 <th style={styles.th}>Time</th>
-                <th style={styles.th}>Moves</th>
+                {!isYahtzee && <th style={styles.th}>Moves</th>}
                 <th style={styles.th}>Date</th>
                 <th style={styles.th}>Proof</th>
               </tr>
@@ -111,7 +147,6 @@ export default function Leaderboard({ game, currentGameId = null }) {
             <tbody>
               {entries.map((entry) => {
                 const isCurrentGame = entry.game_id === currentGameId;
-                const isWin = isSolitaire && entry.score === 52;
                 
                 return (
                   <tr 
@@ -131,23 +166,17 @@ export default function Leaderboard({ game, currentGameId = null }) {
                       </span>
                     </td>
                     <td style={styles.td}>
-                      <span style={{
-                        ...styles.score,
-                        color: isWin ? '#4caf50' : (isSolitaire ? '#64b5f6' : '#4ade80')
-                      }}>
-                        {isSolitaire ? `${entry.score}/52` : entry.score.toLocaleString()}
-                        {isWin && ' ✓'}
-                      </span>
+                      {getScoreDisplay(entry)}
                     </td>
                     <td style={styles.td}>{formatTime(entry.time_seconds)}</td>
-                    <td style={styles.td}>{entry.moves}</td>
+                    {!isYahtzee && <td style={styles.td}>{entry.moves}</td>}
                     <td style={styles.td}>{formatDate(entry.created_at)}</td>
                     <td style={styles.td}>
                       <Link 
-                        to={`/verify/${game}/${entry.game_id}`}
+                        to={getVerifyLink(entry)}
                         style={styles.proofLink}
                       >
-                        ✓ Verify
+                        ✔ Verify
                       </Link>
                     </td>
                   </tr>
@@ -254,9 +283,6 @@ const styles = {
     color: '#4caf50',
     fontWeight: 'normal',
     fontSize: '12px'
-  },
-  score: {
-    fontWeight: 'bold'
   },
   proofLink: {
     color: '#64b5f6',
