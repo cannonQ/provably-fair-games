@@ -200,7 +200,7 @@ export default async function handler(req, res) {
       game_id: gameId,
       player_name: playerName || 'Anonymous',
       score,
-      time_seconds: timeSeconds || 600, // Default 10 min for blackjack
+      time_seconds: timeSeconds || 0,
       moves: moves || 0,
       block_height: blockHeight,
       block_hash: blockHash,
