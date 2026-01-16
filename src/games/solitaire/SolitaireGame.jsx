@@ -57,7 +57,7 @@ export default function SolitaireGame() {
     }
   }, [state.foundations, state.gameStatus]);
 
-  // Auto-complete detection
+  // Auto-complete detection (auto-trigger is handled after handleAutoComplete is defined)
   useEffect(() => {
     if (state.gameStatus === 'playing' && state.blockchainData) {
       setShowAutoComplete(canAutoComplete(state));
@@ -187,6 +187,23 @@ export default function SolitaireGame() {
 
     moveNext();
   }, [state, dispatch]);
+
+  // Auto-trigger completion when all tableau cards are face-up
+  useEffect(() => {
+    if (state.gameStatus === 'playing' && state.blockchainData) {
+      const allTableauFaceUp = state.tableau.every(column =>
+        column.every(card => card.faceUp)
+      );
+
+      // Auto-complete when all cards revealed and game not yet won
+      if (allTableauFaceUp && !checkWinCondition(state.foundations)) {
+        const timer = setTimeout(() => {
+          handleAutoComplete();
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [state.tableau, state.foundations, state.gameStatus, state.blockchainData, handleAutoComplete]);
 
   // Submit score to leaderboard
   const handleSubmitScore = async () => {
