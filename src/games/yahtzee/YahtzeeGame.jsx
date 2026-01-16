@@ -357,6 +357,32 @@ function YahtzeeGame() {
             Provably fair dice game powered by Ergo blockchain
           </p>
 
+          {/* Quick Tips */}
+          <div style={{
+            backgroundColor: '#f5f5f5',
+            padding: '15px',
+            borderRadius: '8px',
+            maxWidth: '350px',
+            margin: '0 auto 25px',
+            fontSize: '13px',
+            textAlign: 'left',
+            border: '1px solid #ddd'
+          }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>🎯 Quick Tips:</div>
+            <div style={{ color: '#555' }}>• 13 rounds, 3 rolls per turn</div>
+            <div style={{ color: '#555' }}>• Click dice to hold between rolls</div>
+            <div style={{ color: '#555' }}>• Upper bonus: 63+ points = +35</div>
+            <div style={{ color: '#555' }}>• Yahtzee (5 of a kind) = 50 pts</div>
+
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #ddd' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#333' }}>🏆 Leaderboard:</div>
+              <div style={{ color: '#666', fontSize: '12px' }}>
+                Score → Time<br/>
+                250+ excellent, 300+ amazing!
+              </div>
+            </div>
+          </div>
+
           {error && <div style={errorStyle}>{error}</div>}
 
           <button
@@ -382,7 +408,7 @@ function YahtzeeGame() {
       {/* Navigation */}
       <div style={navStyle}>
         <Link to="/" style={linkStyle}>← Home</Link>
-        <Link to="/yahtzee/rules" style={linkStyle}>Rules</Link>
+        <a href="/yahtzee/rules" target="_blank" rel="noopener noreferrer" style={linkStyle}>Rules</a>
         {rollHistory.length > 0 && (
           <button
             onClick={handleViewVerification}

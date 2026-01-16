@@ -41,21 +41,11 @@ function VerificationPage() {
         }
       }
 
-      // If gameId provided but not in sessionStorage, try API
+      // If gameId provided but not in sessionStorage, show helpful error
       if (targetGameId) {
-        try {
-          const response = await fetch(`/api/game/${targetGameId}`);
-          if (!response.ok) throw new Error('Game not found');
-
-          const apiData = await response.json();
-          setGameData(apiData);
-          setExpandedTurns({ 1: true });
-        } catch (err) {
-          console.error('Failed to load game data:', err);
-          setError('Game not found. This game may not have been saved to the leaderboard.');
-        }
+        setError('Verification data not found in current session. Yahtzee verification requires roll-by-roll data that is only available during the game session. Play a new game and click "Verify Rolls" to see full verification.');
       } else {
-        setError('No game ID provided. Please play a game first.');
+        setError('No game ID provided. Play a Yahtzee game and click "Verify Rolls" to see blockchain proof for every dice roll.');
       }
 
       setLoading(false);
