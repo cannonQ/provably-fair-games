@@ -1,6 +1,6 @@
-# Provably Fair Card Games
+# Provably Fair Games
 
-Play classic card games with blockchain-verified randomness. No wallet needed, no signup required, completely free.
+Play classic card and dice games with blockchain-verified randomness. No wallet needed, no signup required, completely free.
 
 **Live Demo:** [provably-fair-games.vercel.app](https://provably-fair-games.vercel.app)
 
@@ -176,6 +176,29 @@ Scores are ranked by:
 1. **Score** (primary)
 2. **Time** (secondary)
 3. **Moves** (tertiary)
+
+## For Developers
+
+### Adding a New Game
+
+Want to add a new game to the platform? See the comprehensive [**Game Integration Guide**](GAME_INTEGRATION_GUIDE.md) which includes:
+
+- ✅ Minimum required files checklist
+- ✅ Step-by-step integration process
+- ✅ Database schema documentation
+- ✅ Testing procedures
+- ✅ Common patterns and best practices
+- ✅ Example implementation
+
+The guide walks through exactly what files to create and update when adding games like Solitaire, Garbage, or Yahtzee.
+
+### Contributing
+
+Contributions are welcome! Feel free to:
+- Report bugs or issues
+- Suggest new games
+- Improve existing games
+- Enhance documentation
 
 ## License
 
