@@ -8,6 +8,8 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import GarbageGame from './games/garbage/GarbageGame';
 import SolitaireGame from './games/solitaire/SolitaireGame';
 import SolitaireVerification from './games/solitaire/VerificationPage';
+import YahtzeeGame from './games/yahtzee/YahtzeeGame';
+import YahtzeeVerification from './games/yahtzee/VerificationPage';
 
 // Main App component with routing
 function App() {
@@ -20,6 +22,7 @@ function App() {
           <nav style={styles.nav}>
             <Link to="/garbage" style={styles.link}>Garbage</Link>
             <Link to="/solitaire" style={styles.link}>Solitaire</Link>
+            <Link to="/yahtzee" style={styles.link}>Yahtzee</Link>
             <Link to="/leaderboard" style={styles.link}>Leaderboard</Link>
             <Link to="/how-it-works" style={styles.link}>How It Works</Link>
           </nav>
@@ -33,6 +36,9 @@ function App() {
             <Route path="/play" element={<GarbageGame />} />
             <Route path="/solitaire" element={<SolitaireGame />} />
             <Route path="/verify/solitaire/:gameId" element={<SolitaireVerification />} />
+            <Route path="/yahtzee" element={<YahtzeeGame />} />
+            <Route path="/yahtzee/verify" element={<YahtzeeVerification />} />
+            <Route path="/verify/yahtzee/:gameId" element={<YahtzeeVerification />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
           </Routes>
