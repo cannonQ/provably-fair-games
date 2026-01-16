@@ -23,7 +23,7 @@ function Home() {
       {/* Game Selection Grid */}
       <section style={styles.gamesSection}>
         <h2 style={styles.sectionTitle}>Choose Your Game</h2>
-        
+
         <div style={styles.gamesGrid}>
           {/* Garbage Card */}
           <Link to="/garbage" style={styles.gameCard}>
@@ -53,6 +53,25 @@ function Home() {
             <div style={styles.playBadge}>Play Now →</div>
           </Link>
 
+          {/* Blackjack Card */}
+          <Link to="/blackjack" style={styles.gameCard}>
+            <div style={styles.gameIcon}>🃏</div>
+            <h3 style={styles.gameTitle}>Blackjack</h3>
+            <p style={styles.gameDesc}>
+              Classic casino blackjack with blockchain-verified 6-deck shoe. Hit, Stand, Double, Split – every card is verifiable!
+            </p>
+            <div style={styles.gameStats}>
+              <span>👤 vs Dealer</span>
+              <span>30 min session</span>
+            </div>
+            <ul style={styles.gameFeatures}>
+              <li>Blackjack pays 3:2</li>
+              <li>Split up to 4 hands</li>
+              <li>Provably fair shoe</li>
+            </ul>
+            <div style={styles.playBadge}>Play Blackjack →</div>
+          </Link>
+
           {/* Yahtzee Card */}
           <Link to="/yahtzee" style={styles.gameCard}>
             <div style={styles.gameIcon}>🎲</div>
@@ -72,7 +91,7 @@ function Home() {
             <div style={styles.gameIcon}>🎴</div>
             <h3 style={styles.gameTitle}>More Games</h3>
             <p style={styles.gameDesc}>
-              Blackjack, Poker, and more coming soon!
+              Poker, Baccarat, and more coming soon!
             </p>
             <div style={styles.comingSoon}>Coming Soon</div>
           </div>
@@ -133,7 +152,7 @@ function Home() {
 
 const styles = {
   container: {
-    maxWidth: '900px',
+    maxWidth: '1000px',
     margin: '0 auto',
     padding: '1rem'
   },
@@ -159,7 +178,7 @@ const styles = {
     margin: '0 auto',
     lineHeight: 1.6
   },
-  
+
   // Games Section
   gamesSection: {
     marginTop: '2rem'
@@ -172,7 +191,7 @@ const styles = {
   },
   gamesGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
     gap: '1.5rem'
   },
   gameCard: {
@@ -221,6 +240,13 @@ const styles = {
     fontSize: '0.85rem',
     marginBottom: '1rem'
   },
+  gameFeatures: {
+    color: '#4ade80',
+    fontSize: '0.8rem',
+    margin: '0 0 1rem 1rem',
+    padding: 0,
+    lineHeight: 1.8
+  },
   playBadge: {
     backgroundColor: '#4ade80',
     color: '#000',
@@ -238,7 +264,7 @@ const styles = {
     fontSize: '0.9rem',
     textAlign: 'center'
   },
-  
+
   // Features
   features: {
     display: 'flex',
@@ -264,7 +290,7 @@ const styles = {
     fontSize: '0.9rem',
     fontWeight: '500'
   },
-  
+
   // How It Works
   howItWorks: {
     marginTop: '2rem',
