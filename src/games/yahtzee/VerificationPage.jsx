@@ -381,11 +381,15 @@ if __name__ == "__main__":
     backgroundColor: result?.matches ? '#4caf50' : result?.matches === false ? '#f44336' : '#1976d2'
   });
 
+  // Determine back link based on how user arrived
+  const backLink = targetGameId ? '/leaderboard?game=yahtzee' : '/yahtzee';
+  const backText = targetGameId ? '← Back to Leaderboard' : '← Back to Yahtzee';
+
   // Loading state
   if (loading) {
     return (
       <div style={containerStyle}>
-        <Link to="/yahtzee" style={linkStyle}>← Back to Yahtzee</Link>
+        <Link to={backLink} style={linkStyle}>{backText}</Link>
         <div style={{ ...boxStyle, marginTop: '20px', textAlign: 'center' }}>
           <h2>Loading verification data...</h2>
           <p>Please wait while we load the game data.</p>
@@ -398,7 +402,7 @@ if __name__ == "__main__":
   if (error) {
     return (
       <div style={containerStyle}>
-        <Link to="/yahtzee" style={linkStyle}>← Back to Yahtzee</Link>
+        <Link to={backLink} style={linkStyle}>{backText}</Link>
         <div style={{ ...boxStyle, marginTop: '20px', textAlign: 'center' }}>
           <h2>❌ Verification Error</h2>
           <p style={{ color: '#f44336' }}>{error}</p>
@@ -414,7 +418,7 @@ if __name__ == "__main__":
   if (!gameData) {
     return (
       <div style={containerStyle}>
-        <Link to="/yahtzee" style={linkStyle}>← Back to Yahtzee</Link>
+        <Link to={backLink} style={linkStyle}>{backText}</Link>
         <div style={{ ...boxStyle, marginTop: '20px', textAlign: 'center' }}>
           <h2>No Verification Data Found</h2>
           <p>Play a game of Yahtzee to generate verification data.</p>
@@ -434,7 +438,7 @@ if __name__ == "__main__":
     <div style={containerStyle}>
       {/* Navigation */}
       <div style={{ marginBottom: '20px' }}>
-        <Link to="/yahtzee" style={linkStyle}>← Back to Yahtzee</Link>
+        <Link to={backLink} style={linkStyle}>{backText}</Link>
       </div>
 
       {/* Header */}
