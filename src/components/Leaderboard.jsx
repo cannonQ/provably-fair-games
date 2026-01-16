@@ -180,7 +180,11 @@ export default function Leaderboard({ game, currentGameId = null }) {
                     <td style={styles.td}>
                       {getScoreDisplay(entry)}
                     </td>
-                    <td style={styles.td}>{formatTime(entry.time_seconds)}</td>
+                    <td style={styles.td}>
+                      {isBlackjack
+                        ? `${formatTime(entry.time_seconds)} / 5:00`
+                        : formatTime(entry.time_seconds)}
+                    </td>
                     {!isYahtzee && <td style={styles.td}>{entry.moves}</td>}
                     <td style={styles.td}>{formatDate(entry.created_at)}</td>
                     <td style={styles.td}>

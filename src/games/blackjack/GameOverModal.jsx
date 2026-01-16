@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const STARTING_BALANCE = 1000;
+const SESSION_DURATION = 300; // 5 minutes in seconds
 
 export default function GameOverModal({
   gameId,
@@ -15,6 +16,7 @@ export default function GameOverModal({
   handsPlayed,
   handsWon,
   blackjacksHit,
+  timePlayed,
   startingBalance = STARTING_BALANCE,
   blockchainData,
   roundHistory,
@@ -46,6 +48,7 @@ export default function GameOverModal({
           gameId,
           playerName: playerName.trim() || 'Anonymous',
           score: finalBalance,
+          timeSeconds: timePlayed,
           moves: handsPlayed,
           // Blockchain verification data
           blockHeight: blockchainData?.blockHeight,

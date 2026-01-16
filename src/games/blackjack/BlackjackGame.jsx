@@ -403,6 +403,7 @@ export default function BlackjackGame() {
           handsPlayed={state.handsPlayed}
           handsWon={state.handsWon}
           blackjacksHit={state.blackjacksHit}
+          timePlayed={state.sessionDuration - state.timeRemaining}
           startingBalance={state.startingBalance}
           blockchainData={state.blockchainData}
           roundHistory={state.roundHistory}
