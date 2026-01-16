@@ -47,6 +47,10 @@ export default function VerificationPage() {
   const [showSeedDetails, setShowSeedDetails] = useState(false);
   const [showDealReplay, setShowDealReplay] = useState(false);
 
+  // Determine back link based on how user arrived
+  const backLink = gameId ? '/leaderboard?game=solitaire' : '/solitaire';
+  const backText = gameId ? '← Back to Leaderboard' : '← Back to Solitaire';
+
   useEffect(() => {
     if (!gameId) return;
 
@@ -180,7 +184,7 @@ export default function VerificationPage() {
         <p style={{ color: '#666', fontSize: '14px', marginBottom: '30px' }}>
           Game data is stored locally in your browser. If you cleared your browser data or are on a different device, the verification data won't be available.
         </p>
-        <Link to="/solitaire" style={styles.link}>← Back to Solitaire</Link>
+        <Link to={backLink} style={styles.link}>{backText}</Link>
       </div>
     );
   }
@@ -199,7 +203,7 @@ export default function VerificationPage() {
     <div style={styles.container}>
       {/* Header */}
       <div style={{ marginBottom: '20px' }}>
-        <Link to="/solitaire" style={styles.link}>← Back to Game</Link>
+        <Link to={backLink} style={styles.link}>{backText}</Link>
         <h1 style={{ margin: '8px 0', fontSize: '22px' }}>♠ Solitaire Verification</h1>
         <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>Independently verify this game's shuffle was fair</p>
       </div>
@@ -427,7 +431,7 @@ export default function VerificationPage() {
       {/* Footer */}
       <div style={{ textAlign: 'center', padding: '15px', color: '#666', fontSize: '12px' }}>
         <p style={{ margin: '0 0 8px 0' }}>Provably Fair Gaming on Ergo Blockchain</p>
-        <Link to="/solitaire" style={styles.link}>Play Again</Link>
+        <Link to={backLink} style={styles.link}>{backText}</Link>
       </div>
 
       {/* Toast */}
