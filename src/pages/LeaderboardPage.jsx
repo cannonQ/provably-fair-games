@@ -28,10 +28,10 @@ function LeaderboardPage() {
           ♠️ Solitaire
         </button>
         <button
-          onClick={() => setActiveGame('garbage')}
-          style={activeGame === 'garbage' ? styles.tabActive : styles.tab}
+          onClick={() => setActiveGame('blackjack')}
+          style={activeGame === 'blackjack' ? styles.tabActive : styles.tab}
         >
-          🗑️ Garbage
+          ♠️ Blackjack
         </button>
         <button
           onClick={() => setActiveGame('yahtzee')}
@@ -90,43 +90,42 @@ function LeaderboardPage() {
           </div>
         )}
 
-        {activeGame === 'garbage' && (
+        {activeGame === 'blackjack' && (
           <div style={styles.scoringContent}>
             <div style={styles.rankingBox}>
               <h3 style={styles.rankingTitle}>Ranking Order</h3>
               <div style={styles.rankingList}>
                 <div style={styles.rankingItem}>
                   <span style={styles.rankNum}>1st</span>
-                  <span style={styles.rankLabel}>Score</span>
-                  <span style={styles.rankDesc}>Higher score = higher rank</span>
+                  <span style={styles.rankLabel}>Final Balance</span>
+                  <span style={styles.rankDesc}>Higher chip balance = higher rank</span>
                 </div>
                 <div style={styles.rankingItem}>
                   <span style={styles.rankNum}>2nd</span>
-                  <span style={styles.rankLabel}>Time</span>
-                  <span style={styles.rankDesc}>Faster completion = higher rank</span>
+                  <span style={styles.rankLabel}>Hands Won</span>
+                  <span style={styles.rankDesc}>More hands won = higher rank</span>
                 </div>
                 <div style={styles.rankingItem}>
                   <span style={styles.rankNum}>3rd</span>
-                  <span style={styles.rankLabel}>Moves</span>
-                  <span style={styles.rankDesc}>Fewer moves = higher rank</span>
+                  <span style={styles.rankLabel}>Blackjacks</span>
+                  <span style={styles.rankDesc}>More blackjacks = higher rank</span>
                 </div>
               </div>
             </div>
 
             <div style={styles.infoGrid}>
               <div style={styles.infoCard}>
-                <h4 style={styles.infoTitle}>🎯 Score Calculation</h4>
+                <h4 style={styles.infoTitle}>💰 Session-Based Play</h4>
                 <p style={styles.infoText}>
-                  Base: 100 pts per position filled (max 1000)<br/>
-                  Time bonus: &lt;1min +500, &lt;2min +300, &lt;3min +100<br/>
-                  Win bonus: +500
+                  Start with $1,000 in chips. Play as many hands as you want
+                  within your 5-minute session. Cash out anytime or extend once.
                 </p>
               </div>
               <div style={styles.infoCard}>
-                <h4 style={styles.infoTitle}>🤖 Beat the AI</h4>
+                <h4 style={styles.infoTitle}>🃏 Classic Rules</h4>
                 <p style={styles.infoText}>
-                  Only wins against the AI count for the leaderboard. 
-                  Fill all 10 positions before your opponent!
+                  Blackjack pays 3:2. Insurance pays 2:1. Dealer stands on 17.
+                  Double down and split available.
                 </p>
               </div>
             </div>
@@ -239,7 +238,7 @@ function LeaderboardPage() {
         <h3 style={styles.ctaTitle}>Ready to compete?</h3>
         <div style={styles.ctaButtons}>
           <Link to="/solitaire" style={styles.primaryBtn}>Play Solitaire</Link>
-          <Link to="/garbage" style={styles.primaryBtn}>Play Garbage</Link>
+          <Link to="/blackjack" style={styles.primaryBtn}>Play Blackjack</Link>
           <Link to="/yahtzee" style={styles.primaryBtn}>Play Yahtzee</Link>
         </div>
       </section>

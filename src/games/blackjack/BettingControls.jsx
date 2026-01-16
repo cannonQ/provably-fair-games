@@ -24,16 +24,13 @@ export default function BettingControls({
   currentBet,
   onBetChange,
   onDeal,
-  onCashOut,
   onExtendSession,
   disabled,
   timeRemaining,
-  extensionsUsed,
-  handsPlayed
+  extensionsUsed
 }) {
-  const [showCashOutConfirm, setShowCashOutConfirm] = useState(false);
   const [showExtendPrompt, setShowExtendPrompt] = useState(false);
-  
+
   const available = chipBalance - currentBet;
   const canExtend = extensionsUsed < 1; // Only allow 1 extension
   const showExtendButton = timeRemaining <= 60 && canExtend; // Show when 1 min or less remaining
@@ -54,15 +51,6 @@ export default function BettingControls({
 
   const handleClear = () => onBetChange(0);
 
-  const handleCashOutClick = () => {
-    setShowCashOutConfirm(true);
-  };
-
-  const handleConfirmCashOut = () => {
-    setShowCashOutConfirm(false);
-    onCashOut();
-  };
-
   const handleExtend = () => {
     setShowExtendPrompt(false);
     onExtendSession();
@@ -72,6 +60,15 @@ export default function BettingControls({
 
   return (
     <div className="betting-controls">
+      {/* Deal Button at Top */}
+      <button
+        onClick={onDeal}
+        disabled={disabled || currentBet < 5}
+        className="deal-button"
+      >
+        DEAL
+      </button>
+
       {/* Timer & Balance Row */}
       <div className="betting-row">
         <div className="balance-display">Balance: ${chipBalance.toLocaleString()}</div>
@@ -82,46 +79,15 @@ export default function BettingControls({
         <div className="bet-display">Bet: ${currentBet.toLocaleString()}</div>
       </div>
 
-      {/* Session Control Buttons */}
-      <div className="session-controls">
-        <button
-          onClick={handleCashOutClick}
-          disabled={disabled}
-          className="cash-out-btn"
-        >
-          💰 Cash Out
-        </button>
-        
-        {showExtendButton && (
+      {/* Extend Session Button (if applicable) */}
+      {showExtendButton && (
+        <div className="session-controls">
           <button
             onClick={() => setShowExtendPrompt(true)}
             className="extend-btn"
           >
             ⏱️ +5 Min
           </button>
-        )}
-      </div>
-
-      {/* Cash Out Confirmation */}
-      {showCashOutConfirm && (
-        <div className="confirm-overlay">
-          <div className="confirm-dialog">
-            <h3>Cash Out?</h3>
-            <p>
-              {handsPlayed === 0 
-                ? "You haven't played any hands yet. Are you sure you want to exit?"
-                : `End session with $${chipBalance.toLocaleString()}?`
-              }
-            </p>
-            <div className="confirm-buttons">
-              <button onClick={handleConfirmCashOut} className="confirm-yes">
-                Yes, Cash Out
-              </button>
-              <button onClick={() => setShowCashOutConfirm(false)} className="confirm-no">
-                Keep Playing
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -185,15 +151,6 @@ export default function BettingControls({
           Clear
         </button>
       </div>
-
-      {/* Deal Button */}
-      <button
-        onClick={onDeal}
-        disabled={disabled || currentBet < 5}
-        className="deal-button"
-      >
-        DEAL
-      </button>
     </div>
   );
 }

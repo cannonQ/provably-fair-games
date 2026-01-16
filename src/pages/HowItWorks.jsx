@@ -299,8 +299,10 @@ function HowItWorks() {
           Experience provably fair gaming firsthand. Play a game, submit your score, then verify the shuffle.
         </p>
         <div style={styles.ctaButtons}>
-          <Link to="/garbage" style={styles.primaryBtn}>Play Garbage</Link>
           <Link to="/solitaire" style={styles.primaryBtn}>Play Solitaire</Link>
+          <Link to="/blackjack" style={styles.primaryBtn}>Play Blackjack</Link>
+          <Link to="/yahtzee" style={styles.primaryBtn}>Play Yahtzee</Link>
+          <Link to="/garbage" style={styles.primaryBtn}>Play Garbage</Link>
         </div>
       </section>
     </div>

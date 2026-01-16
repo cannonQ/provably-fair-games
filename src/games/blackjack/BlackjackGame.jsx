@@ -338,6 +338,13 @@ export default function BlackjackGame() {
         <nav className="header-nav">
           <Link to="/">Home</Link>
           {state.gameId && <Link to={`/verify/blackjack/${state.gameId}`}>Verify</Link>}
+          <button
+            onClick={handleCashOut}
+            className="header-cash-out"
+            disabled={state.phase !== 'betting'}
+          >
+            Cash Out
+          </button>
         </nav>
       </header>
 
@@ -358,12 +365,10 @@ export default function BlackjackGame() {
             currentBet={state.currentBet}
             onBetChange={handleBetChange}
             onDeal={handleDeal}
-            onCashOut={handleCashOut}
             onExtendSession={handleExtendSession}
             disabled={false}
             timeRemaining={state.timeRemaining}
             extensionsUsed={state.extensionsUsed}
-            handsPlayed={state.handsPlayed}
           />
         )}
 
