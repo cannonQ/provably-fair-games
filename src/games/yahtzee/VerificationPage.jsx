@@ -41,9 +41,43 @@ function VerificationPage() {
         }
       }
 
-      // If gameId provided but not in sessionStorage, show helpful error
+      // If gameId provided but not in sessionStorage, try fetching from API
       if (targetGameId) {
-        setError('Verification data not found in current session. Yahtzee verification requires roll-by-roll data that is only available during the game session. Play a new game and click "Verify Rolls" to see full verification.');
+        try {
+          const response = await fetch(`/api/leaderboard?game=yahtzee&gameId=${targetGameId}`);
+          if (!response.ok) throw new Error('Game not found');
+
+          const apiResult = await response.json();
+
+          // Find the game in the entries
+          const gameEntry = apiResult.entries?.find(entry => entry.game_id === targetGameId);
+
+          if (!gameEntry || !gameEntry.roll_history) {
+            throw new Error('No roll history found for this game');
+          }
+
+          // Transform database entry to match expected format
+          const transformedData = {
+            gameId: gameEntry.game_id,
+            playerName: gameEntry.player_name,
+            finalScore: gameEntry.score,
+            anchor: {
+              blockHeight: gameEntry.block_height,
+              blockHash: gameEntry.block_hash,
+              txHash: gameEntry.tx_hash,
+              timestamp: gameEntry.block_timestamp
+            },
+            rollHistory: gameEntry.roll_history,
+            scorecard: {}, // Not stored in DB, but not needed for verification
+            verificationTrail: [] // Will be built from rollHistory
+          };
+
+          setGameData(transformedData);
+          setExpandedTurns({ 1: true });
+        } catch (err) {
+          console.error('Failed to load game data:', err);
+          setError('Game not found or roll history not available. Only submitted scores with full roll history can be verified from the leaderboard.');
+        }
       } else {
         setError('No game ID provided. Play a Yahtzee game and click "Verify Rolls" to see blockchain proof for every dice roll.');
       }

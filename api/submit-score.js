@@ -115,7 +115,8 @@ export default async function handler(req, res) {
       blockHeight,
       blockHash,
       txHash,
-      blockTimestamp
+      blockTimestamp,
+      rollHistory
     } = req.body;
 
     // Validate required fields
@@ -171,21 +172,28 @@ export default async function handler(req, res) {
     }
 
     // Step 4: Insert score
+    const insertData = {
+      game,
+      game_id: gameId,
+      player_name: playerName || 'Anonymous',
+      score,
+      time_seconds: timeSeconds,
+      moves: moves || 0, // Default to 0 for games that don't track moves (like Yahtzee)
+      block_height: blockHeight,
+      block_hash: blockHash,
+      tx_hash: txHash,
+      block_timestamp: blockTimestamp,
+      created_at: new Date().toISOString()
+    };
+
+    // Add roll history for Yahtzee (enables leaderboard verification)
+    if (game === 'yahtzee' && rollHistory && Array.isArray(rollHistory)) {
+      insertData.roll_history = rollHistory;
+    }
+
     const { data, error } = await supabase
       .from('LeaderBoard')
-      .insert({
-        game,
-        game_id: gameId,
-        player_name: playerName || 'Anonymous',
-        score,
-        time_seconds: timeSeconds,
-        moves: moves || 0, // Default to 0 for games that don't track moves (like Yahtzee)
-        block_height: blockHeight,
-        block_hash: blockHash,
-        tx_hash: txHash,
-        block_timestamp: blockTimestamp,
-        created_at: new Date().toISOString()
-      })
+      .insert(insertData)
       .select()
       .single();
 

@@ -474,6 +474,7 @@ function YahtzeeGame() {
           finalScore={calculateGrandTotal(scorecard)}
           elapsedSeconds={getElapsedSeconds()}
           anchor={anchor}
+          rollHistory={rollHistory}
           onClose={handleGameOverClose}
           onNewGame={handleNewGame}
           onViewVerification={handleViewVerification}

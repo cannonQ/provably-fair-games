@@ -21,6 +21,7 @@ function GameOverModal({
   finalScore,
   elapsedSeconds,
   anchor,
+  rollHistory,
   onClose,
   onNewGame,
   onViewVerification
@@ -58,7 +59,8 @@ function GameOverModal({
           blockHeight: anchor?.blockHeight,
           blockHash: anchor?.blockHash,
           txHash: anchor?.txHash,
-          blockTimestamp: anchor?.timestamp
+          blockTimestamp: anchor?.timestamp,
+          rollHistory: rollHistory || []
         })
       });
 
@@ -326,6 +328,7 @@ GameOverModal.propTypes = {
   finalScore: PropTypes.number.isRequired,
   elapsedSeconds: PropTypes.number.isRequired,
   anchor: PropTypes.object,
+  rollHistory: PropTypes.array.isRequired,
   onClose: PropTypes.func.isRequired,
   onNewGame: PropTypes.func.isRequired,
   onViewVerification: PropTypes.func.isRequired
