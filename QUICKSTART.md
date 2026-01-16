@@ -4,8 +4,8 @@ Get up and running in 5 minutes.
 
 ## Prerequisites
 
-- **Node.js 18+** — [Download here](https://nodejs.org/)
-- **npm** — Comes with Node.js
+- **Node.js 18+** - [Download here](https://nodejs.org/)
+- **npm** - Comes with Node.js
 
 Verify installation:
 ```bash
@@ -20,87 +20,163 @@ cd provably-fair-games
 npm install
 ```
 
-This installs React, React Router, and Axios (~30 seconds).
+## 2. Environment Setup (Optional)
 
-## 2. Start the Dev Server
+For leaderboard functionality, create `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+> **Note:** The game works without these - you just won't have leaderboard features locally.
+
+## 3. Start the Dev Server
 
 ```bash
 npm start
 ```
 
-Your browser opens automatically to `http://localhost:3000`.
+Opens automatically at `http://localhost:3000`.
 
-## 3. Test the Blockchain Connection
+## 4. Test the Blockchain Connection
 
-1. Click **"Play Garbage"** from the home page
-2. Click **"New Game"**
-3. Look for the green block info banner showing:
-   - Block height (e.g., #1,247,842)
-   - Truncated hash
-   - "Connected to Ergo blockchain"
+1. Click **"Solitaire"** from the home page
+2. Click **"Start New Game"**
+3. Check the header shows block info and card count
 
-If you see this, you're connected! 🎉
+If cards appear and the game is playable, you're connected!
 
-## 4. Play Your First Game
-
-**Garbage Rules (30-second version):**
-- You have 10 face-down cards in positions 1-10
-- Draw a card and place it in its matching position (5 goes in slot 5)
-- The card you replace goes to your hand — keep going!
-- Jacks are wild (place anywhere)
-- Queens/Kings are garbage (end your turn)
-- First to fill all 10 positions wins
+## 5. Play Solitaire
 
 **Controls:**
-- Click **Draw Pile** to draw a card
-- Click **Discard Pile** to take the top discard
-- Click a **position (1-10)** to place your held card
-- Click **Discard** button to end your turn
+- **Click stock pile** (top-left) to draw cards
+- **Click/drag cards** to move between columns
+- **Double-click** to auto-move to foundation
+- **Click foundation** (top-right) to place cards
 
-## 5. Verify a Shuffle
+**Rules:**
+- Build tableau columns: alternating colors, descending rank (K-Q-J-10...)
+- Build foundations: same suit, ascending (A-2-3...K)
+- Only Kings can fill empty tableau columns
+- Game auto-completes when all cards are face-up
 
-After the game ends:
+**Buttons:**
+- **New** - Start fresh game
+- **Undo** - Undo last move
+- **Hint** - Highlight a valid move
+- **Auto** - Auto-complete (when available)
+- **Give Up** - End game early
 
-1. Click **"View Verification"** button
-2. Click **"Verify Shuffle"** — watch it regenerate the deck
-3. See the green ✓ VERIFIED message
-4. Click the **Ergo Explorer** link to see the actual block
+## 6. Submit Your Score
 
-**Manual verification:**
-1. Copy the block hash
-2. Copy the game ID
-3. Run through our shuffle algorithm (see `src/blockchain/shuffle.js`)
-4. Compare results — they'll match exactly
+When the game ends:
 
-## 6. Common Issues
+1. Enter your name (optional)
+2. Click **"Submit Score"**
+3. See your rank on the leaderboard
+4. Click **"Verify"** to see blockchain proof
+
+## 7. Verify a Shuffle
+
+On the verification page:
+
+1. View **Block Hash** and **TX Hash** - the randomness source
+2. See **Stored Seed** matches **Regenerated Seed**
+3. Click **"View Deal Replay"** to see exact card order
+4. Click **Ergo Explorer** links to verify on-chain
+
+## 8. Play Garbage
+
+1. Go back to home page
+2. Click **"Garbage"**
+3. Click **"New Game"**
+
+**Rules (30-second version):**
+- You have 10 face-down cards in positions 1-10
+- Draw a card and place it in its matching position
+- The replaced card goes to your hand - keep going!
+- Jacks are wild, Queens/Kings end your turn
+- First to fill all 10 positions wins
+
+## Common Issues
 
 | Problem | Solution |
 |---------|----------|
-| `npm install` fails | Delete `node_modules` folder, run `npm install` again |
-| Port 3000 in use | Kill other processes or set `PORT=3001 npm start` |
-| "Cannot reach Ergo API" | Check internet connection; API may be temporarily down |
-| Cards not displaying | Hard refresh: `Ctrl+Shift+R` (Windows) or `Cmd+Shift+R` (Mac) |
-| Blank page | Check browser console (F12) for errors |
+| `npm install` fails | Delete `node_modules`, run `npm install` again |
+| Port 3000 in use | `PORT=3001 npm start` |
+| "Cannot reach Ergo API" | Check internet; API may be temporarily down |
+| Leaderboard not working | Check `.env.local` has correct Supabase credentials |
+| Cards not displaying | Hard refresh: `Ctrl+Shift+R` / `Cmd+Shift+R` |
+
+## Deploying to Vercel
+
+1. Push to GitHub
+2. Go to [vercel.com](https://vercel.com) and import project
+3. Add environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy!
+
+## Supabase Setup
+
+1. Create project at [supabase.com](https://supabase.com)
+2. Go to SQL Editor and run:
+
+```sql
+CREATE TABLE "LeaderBoard" (
+  id SERIAL PRIMARY KEY,
+  game TEXT NOT NULL,
+  game_id TEXT UNIQUE NOT NULL,
+  player_name TEXT DEFAULT 'Anonymous',
+  score INTEGER NOT NULL,
+  time_seconds INTEGER NOT NULL,
+  moves INTEGER NOT NULL,
+  block_height INTEGER,
+  block_hash TEXT,
+  tx_hash TEXT,
+  block_timestamp BIGINT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE "LeaderBoard" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public reads" ON "LeaderBoard"
+  FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow public inserts" ON "LeaderBoard"
+  FOR INSERT TO anon WITH CHECK (true);
+```
+
+3. Copy URL and anon key from Settings > API
 
 ## File Structure
 
 ```
 src/
-├── blockchain/     # Ergo API + shuffle algorithm
-├── games/garbage/  # Game logic + AI
-├── components/     # Card, GameBoard, Verification
-└── pages/          # Home, HowItWorks
+├── blockchain/         # Ergo API + shuffle algorithm
+├── games/
+│   ├── solitaire/      # Solitaire game, logic, verification
+│   └── garbage/        # Garbage game + AI opponent
+├── components/         # Leaderboard, Verification, Cards
+├── services/           # API client for leaderboard
+└── lib/                # Supabase client config
+
+api/
+├── submit-score.js     # Score submission + blockchain verification
+├── leaderboard.js      # Get top scores
+└── game/[gameId].js    # Get game data for verification
 ```
 
 ## Next Steps
 
 - Read `README.md` for full documentation
-- Visit `/how-it-works` to understand the math
+- Visit `/how-it-works` in the app to understand the math
 - Check `src/blockchain/shuffle.js` to see the algorithm
-- Modify AI difficulty in `src/games/garbage/ai.js`
+- Explore the verification page to understand provably fair gaming
 
 ---
 
 **Questions?** Open an issue on GitHub.
 
-**Have fun playing provably fair games!** 🃏
+**Have fun playing provably fair games!**
