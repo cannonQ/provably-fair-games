@@ -9,6 +9,7 @@
     "@supabase/supabase-js": "^2.90.1",
     "axios": "^1.6.0",
     "bip39": "^3.1.0",
+    "crypto-js": "^4.2.0",
     "ergo-lib-wasm-nodejs": "^0.28.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

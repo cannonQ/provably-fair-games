@@ -33,6 +33,12 @@ function LeaderboardPage() {
         >
           🗑️ Garbage
         </button>
+        <button
+          onClick={() => setActiveGame('yahtzee')}
+          style={activeGame === 'yahtzee' ? styles.tabActive : styles.tab}
+        >
+          🎲 Yahtzee
+        </button>
       </div>
 
       {/* Leaderboard */}
@@ -42,7 +48,7 @@ function LeaderboardPage() {
       <section style={styles.scoringSection}>
         <h2 style={styles.sectionTitle}>📊 How Scoring Works</h2>
 
-        {activeGame === 'solitaire' ? (
+        {activeGame === 'solitaire' && (
           <div style={styles.scoringContent}>
             <div style={styles.rankingBox}>
               <h3 style={styles.rankingTitle}>Ranking Order</h3>
@@ -67,7 +73,7 @@ function LeaderboardPage() {
 
             <div style={styles.infoGrid}>
               <div style={styles.infoCard}>
-                <h4 style={styles.infoTitle}>✓ Wins & Losses Count</h4>
+                <h4 style={styles.infoTitle}>✔ Wins & Losses Count</h4>
                 <p style={styles.infoText}>
                   You don't have to win to compete! Someone with 48/52 cards in 3 minutes 
                   ranks higher than someone with 40/52 cards regardless of time.
@@ -80,61 +86,11 @@ function LeaderboardPage() {
                   Multiple winners are separated by speed and efficiency.
                 </p>
               </div>
-              <div style={styles.infoCard}>
-                <h4 style={styles.infoTitle}>🎮 Display Modes</h4>
-                <p style={styles.infoText}>
-                  Standard and Vegas modes are cosmetic only. Everyone competes 
-                  on the same leaderboard using cards/time/moves.
-                </p>
-              </div>
-            </div>
-
-            <div style={styles.example}>
-              <h4 style={styles.exampleTitle}>Example Ranking:</h4>
-              <table style={styles.exampleTable}>
-                <thead>
-                  <tr>
-                    <th>Rank</th>
-                    <th>Cards</th>
-                    <th>Time</th>
-                    <th>Moves</th>
-                    <th>Why?</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>🥇 #1</td>
-                    <td style={{color: '#4ade80'}}>52/52</td>
-                    <td>2:34</td>
-                    <td>89</td>
-                    <td>Win + fastest</td>
-                  </tr>
-                  <tr>
-                    <td>🥈 #2</td>
-                    <td style={{color: '#4ade80'}}>52/52</td>
-                    <td>3:12</td>
-                    <td>95</td>
-                    <td>Win + slower</td>
-                  </tr>
-                  <tr>
-                    <td>🥉 #3</td>
-                    <td>48/52</td>
-                    <td>1:45</td>
-                    <td>52</td>
-                    <td>Fewer cards, but fast</td>
-                  </tr>
-                  <tr>
-                    <td>#4</td>
-                    <td>48/52</td>
-                    <td>2:10</td>
-                    <td>61</td>
-                    <td>Same cards, slower</td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
           </div>
-        ) : (
+        )}
+
+        {activeGame === 'garbage' && (
           <div style={styles.scoringContent}>
             <div style={styles.rankingBox}>
               <h3 style={styles.rankingTitle}>Ranking Order</h3>
@@ -163,7 +119,6 @@ function LeaderboardPage() {
                 <p style={styles.infoText}>
                   Base: 100 pts per position filled (max 1000)<br/>
                   Time bonus: &lt;1min +500, &lt;2min +300, &lt;3min +100<br/>
-                  Move bonus: &lt;20 moves +200, &lt;30 moves +100<br/>
                   Win bonus: +500
                 </p>
               </div>
@@ -177,6 +132,93 @@ function LeaderboardPage() {
             </div>
           </div>
         )}
+
+        {activeGame === 'yahtzee' && (
+          <div style={styles.scoringContent}>
+            <div style={styles.rankingBox}>
+              <h3 style={styles.rankingTitle}>Ranking Order</h3>
+              <div style={styles.rankingList}>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>1st</span>
+                  <span style={styles.rankLabel}>Total Score</span>
+                  <span style={styles.rankDesc}>Higher score = higher rank (max ~400)</span>
+                </div>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>2nd</span>
+                  <span style={styles.rankLabel}>Time</span>
+                  <span style={styles.rankDesc}>Faster completion = higher rank</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.infoGrid}>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>🎲 Scoring Categories</h4>
+                <p style={styles.infoText}>
+                  <strong>Upper Section:</strong> Ones through Sixes (sum of matching dice)<br/>
+                  <strong>Upper Bonus:</strong> +35 if upper total ≥ 63<br/>
+                  <strong>Lower Section:</strong> Three/Four of Kind, Full House (25), 
+                  Small Straight (30), Large Straight (40), Yahtzee (50), Chance
+                </p>
+              </div>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>🎯 Yahtzee Bonus</h4>
+                <p style={styles.infoText}>
+                  Roll multiple Yahtzees? After your first Yahtzee (50 pts), 
+                  each additional Yahtzee earns +100 bonus points!
+                </p>
+              </div>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>🔒 Provably Fair Dice</h4>
+                <p style={styles.infoText}>
+                  Every dice roll uses blockchain data. The seed is generated from 
+                  block hash + transaction + game ID + turn/roll number. 
+                  Completely verifiable!
+                </p>
+              </div>
+            </div>
+
+            <div style={styles.example}>
+              <h4 style={styles.exampleTitle}>Example High Score Breakdown:</h4>
+              <table style={styles.exampleTable}>
+                <thead>
+                  <tr>
+                    <th>Section</th>
+                    <th>Score</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Upper Section</td>
+                    <td>63</td>
+                    <td>Hit bonus threshold</td>
+                  </tr>
+                  <tr>
+                    <td>Upper Bonus</td>
+                    <td style={{color: '#4ade80'}}>+35</td>
+                    <td>≥63 bonus</td>
+                  </tr>
+                  <tr>
+                    <td>Lower Section</td>
+                    <td>180</td>
+                    <td>Good rolls!</td>
+                  </tr>
+                  <tr>
+                    <td>Yahtzee Bonus</td>
+                    <td style={{color: '#ff9800'}}>+100</td>
+                    <td>2nd Yahtzee</td>
+                  </tr>
+                  <tr style={{fontWeight: 'bold'}}>
+                    <td>Total</td>
+                    <td style={{color: '#4ade80'}}>378</td>
+                    <td>Great game!</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Verification Note */}
@@ -184,7 +226,7 @@ function LeaderboardPage() {
         <h3 style={styles.verifyTitle}>🔍 Every Score is Verifiable</h3>
         <p style={styles.verifyText}>
           Click "Verify" on any leaderboard entry to see the blockchain proof. 
-          The shuffle was determined by Ergo blockchain data before the game started — 
+          The randomness was determined by Ergo blockchain data before the game started — 
           no one can cheat or manipulate results.
         </p>
         <Link to="/how-it-works" style={styles.learnLink}>
@@ -198,6 +240,7 @@ function LeaderboardPage() {
         <div style={styles.ctaButtons}>
           <Link to="/solitaire" style={styles.primaryBtn}>Play Solitaire</Link>
           <Link to="/garbage" style={styles.primaryBtn}>Play Garbage</Link>
+          <Link to="/yahtzee" style={styles.primaryBtn}>Play Yahtzee</Link>
         </div>
       </section>
     </div>
@@ -230,7 +273,8 @@ const styles = {
     display: 'flex',
     justifyContent: 'center',
     gap: '0.5rem',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
+    flexWrap: 'wrap'
   },
   tab: {
     padding: '0.75rem 1.5rem',
@@ -349,7 +393,7 @@ const styles = {
     borderCollapse: 'collapse',
     fontSize: '0.85rem',
     color: '#ccc',
-    textAlign: 'center'
+    textAlign: 'left'
   },
   
   // Verify Section
@@ -411,20 +455,5 @@ const styles = {
     fontSize: '0.95rem'
   }
 };
-
-// Add table styles via CSS-in-JS workaround
-const tableStyles = `
-  .leaderboard-page table th {
-    text-align: left;
-    padding: 0.5rem;
-    border-bottom: 1px solid #2a3a5e;
-    color: #888;
-    font-weight: normal;
-  }
-  .leaderboard-page table td {
-    padding: 0.5rem;
-    border-bottom: 1px solid #2a3a5e;
-  }
-`;
 
 export default LeaderboardPage;
