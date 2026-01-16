@@ -16,7 +16,7 @@ import {
 
 function GameOverModal({
   gameId,
-  playerName,
+  playerName: initialPlayerName,
   scorecard,
   finalScore,
   elapsedSeconds,
@@ -25,8 +25,11 @@ function GameOverModal({
   onNewGame,
   onViewVerification
 }) {
-  const [submitStatus, setSubmitStatus] = useState('pending'); // pending, submitting, success, error
-  const [errorMessage, setErrorMessage] = useState(null);
+  const [playerName, setPlayerName] = useState(initialPlayerName || '');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitRank, setSubmitRank] = useState(null);
 
   // Calculate score breakdown
   const upperSum = calculateUpperSum(scorecard);
@@ -36,40 +39,44 @@ function GameOverModal({
   const grandTotal = calculateGrandTotal(scorecard);
   const yahtzeeBonuses = (scorecard.yahtzeeBonusCount || 0) * 100;
 
-  // Auto-submit score on mount
-  useEffect(() => {
-    const submitScore = async () => {
-      setSubmitStatus('submitting');
-      
-      try {
-        const response = await fetch('/api/submit-score', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            game: 'yahtzee',
-            gameId,
-            score: grandTotal,
-            timeSeconds: elapsedSeconds,
-            playerName,
-            blockHeight: anchor?.blockHeight,
-            blockHash: anchor?.blockHash
-          })
-        });
+  // Submit score to leaderboard
+  const handleSubmitScore = async () => {
+    setSubmitting(true);
+    setSubmitError(null);
 
-        if (!response.ok) {
-          throw new Error('Failed to submit score');
-        }
+    try {
+      const response = await fetch('/api/submit-score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          game: 'yahtzee',
+          gameId,
+          score: grandTotal,
+          timeSeconds: elapsedSeconds,
+          moves: 0,
+          playerName: playerName.trim() || 'Anonymous',
+          blockHeight: anchor?.blockHeight,
+          blockHash: anchor?.blockHash,
+          txHash: anchor?.txHash,
+          blockTimestamp: anchor?.timestamp
+        })
+      });
 
-        setSubmitStatus('success');
-      } catch (err) {
-        console.error('Score submission failed:', err);
-        setSubmitStatus('error');
-        setErrorMessage('Leaderboard unavailable. Your game is still blockchain-verified - click "View Verification Proof" to see the proof.');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit score');
       }
-    };
 
-    submitScore();
-  }, [gameId, grandTotal, elapsedSeconds, playerName, anchor]);
+      const result = await response.json();
+      setSubmitted(true);
+      setSubmitRank(result.rank);
+    } catch (err) {
+      console.error('Score submission failed:', err);
+      setSubmitError(err.message || 'Leaderboard unavailable. Your game is still blockchain-verified.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Check for high score (300+ is excellent in Yahtzee)
   const isHighScore = grandTotal >= 300;
@@ -137,17 +144,6 @@ function GameOverModal({
     paddingTop: '10px',
     marginTop: '5px',
     borderTop: '2px solid #333'
-  };
-
-  const statusStyle = {
-    fontSize: '14px',
-    padding: '8px 12px',
-    borderRadius: '6px',
-    marginBottom: '20px',
-    backgroundColor: submitStatus === 'success' ? '#e8f5e9' : 
-                     submitStatus === 'error' ? '#ffebee' : '#e3f2fd',
-    color: submitStatus === 'success' ? '#2e7d32' :
-           submitStatus === 'error' ? '#c62828' : '#1565c0'
   };
 
   const buttonContainerStyle = {
@@ -247,23 +243,68 @@ function GameOverModal({
           </div>
         </div>
 
-        {/* Submit Status */}
-        <div style={statusStyle}>
-          {submitStatus === 'submitting' && '⏳ Submitting score...'}
-          {submitStatus === 'success' && '✓ Score submitted to leaderboard!'}
-          {submitStatus === 'error' && `⚠ ${errorMessage}`}
-        </div>
+        {/* Submission Form */}
+        {!submitted ? (
+          <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
+            <p style={{ fontSize: '14px', marginBottom: '10px', color: '#666' }}>
+              Submit to Leaderboard:
+            </p>
+            <input
+              type="text"
+              placeholder="Your name (optional)"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              maxLength={20}
+              style={{
+                width: '100%',
+                padding: '10px',
+                fontSize: '14px',
+                borderRadius: '4px',
+                border: '1px solid #ddd',
+                marginBottom: '10px',
+                boxSizing: 'border-box'
+              }}
+            />
+            <button
+              onClick={handleSubmitScore}
+              disabled={submitting}
+              style={{
+                ...primaryButtonStyle,
+                backgroundColor: submitting ? '#ccc' : '#4caf50',
+                cursor: submitting ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {submitting ? 'Submitting...' : '📤 Submit Score'}
+            </button>
+            {submitError && (
+              <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '6px', fontSize: '13px' }}>
+                ⚠ {submitError}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#e8f5e9', borderRadius: '8px' }}>
+            <div style={{ color: '#2e7d32', fontSize: '14px', fontWeight: '500' }}>
+              ✓ Score submitted to leaderboard!
+            </div>
+            {submitRank && (
+              <div style={{ color: '#555', fontSize: '13px', marginTop: '5px' }}>
+                Your rank: #{submitRank}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Buttons */}
         <div style={buttonContainerStyle}>
           <button style={primaryButtonStyle} onClick={onNewGame}>
             Play Again
           </button>
-          
+
           <button style={secondaryButtonStyle} onClick={onViewVerification}>
             View Verification Proof
           </button>
-          
+
           <Link to="/leaderboard?game=yahtzee" style={linkButtonStyle}>
             View Leaderboard
           </Link>

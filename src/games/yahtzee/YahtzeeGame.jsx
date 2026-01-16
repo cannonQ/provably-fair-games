@@ -441,6 +441,7 @@ function YahtzeeGame() {
           dice={dice}
           onScore={handleScore}
           canScore={rollsRemaining < 3 && phase !== 'gameOver'}
+          rollsRemaining={rollsRemaining}
           activePlayer={playerName}
         />
 

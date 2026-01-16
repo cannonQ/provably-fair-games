@@ -21,9 +21,9 @@ const LOWER_CATEGORIES = [
   'smallStraight', 'largeStraight', 'yahtzee', 'chance'
 ];
 
-function Scorecard({ scorecard, dice, onScore, canScore, activePlayer = 'Player 1' }) {
+function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activePlayer = 'Player 1' }) {
   const [hoveredCategory, setHoveredCategory] = useState(null);
-  
+
   const availableScores = canScore ? getAvailableScores(dice, scorecard) : {};
   const upperSum = calculateUpperSum(scorecard);
   const upperBonus = calculateUpperBonus(scorecard);
@@ -32,8 +32,9 @@ function Scorecard({ scorecard, dice, onScore, canScore, activePlayer = 'Player 
   const grandTotal = calculateGrandTotal(scorecard);
 
   // Check if all available scores are 0 (sacrifice situation)
+  // Only show warning after all 3 rolls are used (rollsRemaining === 0)
   const availableValues = Object.values(availableScores);
-  const mustSacrifice = canScore && availableValues.length > 0 && availableValues.every(v => v === 0);
+  const mustSacrifice = canScore && rollsRemaining === 0 && availableValues.length > 0 && availableValues.every(v => v === 0);
   const hasGoodOptions = canScore && availableValues.some(v => v > 0);
 
   const containerStyle = {
@@ -340,6 +341,7 @@ Scorecard.propTypes = {
   ).isRequired,
   onScore: PropTypes.func.isRequired,
   canScore: PropTypes.bool.isRequired,
+  rollsRemaining: PropTypes.number.isRequired,
   activePlayer: PropTypes.string
 };
 
