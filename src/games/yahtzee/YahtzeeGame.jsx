@@ -65,25 +65,20 @@ function YahtzeeGame() {
    * Initialize game - fetch anchor block
    */
   const startGame = useCallback(async () => {
-    if (!playerName.trim()) {
-      setError('Please enter your name');
-      return;
-    }
-    
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const newGameId = generateGameId();
       setGameId(newGameId);
-      
+
       // Fetch anchor block with transaction list
       const anchorBlock = await initializeAnchor();
       setAnchor(anchorBlock);
-      
+
       // Reset trace state for new game
       setTraceState(createInitialTraceState());
-      
+
       // Initialize game state
       setCurrentTurn(1);
       setDice(resetDice());
@@ -92,14 +87,14 @@ function YahtzeeGame() {
       setRollHistory([]);
       setStartTime(Date.now());
       setPhase('rolling');
-      
+
     } catch (err) {
       console.error('Failed to start game:', err);
       setError('Failed to connect to blockchain. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  }, [playerName]);
+  }, []);
 
   /**
    * Handle dice roll - uses block traversal for RNG source
@@ -361,19 +356,35 @@ function YahtzeeGame() {
           <p style={{ color: '#666', marginBottom: '25px' }}>
             Provably fair dice game powered by Ergo blockchain
           </p>
-          
+
+          {/* Quick Tips */}
+          <div style={{
+            backgroundColor: '#f5f5f5',
+            padding: '15px',
+            borderRadius: '8px',
+            maxWidth: '350px',
+            margin: '0 auto 25px',
+            fontSize: '13px',
+            textAlign: 'left',
+            border: '1px solid #ddd'
+          }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>🎯 Quick Tips:</div>
+            <div style={{ color: '#555' }}>• 13 rounds, 3 rolls per turn</div>
+            <div style={{ color: '#555' }}>• Click dice to hold between rolls</div>
+            <div style={{ color: '#555' }}>• Upper bonus: 63+ points = +35</div>
+            <div style={{ color: '#555' }}>• Yahtzee (5 of a kind) = 50 pts</div>
+
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #ddd' }}>
+              <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#333' }}>🏆 Leaderboard:</div>
+              <div style={{ color: '#666', fontSize: '12px' }}>
+                Score → Time<br/>
+                250+ excellent, 300+ amazing!
+              </div>
+            </div>
+          </div>
+
           {error && <div style={errorStyle}>{error}</div>}
-          
-          <input
-            type="text"
-            placeholder="Enter your name"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            style={inputStyle}
-            maxLength={20}
-            onKeyDown={(e) => e.key === 'Enter' && startGame()}
-          />
-          
+
           <button
             onClick={startGame}
             style={startButtonStyle}
@@ -381,7 +392,7 @@ function YahtzeeGame() {
           >
             {isLoading ? 'Connecting to Blockchain...' : 'Start Game'}
           </button>
-          
+
           <p style={{ fontSize: '13px', color: '#999', marginTop: '20px' }}>
             Each dice roll is verified using blockchain data.<br />
             No manipulation possible!
@@ -397,7 +408,7 @@ function YahtzeeGame() {
       {/* Navigation */}
       <div style={navStyle}>
         <Link to="/" style={linkStyle}>← Home</Link>
-        <Link to="/yahtzee/rules" style={linkStyle}>Rules</Link>
+        <a href="/yahtzee/rules" target="_blank" rel="noopener noreferrer" style={linkStyle}>Rules</a>
         {rollHistory.length > 0 && (
           <button
             onClick={handleViewVerification}
@@ -441,7 +452,8 @@ function YahtzeeGame() {
           dice={dice}
           onScore={handleScore}
           canScore={rollsRemaining < 3 && phase !== 'gameOver'}
-          activePlayer={playerName}
+          rollsRemaining={rollsRemaining}
+          activePlayer={playerName || 'Player'}
         />
 
         {/* Block info */}
@@ -462,6 +474,7 @@ function YahtzeeGame() {
           finalScore={calculateGrandTotal(scorecard)}
           elapsedSeconds={getElapsedSeconds()}
           anchor={anchor}
+          rollHistory={rollHistory}
           onClose={handleGameOverClose}
           onNewGame={handleNewGame}
           onViewVerification={handleViewVerification}

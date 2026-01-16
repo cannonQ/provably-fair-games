@@ -20,23 +20,33 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { game, limit = 10 } = req.query;
+    const { game, limit = 10, gameId } = req.query;
 
     // Validate game type
     if (!game || !VALID_GAMES.includes(game)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Invalid or missing game parameter',
         validGames: VALID_GAMES
       });
     }
 
-    // Fetch top scores
-    const { data, error } = await supabase
+    // Build query
+    let query = supabase
       .from('LeaderBoard')
       .select('*')
-      .eq('game', game)
-      .order('score', { ascending: false })
-      .limit(parseInt(limit));
+      .eq('game', game);
+
+    // If specific gameId requested, filter by it
+    if (gameId) {
+      query = query.eq('game_id', gameId);
+    } else {
+      // Otherwise, get top scores with limit
+      query = query
+        .order('score', { ascending: false })
+        .limit(parseInt(limit));
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw error;
