@@ -75,9 +75,11 @@ export function checkWinCondition(foundations) {
 }
 
 export function canAutoComplete(state) {
+  // Can auto-complete when all tableau cards are face-up
+  // Even with cards in stock/waste, if all tableau is revealed, game is completable
   return state.tableau.every(column =>
     column.every(card => card.faceUp)
-  ) && state.stock.length === 0 && state.waste.length === 0;
+  );
 }
 
 // ============ STUCK DETECTION ============
@@ -158,6 +160,12 @@ export function hasValidMoves(state) {
  * @returns {boolean} True if game is stuck
  */
 export function isGameStuck(state) {
+  // If all tableau cards are face-up, game is always completable (not stuck)
+  const allTableauFaceUp = state.tableau.every(column =>
+    column.every(card => card.faceUp)
+  );
+  if (allTableauFaceUp) return false;
+
   return !hasValidMoves(state);
 }
 
