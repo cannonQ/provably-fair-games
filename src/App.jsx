@@ -11,6 +11,35 @@ import SolitaireVerification from './games/solitaire/VerificationPage';
 import YahtzeeGame from './games/yahtzee/YahtzeeGame';
 import YahtzeeVerification from './games/yahtzee/VerificationPage';
 import YahtzeeRules from './games/yahtzee/RulesPage';
+import BlackjackGame from './games/blackjack/BlackjackGame';
+import BlackjackVerification from './games/blackjack/VerificationPage';
+
+// 404 Not Found Component
+function NotFound() {
+  return (
+    <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+      <h1 style={{ fontSize: '4rem', margin: '0 0 1rem', color: '#f44336' }}>404</h1>
+      <h2 style={{ margin: '0 0 1rem', color: '#fff' }}>Page Not Found</h2>
+      <p style={{ color: '#aaa', marginBottom: '2rem' }}>
+        The page you're looking for doesn't exist or has been moved.
+      </p>
+      <Link 
+        to="/" 
+        style={{
+          display: 'inline-block',
+          padding: '0.75rem 1.5rem',
+          backgroundColor: '#4ade80',
+          color: '#000',
+          textDecoration: 'none',
+          borderRadius: '8px',
+          fontWeight: 'bold'
+        }}
+      >
+        Back to Home
+      </Link>
+    </div>
+  );
+}
 
 // Header component with burger menu
 function Header() {
@@ -67,6 +96,7 @@ function Header() {
       }>
         <Link to="/garbage" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Garbage</Link>
         <Link to="/solitaire" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Solitaire</Link>
+        <Link to="/blackjack" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Blackjack</Link>
         <Link to="/yahtzee" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Yahtzee</Link>
         <Link to="/leaderboard" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Leaderboard</Link>
         <Link to="/how-it-works" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>How It Works</Link>
@@ -98,12 +128,17 @@ function App() {
             <Route path="/play" element={<GarbageGame />} />
             <Route path="/solitaire" element={<SolitaireGame />} />
             <Route path="/verify/solitaire/:gameId" element={<SolitaireVerification />} />
+            <Route path="/blackjack" element={<BlackjackGame />} />
+            <Route path="/play/blackjack" element={<BlackjackGame />} />
+            <Route path="/verify/blackjack/:gameId" element={<BlackjackVerification />} />
             <Route path="/yahtzee" element={<YahtzeeGame />} />
             <Route path="/yahtzee/rules" element={<YahtzeeRules />} />
             <Route path="/yahtzee/verify" element={<YahtzeeVerification />} />
             <Route path="/verify/yahtzee/:gameId" element={<YahtzeeVerification />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
+            {/* 404 catch-all route - must be last */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
 
@@ -166,6 +201,7 @@ const styles = {
     gap: '1.5rem'
   },
   navMobile: {
+    display: 'flex',
     position: 'fixed',
     flexDirection: 'column',
     backgroundColor: '#16213e',
