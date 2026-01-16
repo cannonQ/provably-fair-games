@@ -28,6 +28,20 @@ const supabase = createClient(
 // Games to process
 const GAMES = ['solitaire', 'garbage', 'yahtzee', 'blackjack', 'backgammon'];
 
+// ===== Adding New Games ===== //
+//
+// To add a new game, simply add its name to the GAMES array above.
+// No other changes needed - the game name becomes R4 register data.
+//
+// Requirements for new game:
+// - Supabase LeaderBoard table has rows with game = 'newgame'
+// - Game name matches exactly (case-sensitive)
+//
+// Score handling:
+// - 0 scores in 24h → game skipped
+// - 1-2 scores → posts what exists (1st only, or 1st + 2nd)
+// - 3+ scores → posts top 3 (1st, 2nd, 3rd)
+
 // Rank labels
 const RANK_LABELS = ['1st', '2nd', '3rd'];
 
