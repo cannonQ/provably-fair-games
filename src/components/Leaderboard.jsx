@@ -77,6 +77,7 @@ export default function Leaderboard({ game, currentGameId = null }) {
 
   const isSolitaire = game === 'solitaire';
   const isYahtzee = game === 'yahtzee';
+  const isBlackjack = game === 'blackjack';
 
   const getScoreDisplay = (entry) => {
     if (isSolitaire) {
@@ -92,6 +93,14 @@ export default function Leaderboard({ game, currentGameId = null }) {
       return (
         <span style={{ color: isGreat ? '#4caf50' : '#64b5f6', fontWeight: 'bold' }}>
           {entry.score}
+        </span>
+      );
+    }
+    if (isBlackjack) {
+      const isProfit = entry.score > 1000;
+      return (
+        <span style={{ color: isProfit ? '#4caf50' : entry.score < 1000 ? '#f87171' : '#64b5f6', fontWeight: 'bold' }}>
+          ${entry.score.toLocaleString()}
         </span>
       );
     }
@@ -124,7 +133,10 @@ export default function Leaderboard({ game, currentGameId = null }) {
       {isYahtzee && (
         <p style={styles.subtitle}>Ranked by: Score → Time</p>
       )}
-      {!isSolitaire && !isYahtzee && (
+      {isBlackjack && (
+        <p style={styles.subtitle}>Ranked by: Balance → Hands Won → Blackjacks</p>
+      )}
+      {!isSolitaire && !isYahtzee && !isBlackjack && (
         <p style={styles.subtitle}>Ranked by: Score → Time → Moves</p>
       )}
 
@@ -137,9 +149,9 @@ export default function Leaderboard({ game, currentGameId = null }) {
               <tr>
                 <th style={styles.th}>Rank</th>
                 <th style={styles.th}>Player</th>
-                <th style={styles.th}>{isSolitaire ? 'Cards' : 'Score'}</th>
+                <th style={styles.th}>{isSolitaire ? 'Cards' : isBlackjack ? 'Balance' : 'Score'}</th>
                 <th style={styles.th}>Time</th>
-                {!isYahtzee && <th style={styles.th}>Moves</th>}
+                {!isYahtzee && <th style={styles.th}>{isBlackjack ? 'Hands' : 'Moves'}</th>}
                 <th style={styles.th}>Date</th>
                 <th style={styles.th}>Proof</th>
               </tr>

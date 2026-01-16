@@ -156,9 +156,9 @@ export default function GameOverModal({
 
         {/* Verification Link */}
         <div className="verify-link">
-          <Link to={`/verify/blackjack/${gameId}`}>
+          <a href={`/verify/blackjack/${gameId}`} target="_blank" rel="noopener noreferrer">
             🔗 Verify this session on blockchain
-          </Link>
+          </a>
         </div>
 
         {/* Actions */}
