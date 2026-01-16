@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import CryptoJS from 'crypto-js';
 import { generateSeedFromSource, calculateDieValue } from './diceLogic';
 
@@ -12,23 +12,57 @@ const EXPLORER_BASE = 'https://explorer.ergoplatform.com/en';
 
 function VerificationPage() {
   const { gameId: urlGameId } = useParams();
+  const [searchParams] = useSearchParams();
+  const queryGameId = searchParams.get('gameId');
+  const targetGameId = urlGameId || queryGameId;
+
   const [gameData, setGameData] = useState(null);
   const [expandedTurns, setExpandedTurns] = useState({});
   const [verificationResults, setVerificationResults] = useState({});
   const [showScript, setShowScript] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Load game data from sessionStorage
+  // Load game data from sessionStorage or API
   useEffect(() => {
-    const stored = sessionStorage.getItem('yahtzeeVerification');
-    if (stored) {
-      const data = JSON.parse(stored);
-      if (!urlGameId || data.gameId === urlGameId) {
-        setGameData(data);
-        // Auto-expand first turn
-        setExpandedTurns({ 1: true });
+    const loadGameData = async () => {
+      setLoading(true);
+      setError(null);
+
+      // Try sessionStorage first (for games played in current session)
+      const stored = sessionStorage.getItem('yahtzeeVerification');
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (!targetGameId || data.gameId === targetGameId) {
+          setGameData(data);
+          setExpandedTurns({ 1: true });
+          setLoading(false);
+          return;
+        }
       }
-    }
-  }, [urlGameId]);
+
+      // If gameId provided but not in sessionStorage, try API
+      if (targetGameId) {
+        try {
+          const response = await fetch(`/api/game/${targetGameId}`);
+          if (!response.ok) throw new Error('Game not found');
+
+          const apiData = await response.json();
+          setGameData(apiData);
+          setExpandedTurns({ 1: true });
+        } catch (err) {
+          console.error('Failed to load game data:', err);
+          setError('Game not found. This game may not have been saved to the leaderboard.');
+        }
+      } else {
+        setError('No game ID provided. Please play a game first.');
+      }
+
+      setLoading(false);
+    };
+
+    loadGameData();
+  }, [targetGameId]);
 
   // Group rolls by turn
   const getRollsByTurn = () => {
@@ -323,6 +357,36 @@ if __name__ == "__main__":
     backgroundColor: result?.matches ? '#4caf50' : result?.matches === false ? '#f44336' : '#1976d2'
   });
 
+  // Loading state
+  if (loading) {
+    return (
+      <div style={containerStyle}>
+        <Link to="/yahtzee" style={linkStyle}>← Back to Yahtzee</Link>
+        <div style={{ ...boxStyle, marginTop: '20px', textAlign: 'center' }}>
+          <h2>Loading verification data...</h2>
+          <p>Please wait while we load the game data.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div style={containerStyle}>
+        <Link to="/yahtzee" style={linkStyle}>← Back to Yahtzee</Link>
+        <div style={{ ...boxStyle, marginTop: '20px', textAlign: 'center' }}>
+          <h2>❌ Verification Error</h2>
+          <p style={{ color: '#f44336' }}>{error}</p>
+          <Link to="/yahtzee">
+            <button style={buttonStyle}>Play Yahtzee</button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // No data state
   if (!gameData) {
     return (
       <div style={containerStyle}>

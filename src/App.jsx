@@ -10,6 +10,7 @@ import SolitaireGame from './games/solitaire/SolitaireGame';
 import SolitaireVerification from './games/solitaire/VerificationPage';
 import YahtzeeGame from './games/yahtzee/YahtzeeGame';
 import YahtzeeVerification from './games/yahtzee/VerificationPage';
+import YahtzeeRules from './games/yahtzee/RulesPage';
 
 // Header component with burger menu
 function Header() {
@@ -98,6 +99,7 @@ function App() {
             <Route path="/solitaire" element={<SolitaireGame />} />
             <Route path="/verify/solitaire/:gameId" element={<SolitaireVerification />} />
             <Route path="/yahtzee" element={<YahtzeeGame />} />
+            <Route path="/yahtzee/rules" element={<YahtzeeRules />} />
             <Route path="/yahtzee/verify" element={<YahtzeeVerification />} />
             <Route path="/verify/yahtzee/:gameId" element={<YahtzeeVerification />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
