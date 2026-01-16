@@ -53,6 +53,20 @@ function Home() {
             <div style={styles.playBadge}>Play Now →</div>
           </Link>
 
+          {/* Yahtzee Card */}
+          <Link to="/yahtzee" style={styles.gameCard}>
+            <div style={styles.gameIcon}>🎲</div>
+            <h3 style={styles.gameTitle}>Yahtzee</h3>
+            <p style={styles.gameDesc}>
+              Classic dice game with 13 scoring categories. Roll for straights, full houses, and Yahtzee!
+            </p>
+            <div style={styles.gameStats}>
+              <span>👤 Solo</span>
+              <span>~10 min</span>
+            </div>
+            <div style={styles.playBadge}>Play Now →</div>
+          </Link>
+
           {/* Coming Soon Card */}
           <div style={styles.gameCardDisabled}>
             <div style={styles.gameIcon}>🎴</div>
