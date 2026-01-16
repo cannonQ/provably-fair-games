@@ -7,9 +7,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://rmutcncnppyzirywzozc.supabase.co',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'sb_publishable_K-KApBISA6IiiNE9CCnjNA_3qhuNg8k'
 );
+
+const VALID_GAMES = ['solitaire', 'garbage', 'yahtzee'];
 
 export default async function handler(req, res) {
   // Only allow GET
@@ -21,8 +23,11 @@ export default async function handler(req, res) {
     const { game, limit = 10 } = req.query;
 
     // Validate game type
-    if (!game || !['solitaire', 'garbage'].includes(game)) {
-      return res.status(400).json({ error: 'Invalid or missing game parameter' });
+    if (!game || !VALID_GAMES.includes(game)) {
+      return res.status(400).json({ 
+        error: 'Invalid or missing game parameter',
+        validGames: VALID_GAMES
+      });
     }
 
     // Fetch top scores
