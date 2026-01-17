@@ -104,6 +104,11 @@ function validateScore(game, score, timeSeconds, moves) {
     if (moves !== undefined && moves < 1) return { valid: false, reason: 'Must play at least one hand' };
   }
 
+  if (game === '2048') {
+    // 2048 scores can range from 0 to millions (theoretical max with 131072 tile)
+    if (score < 0) return { valid: false, reason: 'Invalid 2048 score' };
+  }
+
   return { valid: true };
 }
 
@@ -127,7 +132,9 @@ export default async function handler(req, res) {
       txIndex,
       seed,
       rollHistory,   // Yahtzee roll history
-      roundHistory   // Blackjack round history
+      roundHistory,  // Blackjack round history
+      moveHistory,   // 2048 move history (encoded as "UDLR...")
+      highestTile    // 2048 highest tile achieved
     } = req.body;
 
     // Validate required fields - timeSeconds optional for blackjack
@@ -139,7 +146,7 @@ export default async function handler(req, res) {
     }
 
     // Validate game type
-    if (!['solitaire', 'garbage', 'yahtzee', 'blackjack'].includes(game)) {
+    if (!['solitaire', 'garbage', 'yahtzee', 'blackjack', '2048'].includes(game)) {
       return res.status(400).json({ error: 'Invalid game type' });
     }
 
@@ -149,6 +156,7 @@ export default async function handler(req, res) {
     else if (game === 'garbage') gameIdPattern = /^GRB-\d+-\w+$/;
     else if (game === 'yahtzee') gameIdPattern = /^YAH-\d+-\w+$/;
     else if (game === 'blackjack') gameIdPattern = /^BJK-\d+-\w+$/;
+    else if (game === '2048') gameIdPattern = /^2048-\w{8}-\d+-\w{4}$/;
 
     if (!gameIdPattern.test(gameId)) {
       return res.status(400).json({ error: 'Invalid game ID format' });
@@ -227,6 +235,16 @@ export default async function handler(req, res) {
       insertData.round_history = roundHistory;
     }
 
+    // Add move history and highest tile for 2048 (enables leaderboard verification)
+    if (game === '2048') {
+      if (moveHistory) {
+        insertData.move_history = moveHistory;
+      }
+      if (highestTile) {
+        insertData.highest_tile = highestTile;
+      }
+    }
+
     const { data, error } = await supabase
       .from('LeaderBoard')
       .insert(insertData)
@@ -250,6 +268,9 @@ export default async function handler(req, res) {
       // Higher chip balance = better rank
       rankQuery = rankQuery.gt('score', score);
     } else if (game === 'yahtzee') {
+      // Higher score = better rank
+      rankQuery = rankQuery.gt('score', score);
+    } else if (game === '2048') {
       // Higher score = better rank
       rankQuery = rankQuery.gt('score', score);
     } else {
