@@ -422,70 +422,35 @@ async function createStateContext(lib) {
   const preHeader = lib.PreHeader.from_block_header(latestHeader);
   
   // ===== Create State Context ===== //
-  // Different ergo-lib versions have different constructor signatures
   // v0.28.0+ requires Parameters as third argument
   let stateContext;
 
-  // Debug: Log available exports to understand the API
-  const libKeys = Object.keys(lib).filter(k => k.toLowerCase().includes('param') || k.toLowerCase().includes('network'));
-  console.log('Available lib exports (param/network related):', libKeys);
-
-  // Try to get Parameters - different versions have different APIs
+  // Try to get Parameters - use getOwnPropertyNames to find non-enumerable WASM methods
   let parameters = null;
+  if (lib.Parameters) {
+    // CRITICAL: Use getOwnPropertyNames, not Object.keys() - WASM methods are non-enumerable
+    const paramMethods = Object.getOwnPropertyNames(lib.Parameters)
+      .filter(k => typeof lib.Parameters[k] === 'function');
+    console.log('Parameters methods (getOwnPropertyNames):', paramMethods.join(', ') || 'none');
 
-  // Method 1: Check for NetworkParameters (some versions use this)
-  if (lib.NetworkParameters) {
-    console.log('Found NetworkParameters, methods:', Object.keys(lib.NetworkParameters));
-    if (typeof lib.NetworkParameters.mainnet === 'function') {
-      parameters = lib.NetworkParameters.mainnet();
+    // Try default() first (v0.28.0 standard)
+    if (typeof lib.Parameters.default === 'function') {
+      parameters = lib.Parameters.default();
+    } else if (typeof lib.Parameters.default_parameters === 'function') {
+      parameters = lib.Parameters.default_parameters();
     }
   }
 
-  // Method 2: Check Parameters class
-  if (!parameters && lib.Parameters) {
-    console.log('Found Parameters, checking methods...');
-    console.log('Parameters static keys:', Object.keys(lib.Parameters));
-    console.log('Parameters prototype:', lib.Parameters.prototype ? Object.keys(lib.Parameters.prototype) : 'none');
-
-    // Try various known method names
-    const methodsToTry = ['defaultMainnetParameters', 'mainnetParameters', 'default', 'mainnet'];
-    for (const method of methodsToTry) {
-      if (typeof lib.Parameters[method] === 'function') {
-        console.log(`Trying Parameters.${method}()`);
-        try {
-          parameters = lib.Parameters[method]();
-          console.log('Success with', method);
-          break;
-        } catch (e) {
-          console.log(`Parameters.${method}() failed:`, e.message);
-        }
-      }
-    }
-
-    // Try constructor if no static method worked
-    if (!parameters) {
-      try {
-        parameters = new lib.Parameters();
-        console.log('Success with new Parameters()');
-      } catch (e) {
-        console.log('new Parameters() failed:', e.message);
-      }
-    }
-  }
-
-  // Method 3: Check if ErgoStateContext can be created without Parameters (older API)
+  // Create ErgoStateContext
   try {
     if (parameters) {
-      console.log('Creating ErgoStateContext with Parameters');
       stateContext = new lib.ErgoStateContext(preHeader, blockHeaders, parameters);
     } else {
-      console.log('Creating ErgoStateContext without Parameters (2-arg)');
+      // Fallback for older versions
       stateContext = new lib.ErgoStateContext(preHeader, blockHeaders);
     }
   } catch (err) {
     console.error('ErgoStateContext creation failed:', err.message);
-    // Last resort: try to find any way to create state context
-    console.error('Full lib keys:', Object.keys(lib).slice(0, 50));
     throw err;
   }
   
