@@ -54,34 +54,48 @@ const BackgammonGame = () => {
   const aiTimeoutRef = useRef(null);
   const aiCooldownRef = useRef(null);  // Separate ref for aiThinking cooldown to avoid cleanup conflicts
   const turnNumberRef = useRef(null);
+  const stateRef = useRef(state);  // Ref to always have latest state for AI callbacks
 
-  // AI make move - defined early to avoid reference errors
+  // Keep stateRef in sync with current state
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  // AI make move - uses stateRef to always access latest state
   const handleAIMove = useCallback(() => {
-    const legalMoves = getAllLegalMoves(state);
+    try {
+      const currentState = stateRef.current;
+      const legalMoves = getAllLegalMoves(currentState);
 
-    if (legalMoves.length === 0) {
-      // No legal moves - end turn
-      dispatch(actions.completeTurn());
-      setAiThinking(false);
-      return;
-    }
-
-    const selectedMove = selectMove(legalMoves, state, state.aiDifficulty);
-
-    if (selectedMove) {
-      dispatch(actions.moveChecker(selectedMove.from, selectedMove.to));
-
-      // Short delay then allow next move check
-      // Use separate ref to avoid useEffect cleanup clearing this timeout
-      aiCooldownRef.current = setTimeout(() => {
+      if (legalMoves.length === 0) {
+        // No legal moves - end turn
+        dispatch(actions.completeTurn());
         setAiThinking(false);
-      }, 400);
-    } else {
-      // No move selected - end turn
+        return;
+      }
+
+      const selectedMove = selectMove(legalMoves, currentState, currentState.aiDifficulty);
+
+      if (selectedMove) {
+        dispatch(actions.moveChecker(selectedMove.from, selectedMove.to));
+
+        // Short delay then allow next move check
+        // Use separate ref to avoid useEffect cleanup clearing this timeout
+        aiCooldownRef.current = setTimeout(() => {
+          setAiThinking(false);
+        }, 400);
+      } else {
+        // No move selected - end turn
+        dispatch(actions.completeTurn());
+        setAiThinking(false);
+      }
+    } catch (error) {
+      console.error('AI move error:', error);
+      // Recover from error by ending turn
       dispatch(actions.completeTurn());
       setAiThinking(false);
     }
-  }, [state, dispatch]);
+  }, [dispatch]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -169,7 +183,8 @@ const BackgammonGame = () => {
     // Handle AI response to double offer
     if (state.phase === 'doubleOffered' && state.currentPlayer === 'black') {
       aiTimeoutRef.current = setTimeout(() => {
-        const accepts = shouldAcceptDouble(state, 'black', state.aiDifficulty);
+        const currentState = stateRef.current;
+        const accepts = shouldAcceptDouble(currentState, 'black', currentState.aiDifficulty);
         if (accepts) {
           dispatch(actions.acceptDouble());
         } else {
