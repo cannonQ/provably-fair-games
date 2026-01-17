@@ -278,27 +278,27 @@ const BackgammonGame = () => {
     setIsRolling(true);
 
     try {
+      const currentState = stateRef.current;
       const block = await getLatestBlock();
       turnNumberRef.current++;
-      
-      const dice = rollDiceValues(block.id, state.gameId, turnNumberRef.current);
+
+      const dice = rollDiceValues(block.id, currentState.gameId, turnNumberRef.current);
       dispatch(actions.rollDice(dice, block.id));
 
-      // Check for no legal moves
+      // Check for no legal moves after roll
+      // Use setTimeout to allow state to update, then check using stateRef
       setTimeout(() => {
-        const newState = {
-          ...state,
-          dice: isDoubles(dice) ? [dice[0], dice[0], dice[0], dice[0]] : dice,
-          diceUsed: isDoubles(dice) ? [false, false, false, false] : [false, false],
-          phase: 'moving'
-        };
-        const legalMoves = getAllLegalMoves(newState);
-        
-        if (legalMoves.length === 0) {
-          setTimeout(() => {
-            dispatch(actions.completeTurn());
-            setAiThinking(false);
-          }, 1000);
+        const stateAfterRoll = stateRef.current;
+        // Only check if we're still in moving phase (state might have changed)
+        if (stateAfterRoll.phase === 'moving' && stateAfterRoll.currentPlayer === 'black') {
+          const legalMoves = getAllLegalMoves(stateAfterRoll);
+
+          if (legalMoves.length === 0) {
+            setTimeout(() => {
+              dispatch(actions.completeTurn());
+              setAiThinking(false);
+            }, 1000);
+          }
         }
       }, 100);
 
