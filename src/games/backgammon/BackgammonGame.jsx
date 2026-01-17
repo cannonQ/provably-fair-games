@@ -28,6 +28,7 @@ import BackgammonBoard from './BackgammonBoard';
 import Dice from './Dice';
 import DoublingCube from './DoublingCube';
 import GameOverModal from './GameOverModal';
+import RotatePrompt from './RotatePrompt';
 
 // Blockchain API
 import { getLatestBlock } from '../../blockchain/ergo-api';
@@ -544,6 +545,8 @@ const BackgammonGame = () => {
 
   return (
     <div style={containerStyle}>
+      <RotatePrompt gameName="Backgammon" />
+      
       {/* Header */}
       <div style={headerStyle}>
         <h1 style={titleStyle}>🎲 Backgammon</h1>
