@@ -63,29 +63,36 @@ const BackgammonGame = () => {
 
   // AI make move - uses stateRef to always access latest state
   const handleAIMove = useCallback(() => {
+    console.log('[AI] handleAIMove called');
     try {
       const currentState = stateRef.current;
       const legalMoves = getAllLegalMoves(currentState);
+      console.log('[AI] handleAIMove - legalMoves:', legalMoves.length, 'diceUsed:', currentState.diceUsed);
 
       if (legalMoves.length === 0) {
         // No legal moves - end turn
+        console.log('[AI] handleAIMove - no moves, completing turn');
         dispatch(actions.completeTurn());
         setAiThinking(false);
         return;
       }
 
       const selectedMove = selectMove(legalMoves, currentState, currentState.aiDifficulty);
+      console.log('[AI] handleAIMove - selectedMove:', selectedMove);
 
       if (selectedMove) {
+        console.log('[AI] handleAIMove - dispatching move, setting cooldown');
         dispatch(actions.moveChecker(selectedMove.from, selectedMove.to));
 
         // Short delay then allow next move check
         // Use separate ref to avoid useEffect cleanup clearing this timeout
         aiCooldownRef.current = setTimeout(() => {
+          console.log('[AI] cooldown fired, setting aiThinking=false');
           setAiThinking(false);
         }, 400);
       } else {
         // No move selected - end turn
+        console.log('[AI] handleAIMove - no move selected, completing turn');
         dispatch(actions.completeTurn());
         setAiThinking(false);
       }
@@ -144,6 +151,8 @@ const BackgammonGame = () => {
     if (!gameStarted || state.phase === 'gameOver') return;
     if (state.currentPlayer !== 'black') return;
 
+    console.log('[AI] useEffect triggered:', { phase: state.phase, aiThinking, diceUsed: state.diceUsed });
+
     // Handle AI doubling decision
     if (state.phase === 'rolling') {
       const shouldOfferDouble = shouldDouble(state, 'black', state.aiDifficulty);
@@ -155,29 +164,38 @@ const BackgammonGame = () => {
       }
 
       // AI rolls
+      console.log('[AI] Scheduling roll');
       aiTimeoutRef.current = setTimeout(() => {
         handleAIRoll();
       }, 1000);
+      return;  // Important: return after scheduling roll
     }
 
     // Handle AI moving
     if (state.phase === 'moving' && !aiThinking) {
-      const legalMoves = getAllLegalMoves(state);
+      // Use stateRef to get the most current state for legal move calculation
+      const currentState = stateRef.current;
+      const legalMoves = getAllLegalMoves(currentState);
+      console.log('[AI] Checking moves:', { legalMovesCount: legalMoves.length, diceUsed: currentState.diceUsed });
 
       if (legalMoves.length === 0) {
         // No legal moves available - end turn
+        console.log('[AI] No legal moves, ending turn');
         aiTimeoutRef.current = setTimeout(() => {
           dispatch(actions.completeTurn());
         }, 500);
         return;
       }
 
+      console.log('[AI] Setting aiThinking=true, scheduling move');
       setAiThinking(true);
       const delay = getThinkingDelay(state.aiDifficulty, legalMoves.length);
 
       aiTimeoutRef.current = setTimeout(() => {
+        console.log('[AI] handleAIMove timeout fired');
         handleAIMove();
       }, delay);
+      return;  // Important: return after scheduling move
     }
 
     // Handle AI response to double offer
