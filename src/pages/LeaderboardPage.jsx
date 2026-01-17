@@ -39,6 +39,18 @@ function LeaderboardPage() {
         >
           🎲 Yahtzee
         </button>
+        <button
+          onClick={() => setActiveGame('2048')}
+          style={activeGame === '2048' ? styles.tabActive : styles.tab}
+        >
+          🔢 2048
+        </button>
+        <button
+          onClick={() => setActiveGame('backgammon')}
+          style={activeGame === 'backgammon' ? styles.tabActive : styles.tab}
+        >
+          🎲 Backgammon
+        </button>
       </div>
 
       {/* Leaderboard */}
@@ -156,22 +168,22 @@ function LeaderboardPage() {
                 <p style={styles.infoText}>
                   <strong>Upper Section:</strong> Ones through Sixes (sum of matching dice)<br/>
                   <strong>Upper Bonus:</strong> +35 if upper total ≥ 63<br/>
-                  <strong>Lower Section:</strong> Three/Four of Kind, Full House (25), 
+                  <strong>Lower Section:</strong> Three/Four of Kind, Full House (25),
                   Small Straight (30), Large Straight (40), Yahtzee (50), Chance
                 </p>
               </div>
               <div style={styles.infoCard}>
                 <h4 style={styles.infoTitle}>🎯 Yahtzee Bonus</h4>
                 <p style={styles.infoText}>
-                  Roll multiple Yahtzees? After your first Yahtzee (50 pts), 
+                  Roll multiple Yahtzees? After your first Yahtzee (50 pts),
                   each additional Yahtzee earns +100 bonus points!
                 </p>
               </div>
               <div style={styles.infoCard}>
                 <h4 style={styles.infoTitle}>🔒 Provably Fair Dice</h4>
                 <p style={styles.infoText}>
-                  Every dice roll uses blockchain data. The seed is generated from 
-                  block hash + transaction + game ID + turn/roll number. 
+                  Every dice roll uses blockchain data. The seed is generated from
+                  block hash + transaction + game ID + turn/roll number.
                   Completely verifiable!
                 </p>
               </div>
@@ -218,6 +230,107 @@ function LeaderboardPage() {
             </div>
           </div>
         )}
+
+        {activeGame === '2048' && (
+          <div style={styles.scoringContent}>
+            <div style={styles.rankingBox}>
+              <h3 style={styles.rankingTitle}>Ranking Order</h3>
+              <div style={styles.rankingList}>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>1st</span>
+                  <span style={styles.rankLabel}>Highest Tile</span>
+                  <span style={styles.rankDesc}>Bigger tile = higher rank (2048, 4096, etc.)</span>
+                </div>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>2nd</span>
+                  <span style={styles.rankLabel}>Total Score</span>
+                  <span style={styles.rankDesc}>Higher score = higher rank</span>
+                </div>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>3rd</span>
+                  <span style={styles.rankLabel}>Moves</span>
+                  <span style={styles.rankDesc}>Fewer moves = higher rank</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.infoGrid}>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>🔢 How to Play</h4>
+                <p style={styles.infoText}>
+                  Slide tiles using arrow keys or swipe gestures.
+                  When two tiles with the same number collide, they merge!
+                  Reach 2048 to win, but you can keep going for higher scores.
+                </p>
+              </div>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>🎯 Scoring</h4>
+                <p style={styles.infoText}>
+                  Points equal the value of merged tiles.
+                  Merging two 32s = 64 points.
+                  Strategy: Keep your highest tile in a corner!
+                </p>
+              </div>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>🔒 Provably Fair Spawns</h4>
+                <p style={styles.infoText}>
+                  Every new tile spawn uses blockchain data for position and value (90% 2s, 10% 4s).
+                  Completely verifiable!
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeGame === 'backgammon' && (
+          <div style={styles.scoringContent}>
+            <div style={styles.rankingBox}>
+              <h3 style={styles.rankingTitle}>Ranking Order</h3>
+              <div style={styles.rankingList}>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>1st</span>
+                  <span style={styles.rankLabel}>Final Score</span>
+                  <span style={styles.rankDesc}>Points × cube value × difficulty multiplier</span>
+                </div>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>2nd</span>
+                  <span style={styles.rankLabel}>Win Type</span>
+                  <span style={styles.rankDesc}>Backgammon (3x) > Gammon (2x) > Normal (1x)</span>
+                </div>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>3rd</span>
+                  <span style={styles.rankLabel}>Time</span>
+                  <span style={styles.rankDesc}>Faster wins = higher rank</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.infoGrid}>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>🎲 Win Types</h4>
+                <p style={styles.infoText}>
+                  <strong>Normal:</strong> Opponent bore off at least 1 checker<br/>
+                  <strong>Gammon (2x):</strong> Opponent bore off 0 checkers<br/>
+                  <strong>Backgammon (3x):</strong> Opponent has checker on bar or in your home
+                </p>
+              </div>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>📦 Doubling Cube</h4>
+                <p style={styles.infoText}>
+                  Double the stakes during your turn. Opponent can accept (2x points)
+                  or decline (forfeit at current stakes). Cube goes up to 64x!
+                </p>
+              </div>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>🔒 Provably Fair Dice</h4>
+                <p style={styles.infoText}>
+                  Every dice roll is generated from Ergo blockchain data.
+                  Block hash + game ID + turn number = verifiable dice!
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Verification Note */}
@@ -240,6 +353,8 @@ function LeaderboardPage() {
           <Link to="/solitaire" style={styles.primaryBtn}>Play Solitaire</Link>
           <Link to="/blackjack" style={styles.primaryBtn}>Play Blackjack</Link>
           <Link to="/yahtzee" style={styles.primaryBtn}>Play Yahtzee</Link>
+          <Link to="/2048" style={styles.primaryBtn}>Play 2048</Link>
+          <Link to="/backgammon" style={styles.primaryBtn}>Play Backgammon</Link>
         </div>
       </section>
     </div>

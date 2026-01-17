@@ -312,7 +312,19 @@ const Game2048 = () => {
           <h1 style={styles.title}>2048</h1>
           <div style={styles.links}>
             <Link to="/2048/tutorial" style={styles.link}>How to Play</Link>
-            <Link to="/2048/verify" style={styles.link}>Verify</Link>
+            <Link
+              to="/2048/verify"
+              state={{
+                gameId: state.gameId,
+                score: state.score,
+                spawnHistory: state.spawnHistory,
+                moveHistory: state.moveHistory,
+                gameStatus: state.gameStatus
+              }}
+              style={styles.link}
+            >
+              Verify
+            </Link>
             <Link to="/" style={styles.link}>Home</Link>
           </div>
         </div>
