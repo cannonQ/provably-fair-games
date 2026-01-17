@@ -52,7 +52,34 @@ const BackgammonGame = () => {
   
   // Refs for cleanup
   const aiTimeoutRef = useRef(null);
-  const turnNumberRef = useRef(0);
+  const turnNumberRef = useRef(null);
+
+  // AI make move - defined early to avoid reference errors
+  const handleAIMove = useCallback(() => {
+    const legalMoves = getAllLegalMoves(state);
+
+    if (legalMoves.length === 0) {
+      // No legal moves - end turn
+      dispatch(actions.completeTurn());
+      setAiThinking(false);
+      return;
+    }
+
+    const selectedMove = selectMove(legalMoves, state, state.aiDifficulty);
+
+    if (selectedMove) {
+      dispatch(actions.moveChecker(selectedMove.from, selectedMove.to));
+
+      // Short delay then allow next move check
+      aiTimeoutRef.current = setTimeout(() => {
+        setAiThinking(false);
+      }, 400);
+    } else {
+      // No move selected - end turn
+      dispatch(actions.completeTurn());
+      setAiThinking(false);
+    }
+  }, [state, dispatch]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -263,34 +290,6 @@ const BackgammonGame = () => {
       setIsRolling(false);
     }
   };
-
-  // AI make move - simple single-move approach
-  // After each move, sets aiThinking=false to let useEffect trigger next move
-  const handleAIMove = useCallback(() => {
-    const legalMoves = getAllLegalMoves(state);
-
-    if (legalMoves.length === 0) {
-      // No legal moves - end turn
-      dispatch(actions.completeTurn());
-      setAiThinking(false);
-      return;
-    }
-
-    const selectedMove = selectMove(legalMoves, state, state.aiDifficulty);
-
-    if (selectedMove) {
-      dispatch(actions.moveChecker(selectedMove.from, selectedMove.to));
-
-      // Short delay then allow next move check
-      aiTimeoutRef.current = setTimeout(() => {
-        setAiThinking(false);
-      }, 400);
-    } else {
-      // No move selected - end turn
-      dispatch(actions.completeTurn());
-      setAiThinking(false);
-    }
-  }, [state, dispatch]);
 
   // Handle point click (for destination)
   const handlePointClick = (pointIndex) => {

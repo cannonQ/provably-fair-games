@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { verifySpawn, generateMasterSeed } from './spawnLogic';
 import { formatScore } from './scoreLogic';
 import { encodeMoveHistory } from './gameState';
@@ -127,6 +127,10 @@ if __name__ == "__main__":
 const VerificationPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { gameId: urlGameId } = useParams();
+
+  // Detect if accessed from leaderboard (URL has gameId param)
+  const isFromLeaderboard = !!urlGameId;
 
   // Try location.state first, then localStorage (for new tab opens)
   const getGameData = () => {
@@ -136,15 +140,21 @@ const VerificationPage = () => {
     try {
       const stored = localStorage.getItem('2048_verify_data');
       if (stored) {
-        return JSON.parse(stored);
+        const data = JSON.parse(stored);
+        // If from leaderboard, check if stored game matches requested game
+        if (isFromLeaderboard && data.gameId !== urlGameId) {
+          return { mismatch: true, requestedGameId: urlGameId };
+        }
+        return data;
       }
     } catch (e) {
       console.error('Failed to parse stored verify data:', e);
     }
-    return {};
+    return isFromLeaderboard ? { mismatch: true, requestedGameId: urlGameId } : {};
   };
 
-  const { gameId, score, spawnHistory, moveHistory, gameStatus, anchorBlock } = getGameData();
+  const gameData = getGameData();
+  const { gameId, score, spawnHistory, moveHistory, gameStatus, anchorBlock } = gameData.mismatch ? {} : gameData;
 
   const [expandedSpawns, setExpandedSpawns] = useState(new Set());
   const [copiedSeed, setCopiedSeed] = useState(null);
@@ -402,6 +412,34 @@ const VerificationPage = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
+
+  // Leaderboard access but game data not available
+  if (gameData.mismatch) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.wrapper}>
+          <div style={styles.header}>
+            <h1 style={styles.title}>🔍 Verification</h1>
+            <Link to="/leaderboard" style={styles.backLink}>← Back to Leaderboard</Link>
+          </div>
+          <div style={{ ...styles.section, ...styles.emptyState }}>
+            <p style={{ fontWeight: 'bold', color: '#776e65' }}>Historical Verification Not Available</p>
+            <p style={{ color: '#9e948a', marginTop: '10px' }}>
+              2048 uses real-time spawn verification during gameplay. Historical games from the
+              leaderboard cannot be re-verified because the complete spawn data isn't stored.
+            </p>
+            <p style={{ color: '#9e948a', marginTop: '15px', fontSize: '0.9rem' }}>
+              Each tile spawn was verified against the blockchain at the moment it occurred.
+              To see verification in action, play a new game and click "Verify" during or after gameplay.
+            </p>
+            <Link to="/2048" style={{ ...styles.downloadButton, marginTop: '20px', display: 'inline-block' }}>
+              Play 2048
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // No game data - show prompt to play
   if (!gameId || !spawnHistory) {
