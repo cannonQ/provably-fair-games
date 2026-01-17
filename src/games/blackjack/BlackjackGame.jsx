@@ -143,12 +143,19 @@ export default function BlackjackGame() {
     });
 
     // Insurance payout
+    let insurancePayout = 0;
     if (s.insuranceBet > 0) {
-      const insPayout = calculateInsurancePayout(dealerBJ, s.insuranceBet);
-      totalPayout += insPayout;
+      insurancePayout = calculateInsurancePayout(dealerBJ, s.insuranceBet);
+      totalPayout += insurancePayout;
     }
 
-    dispatch({ type: 'RESOLVE_ROUND', payload: { results, totalPayout, blackjackCount } });
+    dispatch({ type: 'RESOLVE_ROUND', payload: {
+      results,
+      totalPayout,
+      blackjackCount,
+      insuranceBet: s.insuranceBet,
+      insurancePayout
+    } });
   }, []);
 
   // Dealer auto-play - using ref to get current state
