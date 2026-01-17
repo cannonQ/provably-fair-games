@@ -425,33 +425,37 @@ async function createStateContext(lib) {
   // v0.28.0+ requires Parameters as third argument
   let stateContext;
 
-  // Try to get Parameters - use getOwnPropertyNames to find non-enumerable WASM methods
+  // Try to get Parameters if available
   let parameters = null;
   if (lib.Parameters) {
-    // CRITICAL: Use getOwnPropertyNames, not Object.keys() - WASM methods are non-enumerable
-    const paramMethods = Object.getOwnPropertyNames(lib.Parameters)
-      .filter(k => typeof lib.Parameters[k] === 'function');
-    console.log('Parameters methods (getOwnPropertyNames):', paramMethods.join(', ') || 'none');
-
-    // Try default() first (v0.28.0 standard)
     if (typeof lib.Parameters.default === 'function') {
       parameters = lib.Parameters.default();
     } else if (typeof lib.Parameters.default_parameters === 'function') {
       parameters = lib.Parameters.default_parameters();
+    } else {
+      // Log available methods for debugging (use getOwnPropertyNames for WASM)
+      const paramMethods = Object.getOwnPropertyNames(lib.Parameters)
+        .filter(k => typeof lib.Parameters[k] === 'function');
+      console.log('Available Parameters methods:', paramMethods.join(', ') || 'none');
     }
   }
 
-  // Create ErgoStateContext
+  // Try 3-arg constructor first, fall back to 2-arg
   try {
     if (parameters) {
       stateContext = new lib.ErgoStateContext(preHeader, blockHeaders, parameters);
     } else {
-      // Fallback for older versions
+      // Try without parameters (older versions)
       stateContext = new lib.ErgoStateContext(preHeader, blockHeaders);
     }
   } catch (err) {
-    console.error('ErgoStateContext creation failed:', err.message);
-    throw err;
+    // If 3-arg failed, try 2-arg as fallback
+    if (parameters) {
+      console.log('3-arg constructor failed, trying 2-arg...');
+      stateContext = new lib.ErgoStateContext(preHeader, blockHeaders);
+    } else {
+      throw err;
+    }
   }
   
   return { stateContext, currentHeight: headersData[0].height };
