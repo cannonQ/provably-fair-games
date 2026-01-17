@@ -31,6 +31,7 @@ const Game2048 = () => {
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [submittedRank, setSubmittedRank] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [playerName, setPlayerName] = useState('');
 
   const touchStartRef = useRef(null);
   const gameContainerRef = useRef(null);
@@ -181,6 +182,7 @@ const Game2048 = () => {
     setIsLoading(true);
     setScoreSubmitted(false);
     setSubmittedRank(null);
+    setPlayerName('');
     newGame();
     const blockData = await fetchBlockData();
     initGame(blockData);
@@ -199,7 +201,7 @@ const Game2048 = () => {
       const result = await submitScore({
         game: '2048',
         gameId: state.gameId,
-        playerName: 'Anonymous',
+        playerName: playerName.trim() || 'Anonymous',
         score: state.score,
         timeSeconds: 0,
         moves: state.moveHistory.length,
@@ -218,7 +220,7 @@ const Game2048 = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, scoreSubmitted, state]);
+  }, [isSubmitting, scoreSubmitted, state, playerName]);
 
   /**
    * Keyboard controls
@@ -319,20 +321,24 @@ const Game2048 = () => {
           <h1 style={styles.title}>2048</h1>
           <div style={styles.links}>
             <Link to="/2048/tutorial" style={styles.link}>How to Play</Link>
-            <Link
-              to="/2048/verify"
-              state={{
-                gameId: state.gameId,
-                score: state.score,
-                spawnHistory: state.spawnHistory,
-                moveHistory: state.moveHistory,
-                gameStatus: state.gameStatus,
-                anchorBlock: state.anchorBlock
+            <span
+              style={{ ...styles.link, cursor: 'pointer' }}
+              onClick={() => {
+                // Store game state for verify page
+                const verifyData = {
+                  gameId: state.gameId,
+                  score: state.score,
+                  spawnHistory: state.spawnHistory,
+                  moveHistory: state.moveHistory,
+                  gameStatus: state.gameStatus,
+                  anchorBlock: state.anchorBlock
+                };
+                localStorage.setItem('2048_verify_data', JSON.stringify(verifyData));
+                window.open('/2048/verify', '_blank');
               }}
-              style={styles.link}
             >
-              Verify
-            </Link>
+              Verify ↗
+            </span>
             <Link to="/" style={styles.link}>Home</Link>
           </div>
         </div>
@@ -364,6 +370,8 @@ const Game2048 = () => {
           onSubmitScore={handleSubmitScore}
           scoreSubmitted={scoreSubmitted}
           submittedRank={submittedRank}
+          playerName={playerName}
+          onPlayerNameChange={setPlayerName}
         />
 
         {/* Grid Section */}

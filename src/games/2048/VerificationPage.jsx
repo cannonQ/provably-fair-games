@@ -127,7 +127,24 @@ if __name__ == "__main__":
 const VerificationPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { gameId, score, spawnHistory, moveHistory, gameStatus, anchorBlock } = location.state || {};
+
+  // Try location.state first, then localStorage (for new tab opens)
+  const getGameData = () => {
+    if (location.state?.gameId) {
+      return location.state;
+    }
+    try {
+      const stored = localStorage.getItem('2048_verify_data');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error('Failed to parse stored verify data:', e);
+    }
+    return {};
+  };
+
+  const { gameId, score, spawnHistory, moveHistory, gameStatus, anchorBlock } = getGameData();
 
   const [expandedSpawns, setExpandedSpawns] = useState(new Set());
   const [copiedSeed, setCopiedSeed] = useState(null);

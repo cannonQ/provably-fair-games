@@ -116,9 +116,19 @@ const BackgammonGame = () => {
 
     // Handle AI moving
     if (state.phase === 'moving' && !aiThinking) {
+      const legalMoves = getAllLegalMoves(state);
+
+      if (legalMoves.length === 0) {
+        // No legal moves available - end turn
+        aiTimeoutRef.current = setTimeout(() => {
+          dispatch(actions.completeTurn());
+        }, 500);
+        return;
+      }
+
       setAiThinking(true);
-      const delay = getThinkingDelay(state.aiDifficulty, getAllLegalMoves(state).length);
-      
+      const delay = getThinkingDelay(state.aiDifficulty, legalMoves.length);
+
       aiTimeoutRef.current = setTimeout(() => {
         handleAIMove();
       }, delay);
@@ -141,7 +151,7 @@ const BackgammonGame = () => {
         clearTimeout(aiTimeoutRef.current);
       }
     };
-  }, [state.currentPlayer, state.phase, gameStarted, aiThinking, state.aiDifficulty]);
+  }, [state.currentPlayer, state.phase, state.dice, state.diceUsed, gameStarted, aiThinking, state.aiDifficulty, dispatch, handleAIMove]);
 
   // Start new game
   const handleStartGame = async () => {
@@ -254,38 +264,29 @@ const BackgammonGame = () => {
     }
   };
 
-  // AI make move (recursive for multiple moves in a turn)
-  const handleAIMove = useCallback((currentState) => {
-    const stateToUse = currentState || state;
-    const legalMoves = getAllLegalMoves(stateToUse);
+  // AI make move - simple single-move approach
+  // After each move, sets aiThinking=false to let useEffect trigger next move
+  const handleAIMove = useCallback(() => {
+    const legalMoves = getAllLegalMoves(state);
 
     if (legalMoves.length === 0) {
+      // No legal moves - end turn
       dispatch(actions.completeTurn());
       setAiThinking(false);
       return;
     }
 
-    const selectedMove = selectMove(legalMoves, stateToUse, stateToUse.aiDifficulty);
+    const selectedMove = selectMove(legalMoves, state, state.aiDifficulty);
 
     if (selectedMove) {
       dispatch(actions.moveChecker(selectedMove.from, selectedMove.to));
 
-      // Check if turn is complete after this move
-      const newState = applyMove(stateToUse, selectedMove);
-
-      if (isTurnComplete(newState)) {
-        setTimeout(() => {
-          dispatch(actions.completeTurn());
-          setAiThinking(false);
-        }, 500);
-      } else {
-        // More moves to make - schedule next move with updated state
-        const delay = getThinkingDelay(stateToUse.aiDifficulty, legalMoves.length);
-        aiTimeoutRef.current = setTimeout(() => {
-          handleAIMove(newState);
-        }, Math.min(delay, 800));
-      }
+      // Short delay then allow next move check
+      aiTimeoutRef.current = setTimeout(() => {
+        setAiThinking(false);
+      }, 400);
     } else {
+      // No move selected - end turn
       dispatch(actions.completeTurn());
       setAiThinking(false);
     }

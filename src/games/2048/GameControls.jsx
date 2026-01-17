@@ -20,6 +20,8 @@ import { formatScore, getScoreRank } from './scoreLogic';
  * @param {function} props.onSubmitScore - Submit score handler
  * @param {boolean} props.scoreSubmitted - Whether score has been submitted
  * @param {number} props.submittedRank - Rank after submission
+ * @param {string} props.playerName - Player name for submission
+ * @param {function} props.onPlayerNameChange - Handler for name change
  */
 const GameControls = ({
   score = 0,
@@ -32,7 +34,9 @@ const GameControls = ({
   onMove,
   onSubmitScore,
   scoreSubmitted = false,
-  submittedRank = null
+  submittedRank = null,
+  playerName = '',
+  onPlayerNameChange
 }) => {
   const styles = {
     container: {
@@ -142,6 +146,24 @@ const GameControls = ({
       fontWeight: 'bold',
       marginTop: '10px'
     },
+    nameInput: {
+      padding: '10px 15px',
+      fontSize: '1rem',
+      border: '2px solid #bbada0',
+      borderRadius: '6px',
+      marginRight: '10px',
+      width: '150px',
+      textAlign: 'center',
+      outline: 'none'
+    },
+    nameInputRow: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: '10px',
+      flexWrap: 'wrap',
+      gap: '10px'
+    },
     arrowControls: {
       display: 'flex',
       flexDirection: 'column',
@@ -236,6 +258,19 @@ const GameControls = ({
                 : `Final Score: ${formatScore(score)}`
               }
             </div>
+            {/* Name input for score submission */}
+            {!scoreSubmitted && onSubmitScore && (
+              <div style={styles.nameInputRow}>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={playerName}
+                  onChange={(e) => onPlayerNameChange && onPlayerNameChange(e.target.value)}
+                  style={styles.nameInput}
+                  maxLength={20}
+                />
+              </div>
+            )}
             <div style={styles.buttonRow}>
               {gameStatus === 'won' && (
                 <button

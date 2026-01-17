@@ -150,11 +150,13 @@ function App() {
             {/* Backgammon routes */}
             <Route path="/backgammon" element={<BackgammonGame />} />
             <Route path="/play/backgammon" element={<BackgammonGame />} />
+            <Route path="/backgammon/verify/:gameId" element={<BackgammonVerification />} />
             <Route path="/verify/backgammon/:gameId" element={<BackgammonVerification />} />
             <Route path="/backgammon/tutorial" element={<BackgammonTutorial />} />
             {/* 2048 routes */}
             <Route path="/2048" element={<Game2048 />} />
             <Route path="/2048/verify" element={<Verification2048 />} />
+            <Route path="/verify/2048/:gameId" element={<Verification2048 />} />
             <Route path="/2048/tutorial" element={<Tutorial2048 />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />

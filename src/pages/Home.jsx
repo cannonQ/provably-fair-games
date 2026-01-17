@@ -36,6 +36,11 @@ function Home() {
               <span>👤 Solo</span>
               <span>~10 min</span>
             </div>
+            <ul style={styles.gameFeatures}>
+              <li>Provably fair shuffle</li>
+              <li>Undo moves available</li>
+              <li>Track completion time</li>
+            </ul>
             <div style={styles.playBadge}>Play Now →</div>
           </Link>
 
@@ -69,6 +74,11 @@ function Home() {
               <span>👤 Solo</span>
               <span>~10 min</span>
             </div>
+            <ul style={styles.gameFeatures}>
+              <li>Blockchain-verified dice</li>
+              <li>All 13 categories</li>
+              <li>Upper section bonus</li>
+            </ul>
             <div style={styles.playBadge}>Play Now →</div>
           </Link>
 
@@ -83,6 +93,11 @@ function Home() {
               <span>👤 vs 🤖</span>
               <span>~5 min</span>
             </div>
+            <ul style={styles.gameFeatures}>
+              <li>3 difficulty levels</li>
+              <li>Jacks are wild cards</li>
+              <li>Provably fair shuffle</li>
+            </ul>
             <div style={styles.playBadge}>Play Now →</div>
           </Link>
 
