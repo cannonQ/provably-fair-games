@@ -422,40 +422,40 @@ async function createStateContext(lib) {
   const preHeader = lib.PreHeader.from_block_header(latestHeader);
   
   // ===== Create State Context ===== //
-  // Different ergo-lib versions have different constructor signatures
   // v0.28.0+ requires Parameters as third argument
   let stateContext;
 
-  // Try to get Parameters - different versions have different APIs
+  // Try to get Parameters if available
   let parameters = null;
   if (lib.Parameters) {
-    // Try various methods that exist in different versions
-    if (typeof lib.Parameters.defaultMainnetParameters === 'function') {
-      parameters = lib.Parameters.defaultMainnetParameters();
-    } else if (typeof lib.Parameters.default === 'function') {
+    if (typeof lib.Parameters.default === 'function') {
       parameters = lib.Parameters.default();
+    } else if (typeof lib.Parameters.default_parameters === 'function') {
+      parameters = lib.Parameters.default_parameters();
     } else {
-      // Try creating with default constructor
-      try {
-        parameters = new lib.Parameters();
-      } catch (e) {
-        // Parameters class exists but can't be instantiated this way
-      }
+      // Log available methods for debugging (use getOwnPropertyNames for WASM)
+      const paramMethods = Object.getOwnPropertyNames(lib.Parameters)
+        .filter(k => typeof lib.Parameters[k] === 'function');
+      console.log('Available Parameters methods:', paramMethods.join(', ') || 'none');
     }
   }
 
+  // Try 3-arg constructor first, fall back to 2-arg
   try {
     if (parameters) {
-      // v0.28.0+ with Parameters
       stateContext = new lib.ErgoStateContext(preHeader, blockHeaders, parameters);
     } else {
-      // Older versions without Parameters requirement
+      // Try without parameters (older versions)
       stateContext = new lib.ErgoStateContext(preHeader, blockHeaders);
     }
   } catch (err) {
-    console.error('ErgoStateContext creation failed:', err.message);
-    console.error('Available Parameters methods:', lib.Parameters ? Object.keys(lib.Parameters) : 'none');
-    throw err;
+    // If 3-arg failed, try 2-arg as fallback
+    if (parameters) {
+      console.log('3-arg constructor failed, trying 2-arg...');
+      stateContext = new lib.ErgoStateContext(preHeader, blockHeaders);
+    } else {
+      throw err;
+    }
   }
   
   return { stateContext, currentHeight: headersData[0].height };
