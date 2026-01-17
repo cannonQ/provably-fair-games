@@ -255,13 +255,15 @@ export default async function handler(req, res) {
       }
     }
 
+    // Add difficulty for games with AI opponents
+    if ((game === 'backgammon' || game === 'garbage') && difficulty) {
+      insertData.difficulty = difficulty;
+    }
+
     // Add backgammon-specific fields
     if (game === 'backgammon') {
       if (winType) {
         insertData.win_type = winType;
-      }
-      if (difficulty) {
-        insertData.difficulty = difficulty;
       }
       if (cubeValue) {
         insertData.cube_value = cubeValue;

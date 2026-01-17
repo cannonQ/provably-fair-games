@@ -509,7 +509,7 @@ const BackgammonGame = () => {
           </div>
 
           <div style={{ fontSize: '14px', color: '#888', marginBottom: '20px' }}>
-            <p>Score multiplier: {d => ({ easy: '1x', normal: '2x', hard: '3x' })[difficulty]}</p>
+            <p>Score multiplier: {{ easy: '1x', normal: '2x', hard: '3x' }[difficulty]}</p>
           </div>
 
           <button
