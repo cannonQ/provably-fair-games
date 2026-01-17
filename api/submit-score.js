@@ -109,6 +109,12 @@ function validateScore(game, score, timeSeconds, moves) {
     if (score < 0) return { valid: false, reason: 'Invalid 2048 score' };
   }
 
+  if (game === 'backgammon') {
+    // Backgammon score = winType(1-3) × cube(1-64) × difficulty(1-3)
+    // Max theoretical: 3 × 64 × 3 = 576
+    if (score < 0 || score > 576) return { valid: false, reason: 'Invalid backgammon score' };
+  }
+
   return { valid: true };
 }
 
@@ -134,7 +140,10 @@ export default async function handler(req, res) {
       rollHistory,   // Yahtzee roll history
       roundHistory,  // Blackjack round history
       moveHistory,   // 2048 move history (encoded as "UDLR...")
-      highestTile    // 2048 highest tile achieved
+      highestTile,   // 2048 highest tile achieved
+      winType,       // Backgammon win type (normal/gammon/backgammon)
+      difficulty,    // Backgammon AI difficulty
+      cubeValue      // Backgammon doubling cube value
     } = req.body;
 
     // Validate required fields - timeSeconds optional for blackjack
@@ -146,7 +155,7 @@ export default async function handler(req, res) {
     }
 
     // Validate game type
-    if (!['solitaire', 'garbage', 'yahtzee', 'blackjack', '2048'].includes(game)) {
+    if (!['solitaire', 'garbage', 'yahtzee', 'blackjack', '2048', 'backgammon'].includes(game)) {
       return res.status(400).json({ error: 'Invalid game type' });
     }
 
@@ -157,6 +166,7 @@ export default async function handler(req, res) {
     else if (game === 'yahtzee') gameIdPattern = /^YAH-\d+-\w+$/;
     else if (game === 'blackjack') gameIdPattern = /^BJK-\d+-\w+$/;
     else if (game === '2048') gameIdPattern = /^2048-\w{8}-\d+-\w{4}$/;
+    else if (game === 'backgammon') gameIdPattern = /^BGM-\d+-\w{9}$/;
 
     if (!gameIdPattern.test(gameId)) {
       return res.status(400).json({ error: 'Invalid game ID format' });
@@ -245,6 +255,19 @@ export default async function handler(req, res) {
       }
     }
 
+    // Add backgammon-specific fields
+    if (game === 'backgammon') {
+      if (winType) {
+        insertData.win_type = winType;
+      }
+      if (difficulty) {
+        insertData.difficulty = difficulty;
+      }
+      if (cubeValue) {
+        insertData.cube_value = cubeValue;
+      }
+    }
+
     const { data, error } = await supabase
       .from('LeaderBoard')
       .insert(insertData)
@@ -271,6 +294,9 @@ export default async function handler(req, res) {
       // Higher score = better rank
       rankQuery = rankQuery.gt('score', score);
     } else if (game === '2048') {
+      // Higher score = better rank
+      rankQuery = rankQuery.gt('score', score);
+    } else if (game === 'backgammon') {
       // Higher score = better rank
       rankQuery = rankQuery.gt('score', score);
     } else {

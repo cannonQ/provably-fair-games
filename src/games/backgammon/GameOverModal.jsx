@@ -57,7 +57,10 @@ const GameOverModal = ({
           blockHeight: blockchainData?.blockHeight,
           blockHash: blockchainData?.blockHash,
           txHash: blockchainData?.txHash,
-          blockTimestamp: blockchainData?.timestamp
+          blockTimestamp: blockchainData?.timestamp,
+          winType,
+          difficulty,
+          cubeValue
         })
       });
 

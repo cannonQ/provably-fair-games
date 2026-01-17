@@ -11,7 +11,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-const VALID_GAMES = ['solitaire', 'garbage', 'yahtzee', 'blackjack', '2048'];
+const VALID_GAMES = ['solitaire', 'garbage', 'yahtzee', 'blackjack', '2048', 'backgammon'];
 
 export default async function handler(req, res) {
   // Only allow GET
