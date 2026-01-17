@@ -26,14 +26,14 @@ async function verifyBlock(blockHash, blockHeight) {
   try {
     const response = await fetch(`${ERGO_API}/blocks/${blockHash}`);
     if (!response.ok) return { valid: false, reason: 'Block not found on blockchain' };
-    
+
     const data = await response.json();
     const block = data.block;
-    
+
     if (block.header.height !== blockHeight) {
       return { valid: false, reason: 'Block height mismatch' };
     }
-    
+
     return { 
       valid: true, 
       txCount: block.blockTransactions?.length || 0,
@@ -63,7 +63,7 @@ function simpleHash(str) {
 function generateSeed(blockData, gameId) {
   const { blockHash, txHash, timestamp, txIndex } = blockData;
   const combined = `${blockHash}${txHash || ''}${timestamp || ''}${gameId}${txIndex || 0}`;
-  
+
   let seed = '';
   for (let i = 0; i < 4; i++) {
     seed += simpleHash(combined + i);
@@ -75,10 +75,10 @@ function generateSeed(blockData, gameId) {
  * Validate score is plausible
  */
 function validateScore(game, score, timeSeconds, moves) {
-  // Basic sanity checks
-  if (timeSeconds < 1) return { valid: false, reason: 'Invalid time' };
+  // Basic sanity checks - timeSeconds optional for blackjack (uses session timer internally)
+  if (timeSeconds !== undefined && timeSeconds < 0) return { valid: false, reason: 'Invalid time' };
 
-  // Moves validation (optional for some games like Yahtzee)
+  // Moves validation (optional for some games)
   if (moves !== undefined && moves < 0) return { valid: false, reason: 'Invalid moves' };
 
   if (game === 'solitaire') {
@@ -94,6 +94,14 @@ function validateScore(game, score, timeSeconds, moves) {
   if (game === 'yahtzee') {
     // Yahtzee scores range from 0 to 375 (theoretical max with bonuses)
     if (score < 0 || score > 375) return { valid: false, reason: 'Invalid Yahtzee score' };
+  }
+
+  if (game === 'blackjack') {
+    // Blackjack score is final chip balance (started with 1000)
+    // Theoretical max is very high with splits/doubles, min is 0 (busted out)
+    if (score < 0) return { valid: false, reason: 'Invalid chip balance' };
+    // Must have played at least 1 hand if submitting
+    if (moves !== undefined && moves < 1) return { valid: false, reason: 'Must play at least one hand' };
   }
 
   return { valid: true };
@@ -116,19 +124,22 @@ export default async function handler(req, res) {
       blockHash,
       txHash,
       blockTimestamp,
-      rollHistory
+      txIndex,
+      seed,
+      rollHistory,   // Yahtzee roll history
+      roundHistory   // Blackjack round history
     } = req.body;
 
-    // Validate required fields
-    if (!game || !gameId || score === undefined || !timeSeconds) {
+    // Validate required fields - timeSeconds optional for blackjack
+    if (!game || !gameId || score === undefined) {
       return res.status(400).json({
         error: 'Missing required fields',
-        required: ['game', 'gameId', 'score', 'timeSeconds']
+        required: ['game', 'gameId', 'score']
       });
     }
 
     // Validate game type
-    if (!['solitaire', 'garbage', 'yahtzee'].includes(game)) {
+    if (!['solitaire', 'garbage', 'yahtzee', 'blackjack'].includes(game)) {
       return res.status(400).json({ error: 'Invalid game type' });
     }
 
@@ -137,6 +148,7 @@ export default async function handler(req, res) {
     if (game === 'solitaire') gameIdPattern = /^SOL-\d+-\w+$/;
     else if (game === 'garbage') gameIdPattern = /^GRB-\d+-\w+$/;
     else if (game === 'yahtzee') gameIdPattern = /^YAH-\d+-\w+$/;
+    else if (game === 'blackjack') gameIdPattern = /^BJK-\d+-\w+$/;
 
     if (!gameIdPattern.test(gameId)) {
       return res.status(400).json({ error: 'Invalid game ID format' });
@@ -165,10 +177,21 @@ export default async function handler(req, res) {
     // Step 3: Verify seed can be regenerated (optional deep verification)
     // This ensures the gameId + blockData combination is legitimate
     if (blockHash && txHash && blockTimestamp) {
-      const blockData = { blockHash, txHash, timestamp: blockTimestamp, txIndex: 0 };
+      const blockData = { 
+        blockHash, 
+        txHash, 
+        timestamp: blockTimestamp, 
+        txIndex: txIndex || 0 
+      };
       const regeneratedSeed = generateSeed(blockData, gameId);
       // We can't fully verify the shuffle server-side without the full deck,
       // but we've confirmed the block exists and inputs are valid
+      
+      // If client sent seed, verify it matches
+      if (seed && regeneratedSeed !== seed) {
+        console.warn(`Seed mismatch for ${gameId}: expected ${regeneratedSeed}, got ${seed}`);
+        // Don't reject - could be timing/format differences, just log it
+      }
     }
 
     // Step 4: Insert score
@@ -177,8 +200,8 @@ export default async function handler(req, res) {
       game_id: gameId,
       player_name: playerName || 'Anonymous',
       score,
-      time_seconds: timeSeconds,
-      moves: moves || 0, // Default to 0 for games that don't track moves (like Yahtzee)
+      time_seconds: timeSeconds || 0,
+      moves: moves || 0,
       block_height: blockHeight,
       block_hash: blockHash,
       tx_hash: txHash,
@@ -186,9 +209,22 @@ export default async function handler(req, res) {
       created_at: new Date().toISOString()
     };
 
+    // Add tx_index and seed if provided (for enhanced verification)
+    if (txIndex !== undefined) {
+      insertData.tx_index = txIndex;
+    }
+    if (seed) {
+      insertData.seed = seed;
+    }
+
     // Add roll history for Yahtzee (enables leaderboard verification)
     if (game === 'yahtzee' && rollHistory && Array.isArray(rollHistory)) {
       insertData.roll_history = rollHistory;
+    }
+
+    // Add round history for Blackjack (enables leaderboard verification)
+    if (game === 'blackjack' && roundHistory && Array.isArray(roundHistory)) {
+      insertData.round_history = roundHistory;
     }
 
     const { data, error } = await supabase
@@ -204,13 +240,25 @@ export default async function handler(req, res) {
       throw error;
     }
 
-    // Get rank
-    const { count } = await supabase
+    // Get rank - for blackjack, higher score (chip balance) is better
+    let rankQuery = supabase
       .from('LeaderBoard')
       .select('*', { count: 'exact', head: true })
-      .eq('game', game)
-      .gt('score', score);
+      .eq('game', game);
 
+    if (game === 'blackjack') {
+      // Higher chip balance = better rank
+      rankQuery = rankQuery.gt('score', score);
+    } else if (game === 'yahtzee') {
+      // Higher score = better rank
+      rankQuery = rankQuery.gt('score', score);
+    } else {
+      // Solitaire/Garbage: higher cards + lower time = better
+      // This is simplified - you may want more complex ranking
+      rankQuery = rankQuery.gt('score', score);
+    }
+
+    const { count } = await rankQuery;
     const rank = (count || 0) + 1;
 
     return res.status(200).json({

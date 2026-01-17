@@ -4,9 +4,11 @@
  * Uses blockchain hash + transaction hash + timestamp for provably fair shuffling.
  * Same inputs ALWAYS produce same shuffle — anyone can verify.
  *
- * Supports two deck formats:
+ * Supports multiple deck formats:
  * - shuffleDeck(seed) → card objects {id, rank, suit, faceUp} (for Solitaire)
  * - shuffleDeckStrings(seed) → card strings "A♠", "7♥" (for Garbage)
+ * - shuffleArray(array, seed) → any array shuffled (generic, for Blackjack)
+ * - createMultiDeckShoe(n) → n-deck shoe for Blackjack
  */
 
 /**
@@ -122,21 +124,56 @@ export function createDeck() {
 }
 
 /**
+ * Creates a multi-deck shoe (for Blackjack)
+ * @param {number} numDecks - Number of decks (default 6 = 312 cards)
+ * @returns {Array} Array of card objects with unique IDs
+ */
+export function createMultiDeckShoe(numDecks = 6) {
+  const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+  const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  const shoe = [];
+
+  for (let deck = 1; deck <= numDecks; deck++) {
+    for (const suit of suits) {
+      for (const rank of ranks) {
+        shoe.push({
+          id: `${rank}${suit[0].toUpperCase()}-${deck}`, // e.g., "7H-3"
+          rank,
+          suit,
+          faceUp: true
+        });
+      }
+    }
+  }
+
+  return shoe;
+}
+
+/**
+ * Shuffles any array using seeded random (Fisher-Yates)
+ * @param {Array} array - Array to shuffle (will be copied)
+ * @param {string} seed - Hex seed string
+ * @returns {Array} New shuffled array
+ */
+export function shuffleArray(array, seed) {
+  const result = [...array];
+  const random = seedRandom(seed);
+
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
+}
+
+/**
  * Shuffles deck as strings (for Garbage)
  * @param {string} seed - Hex string seed
  * @returns {string[]} Shuffled deck of card strings
  */
 export function shuffleDeckStrings(seed) {
-  const deck = createDeckStrings();
-  const random = seedRandom(seed);
-
-  // Fisher-Yates shuffle
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-
-  return deck;
+  return shuffleArray(createDeckStrings(), seed);
 }
 
 /**
@@ -145,45 +182,41 @@ export function shuffleDeckStrings(seed) {
  * @returns {Object[]} Shuffled deck of card objects
  */
 export function shuffleDeck(seed) {
-  const deck = createDeck();
-  const random = seedRandom(seed);
-
-  // Fisher-Yates shuffle
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-
-  return deck;
+  return shuffleArray(createDeck(), seed);
 }
 
 /**
  * Verifies a shuffle matches expected output for given inputs
- * Supports both string and object deck formats
+ * Supports both string and object deck formats, and multi-deck shoes
  * @param {object|string} blockData - Block data object or legacy blockHash string
  * @param {string} gameId - Game identifier
  * @param {Array} claimedDeck - Deck order to verify (strings or objects)
  * @returns {boolean} True if deck matches expected shuffle
  */
 export function verifyShuffle(blockData, gameId, claimedDeck) {
-  if (!claimedDeck || claimedDeck.length !== 52) {
+  if (!claimedDeck || claimedDeck.length < 1) {
     return false;
   }
 
   const seed = generateSeed(blockData, gameId);
-  
-  // Detect format based on first element
   const isObjectFormat = typeof claimedDeck[0] === 'object';
-  const expectedDeck = isObjectFormat ? shuffleDeck(seed) : shuffleDeckStrings(seed);
+
+  // Determine expected deck based on length and format
+  let expectedDeck;
+  if (claimedDeck.length === 52) {
+    expectedDeck = isObjectFormat ? shuffleDeck(seed) : shuffleDeckStrings(seed);
+  } else {
+    // Multi-deck shoe (e.g., 312 cards for 6 decks)
+    const numDecks = Math.round(claimedDeck.length / 52);
+    expectedDeck = shuffleArray(createMultiDeckShoe(numDecks), seed);
+  }
 
   for (let i = 0; i < expectedDeck.length; i++) {
     if (isObjectFormat) {
-      // Compare by ID for object format
       if (claimedDeck[i]?.id !== expectedDeck[i]?.id) {
         return false;
       }
     } else {
-      // Direct comparison for string format
       if (claimedDeck[i] !== expectedDeck[i]) {
         return false;
       }
@@ -217,8 +250,10 @@ export default {
   generateSeed, 
   createDeck, 
   createDeckStrings,
+  createMultiDeckShoe,
   shuffleDeck, 
   shuffleDeckStrings,
+  shuffleArray,
   verifyShuffle, 
   getSeedComponents 
 };
