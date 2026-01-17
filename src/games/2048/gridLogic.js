@@ -112,11 +112,11 @@ const slideRow = (row) => {
     value: cell.value,
     id: cell.id
   }));
-  
+
   const merged = [];
   let score = 0;
   let i = 0;
-  
+
   // Merge adjacent matching values (each tile merges only once)
   while (i < values.length) {
     if (i + 1 < values.length && values[i].value === values[i + 1].value) {
@@ -129,12 +129,12 @@ const slideRow = (row) => {
       i++;
     }
   }
-  
+
   // Pad with zeros to length 4
   while (merged.length < 4) {
     merged.push({ value: 0, id: 0, merged: false });
   }
-  
+
   // Create new row with updated positions
   const newRow = merged.map((item, col) => ({
     row: row[0].row,
@@ -143,7 +143,7 @@ const slideRow = (row) => {
     id: item.id,
     merged: item.merged
   }));
-  
+
   return { row: newRow, score };
 };
 
@@ -156,15 +156,16 @@ const slideRow = (row) => {
 export const slideGrid = (grid, direction) => {
   let workingGrid = cloneGrid(grid);
   let totalScore = 0;
-  
+
   // Rotate grid so we always slide left, then rotate back
+  // left: 0, up: 1 (90° CW), right: 2 (180°), down: 3 (270° CW)
   const rotations = { left: 0, up: 1, right: 2, down: 3 };
   const rotation = rotations[direction];
-  
+
   if (rotation > 0) {
     workingGrid = rotateGrid(workingGrid, rotation);
   }
-  
+
   // Slide each row left
   const newRows = [];
   for (let row = 0; row < 4; row++) {
@@ -173,12 +174,12 @@ export const slideGrid = (grid, direction) => {
     totalScore += score;
   }
   workingGrid = newRows;
-  
+
   // Rotate back
   if (rotation > 0) {
     workingGrid = rotateGrid(workingGrid, 4 - rotation);
   }
-  
+
   // Update row/col positions after rotation
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 4; col++) {
@@ -186,9 +187,9 @@ export const slideGrid = (grid, direction) => {
       workingGrid[row][col].col = col;
     }
   }
-  
+
   const moved = !gridsEqual(grid, workingGrid);
-  
+
   return { grid: workingGrid, score: totalScore, moved };
 };
 
@@ -200,21 +201,21 @@ export const slideGrid = (grid, direction) => {
 export const canMove = (grid) => {
   // Check for empty cells
   if (getEmptyCells(grid).length > 0) return true;
-  
+
   // Check for adjacent horizontal matches
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 3; col++) {
       if (grid[row][col].value === grid[row][col + 1].value) return true;
     }
   }
-  
+
   // Check for adjacent vertical matches
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 4; col++) {
       if (grid[row][col].value === grid[row + 1][col].value) return true;
     }
   }
-  
+
   return false;
 };
 

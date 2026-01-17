@@ -1,6 +1,9 @@
 /**
- * 2048 Main Game Component - Full game integration with controls and blockchain
+ * 2048 Main Game Component - Anchor/Fanning pattern for provably fair spawns
  * @module Game2048
+ *
+ * Only fetches blockchain data ONCE at game start.
+ * All subsequent spawns use the same anchor block.
  */
 
 import React, { useEffect, useCallback, useState, useRef } from 'react';
@@ -18,16 +21,13 @@ const Game2048 = () => {
     state,
     initGame,
     move,
-    spawnNewTile,
     continueAfterWin,
     newGame
   } = useGameState();
 
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [newTiles, setNewTiles] = useState(new Set());
-  const [mergedTiles, setMergedTiles] = useState(new Set());
-  
+
   const touchStartRef = useRef(null);
   const gameContainerRef = useRef(null);
 
@@ -76,7 +76,7 @@ const Game2048 = () => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(250, 248, 239, 0.7)',
+      backgroundColor: 'rgba(250, 248, 239, 0.9)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -112,11 +112,19 @@ const Game2048 = () => {
       color: '#9e948a',
       fontSize: '0.85rem',
       fontFamily: 'Arial, sans-serif'
+    },
+    anchorInfo: {
+      backgroundColor: '#eee4da',
+      padding: '10px',
+      borderRadius: '6px',
+      marginTop: '10px',
+      fontSize: '0.75rem',
+      color: '#776e65'
     }
   };
 
   /**
-   * Fetch blockchain data for randomness
+   * Fetch blockchain data for randomness (only called at game start)
    */
   const fetchBlockData = useCallback(async () => {
     try {
@@ -140,77 +148,37 @@ const Game2048 = () => {
    */
   useEffect(() => {
     const startGame = async () => {
-      setIsProcessing(true);
+      if (state.gameId) return; // Already initialized
+
+      setIsLoading(true);
       const blockData = await fetchBlockData();
       initGame(blockData);
-      setIsProcessing(false);
+      setIsLoading(false);
     };
-    
-    if (!state.gameId) {
-      startGame();
-    }
+
+    startGame();
   }, []);
 
   /**
-   * Handle move and spawn sequence
+   * Handle move - spawns are now synchronous (no API call needed!)
    */
-  const handleMove = useCallback(async (direction) => {
-    if (isProcessing) return;
+  const handleMove = useCallback((direction) => {
+    if (isLoading) return;
     if (state.gameStatus === 'lost') return;
     if (state.gameStatus === 'won' && !state.canContinue) return;
 
-    // Attempt move
     move(direction);
-  }, [isProcessing, state.gameStatus, state.canContinue, move]);
+  }, [isLoading, state.gameStatus, state.canContinue, move]);
 
   /**
-   * Handle tile spawn after valid move
-   */
-  useEffect(() => {
-    const spawnAfterMove = async () => {
-      if (!state.pendingSpawn) return;
-      
-      setIsProcessing(true);
-      const blockData = await fetchBlockData();
-      
-      // Track which tiles are new for animation
-      spawnNewTile(blockData);
-      
-      // Clear animation flags after animation completes
-      setTimeout(() => {
-        setNewTiles(new Set());
-        setMergedTiles(new Set());
-      }, 200);
-      
-      setIsProcessing(false);
-    };
-
-    spawnAfterMove();
-  }, [state.pendingSpawn]);
-
-  /**
-   * Track new and merged tiles for animations
-   */
-  useEffect(() => {
-    if (state.spawnHistory.length > 0) {
-      const lastSpawn = state.spawnHistory[state.spawnHistory.length - 1];
-      // Find the tile at the spawn position
-      const tile = state.grid[lastSpawn.row]?.[lastSpawn.col];
-      if (tile && tile.id) {
-        setNewTiles(new Set([tile.id]));
-      }
-    }
-  }, [state.spawnHistory.length]);
-
-  /**
-   * Handle new game
+   * Handle new game - fetch fresh anchor block
    */
   const handleNewGame = useCallback(async () => {
-    setIsProcessing(true);
+    setIsLoading(true);
     newGame();
     const blockData = await fetchBlockData();
     initGame(blockData);
-    setIsProcessing(false);
+    setIsLoading(false);
   }, [newGame, initGame, fetchBlockData]);
 
   /**
@@ -319,7 +287,8 @@ const Game2048 = () => {
                 score: state.score,
                 spawnHistory: state.spawnHistory,
                 moveHistory: state.moveHistory,
-                gameStatus: state.gameStatus
+                gameStatus: state.gameStatus,
+                anchorBlock: state.anchorBlock
               }}
               style={styles.link}
             >
@@ -333,8 +302,8 @@ const Game2048 = () => {
         {error && (
           <div style={styles.errorBox}>
             <span>{error}</span>
-            <button 
-              style={styles.errorClose} 
+            <button
+              style={styles.errorClose}
               onClick={() => setError(null)}
               aria-label="Close error"
             >
@@ -356,21 +325,21 @@ const Game2048 = () => {
         />
 
         {/* Grid Section */}
-        <div 
+        <div
           style={styles.gridSection}
           ref={gameContainerRef}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchMove={handleTouchMove}
         >
-          <Grid 
+          <Grid
             grid={state.grid}
-            newTiles={newTiles}
-            mergedTiles={mergedTiles}
+            newTiles={new Set()}
+            mergedTiles={new Set()}
           />
-          
+
           {/* Loading Overlay */}
-          {isProcessing && !state.gameId && (
+          {isLoading && (
             <div style={styles.loadingOverlay}>
               <span style={styles.loadingText}>Loading blockchain data...</span>
             </div>
@@ -379,8 +348,15 @@ const Game2048 = () => {
 
         {/* Footer */}
         <div style={styles.footer}>
-          <p>Provably fair using Ergo blockchain randomness</p>
-          <p>Game ID: {state.gameId ? state.gameId.slice(0, 8) + '...' : 'Loading...'}</p>
+          <p>Provably fair using Ergo blockchain</p>
+          <p>Game ID: {state.gameId ? state.gameId.slice(0, 20) + '...' : 'Loading...'}</p>
+          {state.anchorBlock?.blockHeight > 0 && (
+            <div style={styles.anchorInfo}>
+              <strong>Anchor Block:</strong> #{state.anchorBlock.blockHeight} |
+              Spawns: {state.spawnHistory.length} |
+              Moves: {state.moveHistory.length}
+            </div>
+          )}
         </div>
       </div>
     </div>
