@@ -1,276 +1,257 @@
 /**
- * 2048 Grid Logic - Core grid manipulation functions
+ * 2048 Grid Logic - Core game mechanics for tile movement and merging
  * @module gridLogic
  */
 
-const GRID_SIZE = 4;
-const WIN_VALUE = 2048;
+let cellIdCounter = 0;
 
 /**
- * Create an empty 4x4 grid
- * @returns {Array<Array<null>>} Empty grid
+ * Generate a unique cell ID
+ * @returns {number} Unique identifier
+ */
+const generateId = () => ++cellIdCounter;
+
+/**
+ * Create a cell object
+ * @param {number} row - Row position (0-3)
+ * @param {number} col - Column position (0-3)
+ * @param {number} value - Cell value (0, 2, 4, 8, ..., 2048+)
+ * @returns {{row: number, col: number, value: number, id: number}}
+ */
+const createCell = (row, col, value = 0) => ({
+  row,
+  col,
+  value,
+  id: value > 0 ? generateId() : 0
+});
+
+/**
+ * Create an empty 4x4 grid with all cells having value 0
+ * @returns {Array<Array<{row: number, col: number, value: number, id: number}>>}
  */
 export const createEmptyGrid = () => {
-  return Array.from({ length: GRID_SIZE }, () =>
-    Array.from({ length: GRID_SIZE }, () => null)
+  return Array.from({ length: 4 }, (_, row) =>
+    Array.from({ length: 4 }, (_, col) => createCell(row, col, 0))
   );
 };
 
 /**
- * Clone a grid (deep copy)
- * @param {Array<Array<Object|null>>} grid - Grid to clone
- * @returns {Array<Array<Object|null>>} Cloned grid
+ * Deep clone a grid to avoid mutations
+ * @param {Array<Array<Object>>} grid - Grid to clone
+ * @returns {Array<Array<Object>>} Cloned grid
  */
 export const cloneGrid = (grid) => {
-  return grid.map(row => row.map(cell => cell ? { ...cell } : null));
+  return grid.map(row => row.map(cell => ({ ...cell })));
 };
 
 /**
- * Get all empty cells in the grid
- * @param {Array<Array<Object|null>>} grid - Game grid
+ * Get all empty cells (value === 0) from grid
+ * @param {Array<Array<Object>>} grid - Game grid
  * @returns {Array<{row: number, col: number}>} Array of empty cell positions
  */
 export const getEmptyCells = (grid) => {
-  const emptyCells = [];
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
-      if (grid[row][col] === null) {
-        emptyCells.push({ row, col });
+  const empty = [];
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      if (grid[row][col].value === 0) {
+        empty.push({ row, col });
       }
     }
   }
-  return emptyCells;
+  return empty;
 };
 
 /**
- * Check if the grid contains a 2048 tile
- * @param {Array<Array<Object|null>>} grid - Game grid
- * @returns {boolean} True if 2048 tile exists
+ * Check if two grids are equal (same values in same positions)
+ * @param {Array<Array<Object>>} grid1 - First grid
+ * @param {Array<Array<Object>>} grid2 - Second grid
+ * @returns {boolean} True if grids have identical values
  */
-export const hasWon = (grid) => {
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
-      if (grid[row][col] && grid[row][col].value >= WIN_VALUE) {
-        return true;
+export const gridsEqual = (grid1, grid2) => {
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      if (grid1[row][col].value !== grid2[row][col].value) {
+        return false;
       }
-    }
-  }
-  return false;
-};
-
-/**
- * Slide and merge a single row to the left
- * @param {Array<Object|null>} row - Row to slide
- * @returns {{row: Array<Object|null>, score: number}} New row and score gained
- */
-const slideRowLeft = (row) => {
-  // Filter out null cells
-  let tiles = row.filter(cell => cell !== null);
-  let score = 0;
-
-  // Merge adjacent tiles with same value
-  const merged = [];
-  let i = 0;
-  while (i < tiles.length) {
-    if (i + 1 < tiles.length && tiles[i].value === tiles[i + 1].value) {
-      // Merge tiles
-      const newValue = tiles[i].value * 2;
-      merged.push({
-        ...tiles[i],
-        value: newValue,
-        isMerged: true
-      });
-      score += newValue;
-      i += 2;
-    } else {
-      merged.push({ ...tiles[i], isMerged: false });
-      i++;
-    }
-  }
-
-  // Pad with nulls to maintain row length
-  const newRow = [...merged];
-  while (newRow.length < GRID_SIZE) {
-    newRow.push(null);
-  }
-
-  return { row: newRow, score };
-};
-
-/**
- * Rotate grid 90 degrees clockwise
- * @param {Array<Array<Object|null>>} grid - Grid to rotate
- * @returns {Array<Array<Object|null>>} Rotated grid
- */
-const rotateClockwise = (grid) => {
-  const newGrid = createEmptyGrid();
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
-      newGrid[col][GRID_SIZE - 1 - row] = grid[row][col];
-    }
-  }
-  return newGrid;
-};
-
-/**
- * Rotate grid 90 degrees counter-clockwise
- * @param {Array<Array<Object|null>>} grid - Grid to rotate
- * @returns {Array<Array<Object|null>>} Rotated grid
- */
-const rotateCounterClockwise = (grid) => {
-  const newGrid = createEmptyGrid();
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
-      newGrid[GRID_SIZE - 1 - col][row] = grid[row][col];
-    }
-  }
-  return newGrid;
-};
-
-/**
- * Rotate grid 180 degrees
- * @param {Array<Array<Object|null>>} grid - Grid to rotate
- * @returns {Array<Array<Object|null>>} Rotated grid
- */
-const rotate180 = (grid) => {
-  return rotateClockwise(rotateClockwise(grid));
-};
-
-/**
- * Check if two grids are equal
- * @param {Array<Array<Object|null>>} grid1 - First grid
- * @param {Array<Array<Object|null>>} grid2 - Second grid
- * @returns {boolean} True if grids are equal
- */
-const gridsEqual = (grid1, grid2) => {
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
-      const cell1 = grid1[row][col];
-      const cell2 = grid2[row][col];
-      if (cell1 === null && cell2 === null) continue;
-      if (cell1 === null || cell2 === null) return false;
-      if (cell1.value !== cell2.value) return false;
     }
   }
   return true;
 };
 
 /**
- * Slide the entire grid in a direction
- * @param {Array<Array<Object|null>>} grid - Game grid
- * @param {'up'|'down'|'left'|'right'} direction - Slide direction
- * @returns {{grid: Array<Array<Object|null>>, score: number, moved: boolean}} Result
+ * Rotate grid 90° clockwise (used for up/down movement via left slide)
+ * @param {Array<Array<Object>>} grid - Grid to rotate
+ * @param {number} times - Number of 90° rotations (1-3)
+ * @returns {Array<Array<Object>>} Rotated grid
+ */
+export const rotateGrid = (grid, times = 1) => {
+  let result = cloneGrid(grid);
+  for (let t = 0; t < times; t++) {
+    const rotated = createEmptyGrid();
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 4; col++) {
+        rotated[col][3 - row] = { ...result[row][col], row: col, col: 3 - row };
+      }
+    }
+    result = rotated;
+  }
+  return result;
+};
+
+/**
+ * Slide and merge a single row to the left
+ * Merge rules: tiles merge ONLY once per move
+ * Example: [2,2,4,4] → [4,8,0,0] (score: 12)
+ * Example: [2,2,2,2] → [4,4,0,0] (score: 8, NOT [8,0,0,0])
+ * @param {Array<Object>} row - Row of cells
+ * @returns {{row: Array<Object>, score: number}} Slid row and score gained
+ */
+const slideRow = (row) => {
+  // Extract non-zero values
+  const values = row.filter(cell => cell.value > 0).map(cell => ({
+    value: cell.value,
+    id: cell.id
+  }));
+  
+  const merged = [];
+  let score = 0;
+  let i = 0;
+  
+  // Merge adjacent matching values (each tile merges only once)
+  while (i < values.length) {
+    if (i + 1 < values.length && values[i].value === values[i + 1].value) {
+      const newValue = values[i].value * 2;
+      merged.push({ value: newValue, id: generateId(), merged: true });
+      score += newValue;
+      i += 2; // Skip both merged tiles
+    } else {
+      merged.push({ value: values[i].value, id: values[i].id, merged: false });
+      i++;
+    }
+  }
+  
+  // Pad with zeros to length 4
+  while (merged.length < 4) {
+    merged.push({ value: 0, id: 0, merged: false });
+  }
+  
+  // Create new row with updated positions
+  const newRow = merged.map((item, col) => ({
+    row: row[0].row,
+    col,
+    value: item.value,
+    id: item.id,
+    merged: item.merged
+  }));
+  
+  return { row: newRow, score };
+};
+
+/**
+ * Slide entire grid in specified direction, merging matching tiles
+ * @param {Array<Array<Object>>} grid - Game grid
+ * @param {'up'|'down'|'left'|'right'} direction - Movement direction
+ * @returns {{grid: Array<Array<Object>>, score: number, moved: boolean}} New grid, score, and whether anything moved
  */
 export const slideGrid = (grid, direction) => {
   let workingGrid = cloneGrid(grid);
   let totalScore = 0;
-
-  // Rotate grid so we can always slide left
-  switch (direction) {
-    case 'right':
-      workingGrid = rotate180(workingGrid);
-      break;
-    case 'up':
-      workingGrid = rotateCounterClockwise(workingGrid);
-      break;
-    case 'down':
-      workingGrid = rotateClockwise(workingGrid);
-      break;
-    default:
-      break;
+  
+  // Rotate grid so we always slide left, then rotate back
+  const rotations = { left: 0, up: 1, right: 2, down: 3 };
+  const rotation = rotations[direction];
+  
+  if (rotation > 0) {
+    workingGrid = rotateGrid(workingGrid, rotation);
   }
-
-  // Slide all rows left
-  const newGrid = workingGrid.map((row, rowIndex) => {
-    const result = slideRowLeft(row);
-    totalScore += result.score;
-    // Update row and column positions
-    return result.row.map((cell, colIndex) => {
-      if (cell) {
-        return { ...cell, row: rowIndex, col: colIndex };
-      }
-      return null;
-    });
-  });
-
+  
+  // Slide each row left
+  const newRows = [];
+  for (let row = 0; row < 4; row++) {
+    const { row: slidRow, score } = slideRow(workingGrid[row]);
+    newRows.push(slidRow);
+    totalScore += score;
+  }
+  workingGrid = newRows;
+  
   // Rotate back
-  let finalGrid;
-  switch (direction) {
-    case 'right':
-      finalGrid = rotate180(newGrid);
-      break;
-    case 'up':
-      finalGrid = rotateClockwise(newGrid);
-      break;
-    case 'down':
-      finalGrid = rotateCounterClockwise(newGrid);
-      break;
-    default:
-      finalGrid = newGrid;
-      break;
+  if (rotation > 0) {
+    workingGrid = rotateGrid(workingGrid, 4 - rotation);
   }
-
-  // Update positions after rotation
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
-      if (finalGrid[row][col]) {
-        finalGrid[row][col].row = row;
-        finalGrid[row][col].col = col;
-      }
+  
+  // Update row/col positions after rotation
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      workingGrid[row][col].row = row;
+      workingGrid[row][col].col = col;
     }
   }
-
-  const moved = !gridsEqual(grid, finalGrid);
-
-  return { grid: finalGrid, score: totalScore, moved };
+  
+  const moved = !gridsEqual(grid, workingGrid);
+  
+  return { grid: workingGrid, score: totalScore, moved };
 };
 
 /**
- * Check if any move is possible
- * @param {Array<Array<Object|null>>} grid - Game grid
+ * Check if any move is possible (game not over)
+ * @param {Array<Array<Object>>} grid - Game grid
  * @returns {boolean} True if at least one move is possible
  */
 export const canMove = (grid) => {
   // Check for empty cells
-  const emptyCells = getEmptyCells(grid);
-  if (emptyCells.length > 0) return true;
-
-  // Check for adjacent equal tiles
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
-      const current = grid[row][col];
-      if (!current) continue;
-
-      // Check right neighbor
-      if (col < GRID_SIZE - 1) {
-        const right = grid[row][col + 1];
-        if (right && right.value === current.value) return true;
-      }
-
-      // Check bottom neighbor
-      if (row < GRID_SIZE - 1) {
-        const bottom = grid[row + 1][col];
-        if (bottom && bottom.value === current.value) return true;
-      }
+  if (getEmptyCells(grid).length > 0) return true;
+  
+  // Check for adjacent horizontal matches
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 3; col++) {
+      if (grid[row][col].value === grid[row][col + 1].value) return true;
     }
   }
-
+  
+  // Check for adjacent vertical matches
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 4; col++) {
+      if (grid[row][col].value === grid[row + 1][col].value) return true;
+    }
+  }
+  
   return false;
 };
 
 /**
- * Get the highest tile value in the grid
- * @param {Array<Array<Object|null>>} grid - Game grid
- * @returns {number} Highest tile value
+ * Check if player has won (reached 2048 tile)
+ * @param {Array<Array<Object>>} grid - Game grid
+ * @returns {boolean} True if any cell has value >= 2048
  */
-export const getMaxTile = (grid) => {
-  let max = 0;
-  for (let row = 0; row < GRID_SIZE; row++) {
-    for (let col = 0; col < GRID_SIZE; col++) {
-      if (grid[row][col] && grid[row][col].value > max) {
-        max = grid[row][col].value;
+export const hasWon = (grid) => {
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      if (grid[row][col].value >= 2048) return true;
+    }
+  }
+  return false;
+};
+
+/**
+ * Assign unique IDs to all non-zero cells (for animation tracking)
+ * @param {Array<Array<Object>>} grid - Game grid
+ * @returns {Array<Array<Object>>} Grid with assigned IDs
+ */
+export const assignCellIds = (grid) => {
+  const newGrid = cloneGrid(grid);
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      if (newGrid[row][col].value > 0 && !newGrid[row][col].id) {
+        newGrid[row][col].id = generateId();
       }
     }
   }
-  return max;
+  return newGrid;
+};
+
+/**
+ * Reset the cell ID counter (for testing)
+ */
+export const resetIdCounter = () => {
+  cellIdCounter = 0;
 };
