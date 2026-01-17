@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import CryptoJS from 'crypto-js';
+import BackgammonReplay from './BackgammonReplay';
 
 const VerificationPage = () => {
   const { gameId } = useParams();
@@ -19,7 +20,6 @@ const VerificationPage = () => {
   // Get game data from navigation state or localStorage
   const [gameData, setGameData] = useState(null);
   const [expandedRolls, setExpandedRolls] = useState({});
-  const [replayPosition, setReplayPosition] = useState(0);
 
   useEffect(() => {
     if (location.state?.gameState) {
@@ -486,36 +486,19 @@ if __name__ == "__main__":
         })}
       </div>
 
-      {/* Position Replay */}
-      <div style={sectionStyle}>
-        <h2 style={{ color: '#ffd700', marginTop: 0 }}>Position Replay</h2>
-        <div style={{ marginBottom: '15px' }}>
-          <input
-            type="range"
-            min="0"
-            max={gameData.rollHistory?.length || 0}
-            value={replayPosition}
-            onChange={(e) => setReplayPosition(parseInt(e.target.value))}
-            style={{ width: '100%' }}
+      {/* Game Replay */}
+      {gameData.rollHistory?.length > 0 && (
+        <div style={sectionStyle}>
+          <h2 style={{ color: '#ffd700', marginTop: 0 }}>🎬 Game Replay</h2>
+          <BackgammonReplay
+            rollHistory={gameData.rollHistory}
+            moveHistory={gameData.moveHistory}
+            winner={gameData.winner}
+            winType={gameData.winType}
+            finalScore={gameData.finalScore}
           />
-          <div style={{ textAlign: 'center', color: '#888' }}>
-            Turn {replayPosition} of {gameData.rollHistory?.length || 0}
-          </div>
         </div>
-        <div style={{ 
-          backgroundColor: '#1a1a2e', 
-          padding: '20px', 
-          borderRadius: '8px',
-          textAlign: 'center',
-          color: '#666'
-        }}>
-          Position replay visualization would render here
-          <br />
-          <span style={{ fontSize: '12px' }}>
-            (Shows board state at selected turn)
-          </span>
-        </div>
-      </div>
+      )}
 
       {/* Verification Script */}
       <div style={sectionStyle}>

@@ -8,6 +8,7 @@ import { useParams, Link } from 'react-router-dom';
 import { generateSeed, shuffleArray } from '../../blockchain/shuffle';
 import { createSixDeckShoe } from './gameState';
 import { calculateHandValue, isBlackjack } from './gameLogic';
+import BlackjackReplay from './BlackjackReplay';
 
 const SUIT_SYMBOLS = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
 const isRedSuit = (suit) => suit === 'hearts' || suit === 'diamonds';
@@ -100,6 +101,7 @@ export default function VerificationPage() {
   const [showSeedDetails, setShowSeedDetails] = useState(false);
   const [showFullShoe, setShowFullShoe] = useState(false);
   const [showRounds, setShowRounds] = useState(false);
+  const [showReplay, setShowReplay] = useState(false);
 
   const backLink = gameId ? '/leaderboard?game=blackjack' : '/blackjack';
   const backText = gameId ? '← Back to Leaderboard' : '← Back to Blackjack';
@@ -321,6 +323,25 @@ export default function VerificationPage() {
           </span>
         </div>
       </div>
+
+      {/* Game Replay */}
+      {roundHistory?.length > 0 && (
+        <div style={styles.section}>
+          <h4
+            style={styles.collapsibleTitle}
+            onClick={() => setShowReplay(!showReplay)}
+          >
+            {showReplay ? '▼' : '▶'} 🎬 Watch Replay
+          </h4>
+
+          {showReplay && (
+            <BlackjackReplay
+              roundHistory={roundHistory}
+              finalBalance={verificationData.finalBalance}
+            />
+          )}
+        </div>
+      )}
 
       {/* Blockchain Proof */}
       <div style={styles.section}>
