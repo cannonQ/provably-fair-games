@@ -35,8 +35,8 @@ const Checker = ({
 
   // Base checker style with 3D gradient
   const checkerStyle = {
-    width: '44px',
-    height: '44px',
+    width: '36px',
+    height: '36px',
     borderRadius: '50%',
     background: `radial-gradient(circle at 30% 30%, ${c.light}, ${c.main} 50%, ${c.dark} 100%)`,
     border: `2px solid ${c.border}`,

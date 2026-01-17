@@ -60,7 +60,7 @@ const Point = ({
     const showOverflow = count > maxVisible;
 
     const checkerElements = [];
-    const spacing = 40; // Vertical spacing between checkers
+    const spacing = 32; // Vertical spacing between checkers (reduced from 40)
 
     for (let i = 0; i < visibleCount; i++) {
       const isTopChecker = i === visibleCount - 1;

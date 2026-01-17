@@ -254,38 +254,42 @@ const BackgammonGame = () => {
     }
   };
 
-  // AI make move
-  const handleAIMove = () => {
-    const legalMoves = getAllLegalMoves(state);
-    
+  // AI make move (recursive for multiple moves in a turn)
+  const handleAIMove = useCallback((currentState) => {
+    const stateToUse = currentState || state;
+    const legalMoves = getAllLegalMoves(stateToUse);
+
     if (legalMoves.length === 0) {
       dispatch(actions.completeTurn());
       setAiThinking(false);
       return;
     }
 
-    const selectedMove = selectMove(legalMoves, state, state.aiDifficulty);
-    
+    const selectedMove = selectMove(legalMoves, stateToUse, stateToUse.aiDifficulty);
+
     if (selectedMove) {
       dispatch(actions.moveChecker(selectedMove.from, selectedMove.to));
-      
+
       // Check if turn is complete after this move
-      const newState = applyMove(state, selectedMove);
-      
+      const newState = applyMove(stateToUse, selectedMove);
+
       if (isTurnComplete(newState)) {
         setTimeout(() => {
           dispatch(actions.completeTurn());
           setAiThinking(false);
         }, 500);
       } else {
-        // More moves to make
-        setAiThinking(false); // Will trigger another AI move
+        // More moves to make - schedule next move with updated state
+        const delay = getThinkingDelay(stateToUse.aiDifficulty, legalMoves.length);
+        aiTimeoutRef.current = setTimeout(() => {
+          handleAIMove(newState);
+        }, Math.min(delay, 800));
       }
     } else {
       dispatch(actions.completeTurn());
       setAiThinking(false);
     }
-  };
+  }, [state, dispatch]);
 
   // Handle point click (for destination)
   const handlePointClick = (pointIndex) => {

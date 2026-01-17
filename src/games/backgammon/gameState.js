@@ -60,22 +60,23 @@ function createPoint(checkers = 0, color = null) {
 /**
  * Create initial board setup
  * Standard backgammon starting position
+ * White moves from 24 → 1, Black moves from 1 → 24
  */
 function createInitialBoard() {
   const points = Array(24).fill(null).map(() => createPoint());
-  
-  // White checkers (moves from 24 → 1)
-  points[0] = createPoint(2, 'white');   // Point 1: 2 white
-  points[5] = createPoint(5, 'white');   // Point 6: 5 white
+
+  // White checkers (moves from 24 → 1, bears off at 1-6)
+  points[23] = createPoint(2, 'white');  // Point 24: 2 white
+  points[12] = createPoint(5, 'white');  // Point 13: 5 white
   points[7] = createPoint(3, 'white');   // Point 8: 3 white
-  points[11] = createPoint(5, 'white');  // Point 12: 5 white
-  
-  // Black checkers (moves from 1 → 24)
-  points[12] = createPoint(5, 'black');  // Point 13: 5 black
+  points[5] = createPoint(5, 'white');   // Point 6: 5 white
+
+  // Black checkers (moves from 1 → 24, bears off at 19-24)
+  points[0] = createPoint(2, 'black');   // Point 1: 2 black
+  points[11] = createPoint(5, 'black');  // Point 12: 5 black
   points[16] = createPoint(3, 'black');  // Point 17: 3 black
   points[18] = createPoint(5, 'black');  // Point 19: 5 black
-  points[23] = createPoint(2, 'black');  // Point 24: 2 black
-  
+
   return points;
 }
 
