@@ -271,9 +271,9 @@ export function blackjackReducer(state, action) {
     }
 
     case 'RESOLVE_ROUND': {
-      const { results, totalPayout, blackjackCount } = action.payload;
+      const { results, totalPayout, blackjackCount, insuranceBet, insurancePayout } = action.payload;
       const newBalance = state.chipBalance + totalPayout;
-      const wins = results.filter(r => r.outcome === 'win' || r.outcome === 'blackjack').length;
+      const wins = results.filter(r => ['win', 'blackjack', 'losebust'].includes(r.outcome)).length;
 
       const record = {
         roundNumber: state.handsPlayed + 1,
@@ -282,6 +282,8 @@ export function blackjackReducer(state, action) {
         dealerHand: state.dealerHand,
         handBets: state.handBets,
         results,
+        insuranceBet: insuranceBet || 0,
+        insurancePayout: insurancePayout || 0,
         totalPayout,
         balanceAfter: newBalance,
         timestamp: Date.now()

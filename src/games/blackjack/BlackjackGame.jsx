@@ -143,12 +143,19 @@ export default function BlackjackGame() {
     });
 
     // Insurance payout
+    let insurancePayout = 0;
     if (s.insuranceBet > 0) {
-      const insPayout = calculateInsurancePayout(dealerBJ, s.insuranceBet);
-      totalPayout += insPayout;
+      insurancePayout = calculateInsurancePayout(dealerBJ, s.insuranceBet);
+      totalPayout += insurancePayout;
     }
 
-    dispatch({ type: 'RESOLVE_ROUND', payload: { results, totalPayout, blackjackCount } });
+    dispatch({ type: 'RESOLVE_ROUND', payload: {
+      results,
+      totalPayout,
+      blackjackCount,
+      insuranceBet: s.insuranceBet,
+      insurancePayout
+    } });
   }, []);
 
   // Dealer auto-play - using ref to get current state
@@ -338,6 +345,13 @@ export default function BlackjackGame() {
         <nav className="header-nav">
           <Link to="/">Home</Link>
           {state.gameId && <Link to={`/verify/blackjack/${state.gameId}`}>Verify</Link>}
+          <button
+            onClick={handleCashOut}
+            className="header-cash-out"
+            disabled={state.phase !== 'betting'}
+          >
+            Cash Out
+          </button>
         </nav>
       </header>
 
@@ -345,6 +359,7 @@ export default function BlackjackGame() {
       <div className="game-container">
         <BlackjackTable
           state={state}
+          insuranceDeclined={insuranceDeclined}
           onHit={handleHit}
           onStand={handleStand}
           onDoubleDown={handleDoubleDown}
@@ -358,12 +373,10 @@ export default function BlackjackGame() {
             currentBet={state.currentBet}
             onBetChange={handleBetChange}
             onDeal={handleDeal}
-            onCashOut={handleCashOut}
             onExtendSession={handleExtendSession}
             disabled={false}
             timeRemaining={state.timeRemaining}
             extensionsUsed={state.extensionsUsed}
-            handsPlayed={state.handsPlayed}
           />
         )}
 
@@ -398,6 +411,7 @@ export default function BlackjackGame() {
           handsPlayed={state.handsPlayed}
           handsWon={state.handsWon}
           blackjacksHit={state.blackjacksHit}
+          timePlayed={state.sessionDuration - state.timeRemaining}
           startingBalance={state.startingBalance}
           blockchainData={state.blockchainData}
           roundHistory={state.roundHistory}

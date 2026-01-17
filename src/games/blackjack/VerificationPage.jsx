@@ -35,16 +35,18 @@ function RoundBreakdown({ round, index }) {
   const playerValue = calculateHandValue(round.playerHands[0]);
   const dealerValue = calculateHandValue(round.dealerHand);
   const result = round.results?.[0];
-  const netResult = (result?.payout || 0) - (result?.bet || 0);
+  const totalBet = (result?.bet || 0) + (round.insuranceBet || 0);
+  const netResult = (round.totalPayout || 0) - totalBet;
+  const hasInsurance = round.insuranceBet > 0;
 
   return (
     <div style={styles.roundCard}>
-      <div 
+      <div
         style={styles.roundHeader}
         onClick={() => setExpanded(!expanded)}
       >
         <span style={styles.roundNumber}>Round {index + 1}</span>
-        <span style={{ 
+        <span style={{
           color: netResult > 0 ? '#4caf50' : netResult < 0 ? '#f44336' : '#888',
           fontWeight: 'bold'
         }}>
@@ -52,7 +54,7 @@ function RoundBreakdown({ round, index }) {
         </span>
         <span style={{ color: '#666', fontSize: '12px' }}>{expanded ? '▼' : '▶'}</span>
       </div>
-      
+
       {expanded && (
         <div style={styles.roundDetails}>
           <div style={styles.handsRow}>
@@ -73,7 +75,12 @@ function RoundBreakdown({ round, index }) {
           </div>
           <div style={styles.betRow}>
             <span>Bet: ${round.handBets[0]}</span>
-            <span>Payout: ${result?.payout || 0}</span>
+            {hasInsurance && (
+              <span style={{ color: '#ffd700' }}>
+                Insurance: ${round.insuranceBet} → ${round.insurancePayout}
+              </span>
+            )}
+            <span>Payout: ${round.totalPayout || 0}</span>
           </div>
         </div>
       )}
@@ -251,12 +258,24 @@ export default function VerificationPage() {
 
   const { blockchainData, roundHistory, shoe, shoePosition } = verificationData;
   
-  // Calculate stats
+  // Calculate stats using totalPayout (includes insurance)
   const stats = {
-    wins: roundHistory?.filter(r => r.results?.[0]?.payout > r.results?.[0]?.bet).length || 0,
-    losses: roundHistory?.filter(r => r.results?.[0]?.payout === 0).length || 0,
-    pushes: roundHistory?.filter(r => r.results?.[0]?.payout === r.results?.[0]?.bet).length || 0,
-    totalProfit: roundHistory?.reduce((sum, r) => sum + (r.results?.[0]?.payout || 0) - (r.results?.[0]?.bet || 0), 0) || 0
+    wins: roundHistory?.filter(r => {
+      const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
+      return (r.totalPayout || 0) > totalBet;
+    }).length || 0,
+    losses: roundHistory?.filter(r => {
+      const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
+      return (r.totalPayout || 0) < totalBet;
+    }).length || 0,
+    pushes: roundHistory?.filter(r => {
+      const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
+      return (r.totalPayout || 0) === totalBet;
+    }).length || 0,
+    totalProfit: roundHistory?.reduce((sum, r) => {
+      const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
+      return sum + (r.totalPayout || 0) - totalBet;
+    }, 0) || 0
   };
 
   return (

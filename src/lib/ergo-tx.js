@@ -423,21 +423,39 @@ async function createStateContext(lib) {
   
   // ===== Create State Context ===== //
   // Different ergo-lib versions have different constructor signatures
-  // Try 2-arg first (older versions), fall back to 3-arg if needed
+  // v0.28.0+ requires Parameters as third argument
   let stateContext;
-  try {
-    stateContext = new lib.ErgoStateContext(preHeader, blockHeaders);
-  } catch (err) {
-    // v0.28.0+ may require Parameters as third argument
-    if (lib.Parameters?.default) {
-      stateContext = new lib.ErgoStateContext(
-        preHeader, 
-        blockHeaders, 
-        lib.Parameters.default()
-      );
+
+  // Try to get Parameters - different versions have different APIs
+  let parameters = null;
+  if (lib.Parameters) {
+    // Try various methods that exist in different versions
+    if (typeof lib.Parameters.defaultMainnetParameters === 'function') {
+      parameters = lib.Parameters.defaultMainnetParameters();
+    } else if (typeof lib.Parameters.default === 'function') {
+      parameters = lib.Parameters.default();
     } else {
-      throw err;
+      // Try creating with default constructor
+      try {
+        parameters = new lib.Parameters();
+      } catch (e) {
+        // Parameters class exists but can't be instantiated this way
+      }
     }
+  }
+
+  try {
+    if (parameters) {
+      // v0.28.0+ with Parameters
+      stateContext = new lib.ErgoStateContext(preHeader, blockHeaders, parameters);
+    } else {
+      // Older versions without Parameters requirement
+      stateContext = new lib.ErgoStateContext(preHeader, blockHeaders);
+    }
+  } catch (err) {
+    console.error('ErgoStateContext creation failed:', err.message);
+    console.error('Available Parameters methods:', lib.Parameters ? Object.keys(lib.Parameters) : 'none');
+    throw err;
   }
   
   return { stateContext, currentHeight: headersData[0].height };

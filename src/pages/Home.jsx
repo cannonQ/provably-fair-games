@@ -25,20 +25,6 @@ function Home() {
         <h2 style={styles.sectionTitle}>Choose Your Game</h2>
 
         <div style={styles.gamesGrid}>
-          {/* Garbage Card */}
-          <Link to="/garbage" style={styles.gameCard}>
-            <div style={styles.gameIcon}>🗑️</div>
-            <h3 style={styles.gameTitle}>Garbage</h3>
-            <p style={styles.gameDesc}>
-              Race against AI to fill positions 1-10. Jacks are wild, Queens & Kings are garbage!
-            </p>
-            <div style={styles.gameStats}>
-              <span>👤 vs 🤖</span>
-              <span>~5 min</span>
-            </div>
-            <div style={styles.playBadge}>Play Now →</div>
-          </Link>
-
           {/* Solitaire Card */}
           <Link to="/solitaire" style={styles.gameCard}>
             <div style={styles.gameIcon}>♠️</div>
@@ -62,7 +48,7 @@ function Home() {
             </p>
             <div style={styles.gameStats}>
               <span>👤 vs Dealer</span>
-              <span>30 min session</span>
+              <span>5 min session</span>
             </div>
             <ul style={styles.gameFeatures}>
               <li>Blackjack pays 3:2</li>
@@ -82,6 +68,20 @@ function Home() {
             <div style={styles.gameStats}>
               <span>👤 Solo</span>
               <span>~10 min</span>
+            </div>
+            <div style={styles.playBadge}>Play Now →</div>
+          </Link>
+
+          {/* Garbage Card */}
+          <Link to="/garbage" style={styles.gameCard}>
+            <div style={styles.gameIcon}>🗑️</div>
+            <h3 style={styles.gameTitle}>Garbage</h3>
+            <p style={styles.gameDesc}>
+              Race against AI to fill positions 1-10. Jacks are wild, Queens & Kings are garbage!
+            </p>
+            <div style={styles.gameStats}>
+              <span>👤 vs 🤖</span>
+              <span>~5 min</span>
             </div>
             <div style={styles.playBadge}>Play Now →</div>
           </Link>

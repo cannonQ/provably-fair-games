@@ -48,6 +48,27 @@
   color: #fff;
 }
 
+.header-cash-out {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-cash-out:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffb74d 0%, #ff9800 100%);
+}
+
+.header-cash-out:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .game-container {
   max-width: 900px;
   margin: 0 auto;
@@ -324,6 +345,13 @@
 .insurance-btn.no {
   background: #f44336;
   color: #fff;
+}
+
+.insurance-btn:disabled {
+  background: #424242;
+  color: #757575;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* =============================================================================
