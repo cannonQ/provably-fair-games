@@ -62,13 +62,13 @@ const GameReplay = ({
   const [error, setError] = useState(null);
 
   const playIntervalRef = useRef(null);
-  const moves = decodeMoveHistory(moveHistory);
 
   // Generate all game states from move history
   useEffect(() => {
     if (!anchorBlockHash || !gameId) return;
 
     try {
+      const moves = decodeMoveHistory(moveHistory);
       const states = [];
       let grid = createEmptyGrid();
       let score = 0;
@@ -160,7 +160,7 @@ const GameReplay = ({
       console.error('Replay generation failed:', err);
       setError('Failed to generate replay: ' + err.message);
     }
-  }, [anchorBlockHash, gameId, moveHistory, moves]);
+  }, [anchorBlockHash, gameId, moveHistory]);
 
   // Playback control
   useEffect(() => {
