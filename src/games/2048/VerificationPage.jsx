@@ -6,11 +6,12 @@
  * Formula: SHA256(anchorBlockHash + gameId + spawnIndex)
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { verifySpawn, generateMasterSeed } from './spawnLogic';
 import { formatScore } from './scoreLogic';
 import { encodeMoveHistory } from './gameState';
+import GameReplay from './GameReplay';
 
 /**
  * Generate Python verification script for anchor/fanning approach
@@ -158,6 +159,32 @@ const VerificationPage = () => {
 
   const [expandedSpawns, setExpandedSpawns] = useState(new Set());
   const [copiedSeed, setCopiedSeed] = useState(null);
+
+  // State for fetching leaderboard data (for replay mode)
+  const [leaderboardData, setLeaderboardData] = useState(null);
+  const [fetchLoading, setFetchLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
+
+  // Fetch game data from leaderboard when accessing historical game
+  useEffect(() => {
+    if (gameData.mismatch && urlGameId) {
+      setFetchLoading(true);
+      fetch(`/api/leaderboard?game=2048&gameId=${urlGameId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.entries && data.entries.length > 0) {
+            setLeaderboardData(data.entries[0]);
+          } else {
+            setFetchError('Game not found in leaderboard');
+          }
+        })
+        .catch(err => {
+          console.error('Failed to fetch leaderboard data:', err);
+          setFetchError('Failed to fetch game data');
+        })
+        .finally(() => setFetchLoading(false));
+    }
+  }, [gameData.mismatch, urlGameId]);
 
   // Dark theme styles
   const styles = {
@@ -420,28 +447,161 @@ const VerificationPage = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Leaderboard access but game data not available
+  // Leaderboard access - show replay if data available
   if (gameData.mismatch) {
+    // Loading state
+    if (fetchLoading) {
+      return (
+        <div style={styles.container}>
+          <div style={styles.wrapper}>
+            <div style={styles.header}>
+              <h1 style={styles.title}>🔍 Verification</h1>
+              <Link to="/leaderboard?game=2048" style={styles.backLink}>← Back to Leaderboard</Link>
+            </div>
+            <div style={{ ...styles.section, textAlign: 'center', padding: '40px' }}>
+              <p style={{ color: '#4ade80' }}>Loading game data...</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Error or no data
+    if (fetchError || !leaderboardData) {
+      return (
+        <div style={styles.container}>
+          <div style={styles.wrapper}>
+            <div style={styles.header}>
+              <h1 style={styles.title}>🔍 Verification</h1>
+              <Link to="/leaderboard?game=2048" style={styles.backLink}>← Back to Leaderboard</Link>
+            </div>
+            <div style={{ ...styles.section, ...styles.emptyState }}>
+              <p style={{ fontWeight: 'bold', color: '#fff' }}>
+                {fetchError || 'Game not found'}
+              </p>
+              <p style={{ color: '#888', marginTop: '10px' }}>
+                Could not load game data for verification.
+              </p>
+              <Link to="/2048" style={{ ...styles.downloadButton, marginTop: '20px', display: 'inline-block' }}>
+                Play 2048
+              </Link>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Check if we have the necessary data for replay
+    const hasReplayData = leaderboardData.move_history && leaderboardData.block_hash;
+
+    if (!hasReplayData) {
+      return (
+        <div style={styles.container}>
+          <div style={styles.wrapper}>
+            <div style={styles.header}>
+              <h1 style={styles.title}>🔍 Verification</h1>
+              <Link to="/leaderboard?game=2048" style={styles.backLink}>← Back to Leaderboard</Link>
+            </div>
+            <div style={{ ...styles.section, ...styles.emptyState }}>
+              <p style={{ fontWeight: 'bold', color: '#fff' }}>Replay Data Not Available</p>
+              <p style={{ color: '#888', marginTop: '10px' }}>
+                This game was submitted before replay verification was enabled.
+              </p>
+              <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#0d1525', borderRadius: '6px' }}>
+                <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>
+                  <strong style={{ color: '#fff' }}>Game Info:</strong><br />
+                  Player: {leaderboardData.player_name}<br />
+                  Score: {leaderboardData.score?.toLocaleString()}<br />
+                  Anchor Block: #{leaderboardData.block_height || 'N/A'}
+                </p>
+              </div>
+              <Link to="/2048" style={{ ...styles.downloadButton, marginTop: '20px', display: 'inline-block' }}>
+                Play 2048
+              </Link>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Show replay
     return (
       <div style={styles.container}>
         <div style={styles.wrapper}>
           <div style={styles.header}>
-            <h1 style={styles.title}>🔍 Verification</h1>
-            <Link to="/leaderboard" style={styles.backLink}>← Back to Leaderboard</Link>
+            <h1 style={styles.title}>🔍 Replay Verification</h1>
+            <Link to="/leaderboard?game=2048" style={styles.backLink}>← Back to Leaderboard</Link>
           </div>
-          <div style={{ ...styles.section, ...styles.emptyState }}>
-            <p style={{ fontWeight: 'bold', color: '#776e65' }}>Historical Verification Not Available</p>
-            <p style={{ color: '#9e948a', marginTop: '10px' }}>
-              2048 uses real-time spawn verification during gameplay. Historical games from the
-              leaderboard cannot be re-verified because the complete spawn data isn't stored.
+
+          {/* Info Section */}
+          <div style={styles.anchorSection}>
+            <h2 style={styles.anchorTitle}>⚓ Anchor Block Verification</h2>
+            <p style={{ marginTop: 0, marginBottom: '15px', color: '#ccc' }}>
+              This replay deterministically recreates all {leaderboardData.moves || 0} moves and tile spawns
+              from the anchor block, proving the game was fair.
             </p>
-            <p style={{ color: '#9e948a', marginTop: '15px', fontSize: '0.9rem' }}>
-              Each tile spawn was verified against the blockchain at the moment it occurred.
-              To see verification in action, play a new game and click "Verify" during or after gameplay.
-            </p>
-            <Link to="/2048" style={{ ...styles.downloadButton, marginTop: '20px', display: 'inline-block' }}>
-              Play 2048
-            </Link>
+            <div style={styles.anchorDetail}>
+              <span style={styles.anchorLabel}>Player:</span>
+              <span style={{ ...styles.anchorValue, color: '#fff' }}>{leaderboardData.player_name}</span>
+            </div>
+            <div style={styles.anchorDetail}>
+              <span style={styles.anchorLabel}>Block Height:</span>
+              <a
+                href={`https://explorer.ergoplatform.com/en/blocks/${leaderboardData.block_hash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: '#64b5f6', fontWeight: 'bold' }}
+              >
+                #{leaderboardData.block_height}
+              </a>
+            </div>
+            <div style={styles.anchorDetail}>
+              <span style={styles.anchorLabel}>Block Hash:</span>
+              <span style={styles.anchorValue}>{leaderboardData.block_hash}</span>
+            </div>
+          </div>
+
+          {/* Replay Component */}
+          <GameReplay
+            gameId={leaderboardData.game_id}
+            anchorBlockHash={leaderboardData.block_hash}
+            anchorBlockHeight={leaderboardData.block_height}
+            moveHistory={leaderboardData.move_history}
+            finalScore={leaderboardData.score}
+            playerName={leaderboardData.player_name}
+          />
+
+          {/* Verification Explanation */}
+          <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>How This Works</h2>
+            <div style={{ color: '#aaa', lineHeight: '1.6' }}>
+              <p style={{ margin: '0 0 10px' }}>
+                <strong style={{ color: '#4ade80' }}>1. Anchor Block:</strong> The blockchain block hash was
+                committed when the game started - before any moves were made.
+              </p>
+              <p style={{ margin: '0 0 10px' }}>
+                <strong style={{ color: '#4ade80' }}>2. Deterministic Spawns:</strong> Each tile spawn is calculated as:
+                <code style={{ backgroundColor: '#0d1525', padding: '2px 6px', borderRadius: '4px', marginLeft: '5px' }}>
+                  SHA256(blockHash + gameId + spawnIndex)
+                </code>
+              </p>
+              <p style={{ margin: 0 }}>
+                <strong style={{ color: '#4ade80' }}>3. Verifiable:</strong> Anyone can replay these moves with
+                this anchor block and get the exact same tile spawns. The game is provably fair.
+              </p>
+            </div>
+          </div>
+
+          {/* View on Explorer Link */}
+          <div style={styles.section}>
+            <a
+              href={`https://explorer.ergoplatform.com/en/blocks/${leaderboardData.block_hash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.explorerLink}
+            >
+              🔗 View Anchor Block on Ergo Explorer
+            </a>
           </div>
         </div>
       </div>
