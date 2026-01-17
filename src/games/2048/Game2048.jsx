@@ -228,6 +228,14 @@ const Game2048 = () => {
    */
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Ignore keyboard shortcuts when typing in an input field
+      const activeElement = document.activeElement;
+      const isTyping = activeElement?.tagName === 'INPUT' ||
+                       activeElement?.tagName === 'TEXTAREA' ||
+                       activeElement?.isContentEditable;
+
+      if (isTyping) return;
+
       // Prevent default for arrow keys to stop page scrolling
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
