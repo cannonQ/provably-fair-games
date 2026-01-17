@@ -1,0 +1,696 @@
+/**
+ * Backgammon Game Component
+ * 
+ * Main game orchestration including:
+ * - Blockchain integration for provably fair dice
+ * - AI opponent automation
+ * - Win detection and scoring
+ * - Timer tracking for leaderboard
+ */
+
+import React, { useReducer, useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+// Game logic imports
+import { gameReducer, initialState, actions, selectors } from './gameState';
+import { 
+  rollDiceValues, 
+  isDoubles, 
+  checkGameOver, 
+  detectWinType,
+  generateVerificationData 
+} from './gameLogic';
+import { getAllLegalMoves, isTurnComplete, applyMove } from './moveValidation';
+import { selectMove, selectTurnSequence, shouldDouble, shouldAcceptDouble, getThinkingDelay } from './ai';
+
+// Component imports
+import BackgammonBoard from './BackgammonBoard';
+import Dice from './Dice';
+import DoublingCube from './DoublingCube';
+import GameOverModal from './GameOverModal';
+
+// Blockchain API
+import { getLatestBlock } from '../../blockchain/ergo-api';
+
+const BackgammonGame = () => {
+  const navigate = useNavigate();
+  
+  // Game state
+  const [state, dispatch] = useReducer(gameReducer, initialState);
+  
+  // Local UI state
+  const [gameStarted, setGameStarted] = useState(false);
+  const [difficulty, setDifficulty] = useState('normal');
+  const [isRolling, setIsRolling] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [aiThinking, setAiThinking] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [showGameOver, setShowGameOver] = useState(false);
+  const [selectedPoint, setSelectedPoint] = useState(null);
+  const [validMoves, setValidMoves] = useState([]);
+  
+  // Refs for cleanup
+  const aiTimeoutRef = useRef(null);
+  const turnNumberRef = useRef(0);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (aiTimeoutRef.current) {
+        clearTimeout(aiTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Calculate valid moves when selection changes
+  useEffect(() => {
+    if (selectedPoint !== null && state.phase === 'moving') {
+      const moves = getAllLegalMoves(state);
+      const movesFromSelected = moves.filter(m => m.from === selectedPoint);
+      setValidMoves(movesFromSelected);
+    } else {
+      setValidMoves([]);
+    }
+  }, [selectedPoint, state]);
+
+  // Check for game over
+  useEffect(() => {
+    if (state.phase === 'moving') {
+      const { isOver, winner } = checkGameOver(state);
+      if (isOver && winner) {
+        const loser = winner === 'white' ? 'black' : 'white';
+        const winType = detectWinType(state, loser);
+        dispatch(actions.endGame(winner, winType));
+      }
+    }
+  }, [state.bearOff.white, state.bearOff.black, state.phase]);
+
+  // Show game over modal
+  useEffect(() => {
+    if (state.phase === 'gameOver' && state.winner) {
+      setShowGameOver(true);
+    }
+  }, [state.phase, state.winner]);
+
+  // AI turn automation
+  useEffect(() => {
+    if (!gameStarted || state.phase === 'gameOver') return;
+    if (state.currentPlayer !== 'black') return;
+
+    // Handle AI doubling decision
+    if (state.phase === 'rolling') {
+      const shouldOfferDouble = shouldDouble(state, 'black', state.aiDifficulty);
+      if (shouldOfferDouble) {
+        aiTimeoutRef.current = setTimeout(() => {
+          dispatch(actions.offerDouble());
+        }, 1000);
+        return;
+      }
+
+      // AI rolls
+      aiTimeoutRef.current = setTimeout(() => {
+        handleAIRoll();
+      }, 1000);
+    }
+
+    // Handle AI moving
+    if (state.phase === 'moving' && !aiThinking) {
+      setAiThinking(true);
+      const delay = getThinkingDelay(state.aiDifficulty, getAllLegalMoves(state).length);
+      
+      aiTimeoutRef.current = setTimeout(() => {
+        handleAIMove();
+      }, delay);
+    }
+
+    // Handle AI response to double offer
+    if (state.phase === 'doubleOffered' && state.currentPlayer === 'black') {
+      aiTimeoutRef.current = setTimeout(() => {
+        const accepts = shouldAcceptDouble(state, 'black', state.aiDifficulty);
+        if (accepts) {
+          dispatch(actions.acceptDouble());
+        } else {
+          dispatch(actions.declineDouble());
+        }
+      }, 1500);
+    }
+
+    return () => {
+      if (aiTimeoutRef.current) {
+        clearTimeout(aiTimeoutRef.current);
+      }
+    };
+  }, [state.currentPlayer, state.phase, gameStarted, aiThinking, state.aiDifficulty]);
+
+  // Start new game
+  const handleStartGame = async () => {
+    setErrorMessage(null);
+    setIsProcessing(true);
+
+    try {
+      const block = await getLatestBlock();
+      const blockchainData = {
+        blockHeight: block.height,
+        blockHash: block.id,
+        timestamp: block.timestamp
+      };
+
+      dispatch(actions.initGame(difficulty, blockchainData));
+      setGameStarted(true);
+      turnNumberRef.current = 0;
+    } catch (error) {
+      console.error('Failed to fetch blockchain data:', error);
+      setErrorMessage('Failed to connect to blockchain. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Roll dice using blockchain
+  const handleRollDice = async () => {
+    if (state.phase !== 'rolling' || isRolling) return;
+    
+    setIsRolling(true);
+    setErrorMessage(null);
+
+    try {
+      const block = await getLatestBlock();
+      turnNumberRef.current++;
+      
+      const dice = rollDiceValues(block.id, state.gameId, turnNumberRef.current);
+      
+      // Store verification data
+      const verificationData = generateVerificationData(
+        block.id,
+        state.gameId,
+        turnNumberRef.current,
+        dice
+      );
+
+      dispatch(actions.rollDice(dice, block.id));
+
+      // Check if any moves are possible
+      setTimeout(() => {
+        const newState = {
+          ...state,
+          dice: isDoubles(dice) ? [dice[0], dice[0], dice[0], dice[0]] : dice,
+          diceUsed: isDoubles(dice) ? [false, false, false, false] : [false, false],
+          phase: 'moving'
+        };
+        const legalMoves = getAllLegalMoves(newState);
+        
+        if (legalMoves.length === 0) {
+          // No legal moves, end turn
+          setTimeout(() => {
+            dispatch(actions.completeTurn());
+          }, 1000);
+        }
+      }, 100);
+
+    } catch (error) {
+      console.error('Failed to roll dice:', error);
+      setErrorMessage('Failed to fetch blockchain data for dice roll.');
+    } finally {
+      setIsRolling(false);
+    }
+  };
+
+  // AI roll dice
+  const handleAIRoll = async () => {
+    setIsRolling(true);
+
+    try {
+      const block = await getLatestBlock();
+      turnNumberRef.current++;
+      
+      const dice = rollDiceValues(block.id, state.gameId, turnNumberRef.current);
+      dispatch(actions.rollDice(dice, block.id));
+
+      // Check for no legal moves
+      setTimeout(() => {
+        const newState = {
+          ...state,
+          dice: isDoubles(dice) ? [dice[0], dice[0], dice[0], dice[0]] : dice,
+          diceUsed: isDoubles(dice) ? [false, false, false, false] : [false, false],
+          phase: 'moving'
+        };
+        const legalMoves = getAllLegalMoves(newState);
+        
+        if (legalMoves.length === 0) {
+          setTimeout(() => {
+            dispatch(actions.completeTurn());
+            setAiThinking(false);
+          }, 1000);
+        }
+      }, 100);
+
+    } catch (error) {
+      console.error('AI roll failed:', error);
+      setErrorMessage('AI failed to roll. Retrying...');
+      setTimeout(handleAIRoll, 2000);
+    } finally {
+      setIsRolling(false);
+    }
+  };
+
+  // AI make move
+  const handleAIMove = () => {
+    const legalMoves = getAllLegalMoves(state);
+    
+    if (legalMoves.length === 0) {
+      dispatch(actions.completeTurn());
+      setAiThinking(false);
+      return;
+    }
+
+    const selectedMove = selectMove(legalMoves, state, state.aiDifficulty);
+    
+    if (selectedMove) {
+      dispatch(actions.moveChecker(selectedMove.from, selectedMove.to));
+      
+      // Check if turn is complete after this move
+      const newState = applyMove(state, selectedMove);
+      
+      if (isTurnComplete(newState)) {
+        setTimeout(() => {
+          dispatch(actions.completeTurn());
+          setAiThinking(false);
+        }, 500);
+      } else {
+        // More moves to make
+        setAiThinking(false); // Will trigger another AI move
+      }
+    } else {
+      dispatch(actions.completeTurn());
+      setAiThinking(false);
+    }
+  };
+
+  // Handle point click (for destination)
+  const handlePointClick = (pointIndex) => {
+    if (state.currentPlayer !== 'white' || state.phase !== 'moving') return;
+
+    // If clicking a valid destination
+    const moveToExecute = validMoves.find(m => m.to === pointIndex);
+    if (moveToExecute) {
+      executeMove(moveToExecute);
+      return;
+    }
+
+    // Clear selection if clicking elsewhere
+    setSelectedPoint(null);
+    setValidMoves([]);
+  };
+
+  // Handle checker click (for selection)
+  const handleCheckerClick = (pointIndex) => {
+    if (state.currentPlayer !== 'white' || state.phase !== 'moving') return;
+
+    const allMoves = getAllLegalMoves(state);
+    const canMoveFrom = allMoves.some(m => m.from === pointIndex);
+
+    if (canMoveFrom) {
+      setSelectedPoint(pointIndex);
+    }
+  };
+
+  // Handle bar click
+  const handleBarClick = (player) => {
+    if (player !== 'white' || state.currentPlayer !== 'white') return;
+    if (state.phase !== 'moving') return;
+
+    const allMoves = getAllLegalMoves(state);
+    const canMoveFromBar = allMoves.some(m => m.from === 'bar');
+
+    if (canMoveFromBar) {
+      setSelectedPoint('bar');
+    }
+  };
+
+  // Execute a move
+  const executeMove = (move) => {
+    dispatch(actions.moveChecker(move.from, move.to));
+    setSelectedPoint(null);
+    setValidMoves([]);
+
+    // Check if turn is complete
+    const newState = applyMove(state, move);
+    if (isTurnComplete(newState)) {
+      setTimeout(() => {
+        dispatch(actions.completeTurn());
+      }, 300);
+    }
+  };
+
+  // Handle doubling
+  const handleOfferDouble = () => {
+    if (state.currentPlayer === 'white' && state.phase === 'rolling') {
+      dispatch(actions.offerDouble());
+    }
+  };
+
+  const handleAcceptDouble = () => {
+    dispatch(actions.acceptDouble());
+  };
+
+  const handleDeclineDouble = () => {
+    dispatch(actions.declineDouble());
+  };
+
+  // End turn manually
+  const handleEndTurn = () => {
+    if (state.phase === 'moving' && state.currentPlayer === 'white') {
+      const legalMoves = getAllLegalMoves(state);
+      if (legalMoves.length === 0) {
+        dispatch(actions.completeTurn());
+      }
+    }
+  };
+
+  // New game
+  const handleNewGame = () => {
+    setShowGameOver(false);
+    setGameStarted(false);
+    setSelectedPoint(null);
+    setValidMoves([]);
+    setAiThinking(false);
+    dispatch(actions.newGame());
+  };
+
+  // View verification
+  const handleViewVerification = () => {
+    navigate(`/backgammon/verify/${state.gameId}`, { 
+      state: { 
+        gameState: state,
+        rollHistory: state.rollHistory 
+      } 
+    });
+  };
+
+  // Styles
+  const containerStyle = {
+    minHeight: '100vh',
+    backgroundColor: '#1a1a2e',
+    color: '#fff',
+    padding: '20px',
+    fontFamily: 'Arial, sans-serif'
+  };
+
+  const headerStyle = {
+    textAlign: 'center',
+    marginBottom: '20px'
+  };
+
+  const titleStyle = {
+    fontSize: '32px',
+    fontWeight: 'bold',
+    color: '#ffd700',
+    marginBottom: '10px',
+    textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
+  };
+
+  const startScreenStyle = {
+    maxWidth: '400px',
+    margin: '100px auto',
+    padding: '40px',
+    backgroundColor: '#2a2a4a',
+    borderRadius: '16px',
+    textAlign: 'center',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+  };
+
+  const difficultyButtonStyle = (selected) => ({
+    padding: '12px 24px',
+    margin: '5px',
+    fontSize: '16px',
+    fontWeight: selected ? 'bold' : 'normal',
+    backgroundColor: selected ? '#4CAF50' : '#444',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease'
+  });
+
+  const startButtonStyle = {
+    padding: '16px 48px',
+    marginTop: '30px',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    backgroundColor: '#1976D2',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: isProcessing ? 'not-allowed' : 'pointer',
+    opacity: isProcessing ? 0.7 : 1
+  };
+
+  const gameAreaStyle = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: '30px',
+    flexWrap: 'wrap'
+  };
+
+  const sidebarStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    padding: '20px',
+    backgroundColor: '#2a2a4a',
+    borderRadius: '12px',
+    minWidth: '200px'
+  };
+
+  const statusStyle = {
+    padding: '15px',
+    backgroundColor: '#333',
+    borderRadius: '8px',
+    textAlign: 'center'
+  };
+
+  const turnIndicatorStyle = {
+    fontSize: '18px',
+    fontWeight: 'bold',
+    color: state.currentPlayer === 'white' ? '#f0f0f0' : '#666',
+    marginBottom: '10px'
+  };
+
+  const errorStyle = {
+    padding: '10px',
+    backgroundColor: '#f44336',
+    color: '#fff',
+    borderRadius: '8px',
+    marginTop: '10px'
+  };
+
+  // Start screen
+  if (!gameStarted) {
+    return (
+      <div style={containerStyle}>
+        <div style={startScreenStyle}>
+          <h1 style={titleStyle}>🎲 Backgammon</h1>
+          <p style={{ color: '#aaa', marginBottom: '30px' }}>
+            Provably Fair • Blockchain Verified
+          </p>
+
+          <div style={{ marginBottom: '20px' }}>
+            <h3 style={{ marginBottom: '15px' }}>Select Difficulty</h3>
+            {['easy', 'normal', 'hard'].map(d => (
+              <button
+                key={d}
+                style={difficultyButtonStyle(difficulty === d)}
+                onClick={() => setDifficulty(d)}
+              >
+                {d.charAt(0).toUpperCase() + d.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ fontSize: '14px', color: '#888', marginBottom: '20px' }}>
+            <p>Score multiplier: {d => ({ easy: '1x', normal: '2x', hard: '3x' })[difficulty]}</p>
+          </div>
+
+          <button
+            style={startButtonStyle}
+            onClick={handleStartGame}
+            disabled={isProcessing}
+          >
+            {isProcessing ? 'Connecting to Blockchain...' : 'Start Game'}
+          </button>
+
+          {errorMessage && (
+            <div style={errorStyle}>{errorMessage}</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Check if player can roll
+  const canRoll = state.currentPlayer === 'white' && 
+                  state.phase === 'rolling' && 
+                  !isRolling;
+
+  // Check if player can double
+  const canDouble = state.currentPlayer === 'white' &&
+                    state.phase === 'rolling' &&
+                    (state.doublingCube.owner === null || state.doublingCube.owner === 'white') &&
+                    state.doublingCube.value < 64;
+
+  // Check if double is offered to player
+  const isDoubleOffered = state.phase === 'doubleOffered' && state.currentPlayer === 'white';
+
+  return (
+    <div style={containerStyle}>
+      {/* Header */}
+      <div style={headerStyle}>
+        <h1 style={titleStyle}>🎲 Backgammon</h1>
+        <p style={{ color: '#888', fontSize: '14px' }}>
+          Game: {state.gameId} | Difficulty: {state.aiDifficulty}
+        </p>
+      </div>
+
+      {/* Game area */}
+      <div style={gameAreaStyle}>
+        {/* Left sidebar - Dice & Controls */}
+        <div style={sidebarStyle}>
+          <div style={statusStyle}>
+            <div style={turnIndicatorStyle}>
+              {state.currentPlayer === 'white' ? "Your Turn" : "AI's Turn"}
+            </div>
+            <div style={{ color: '#888', fontSize: '14px' }}>
+              Phase: {state.phase}
+            </div>
+            {aiThinking && (
+              <div style={{ color: '#ffd700', marginTop: '10px' }}>
+                🤔 AI is thinking...
+              </div>
+            )}
+          </div>
+
+          <Dice
+            dice={state.dice}
+            diceUsed={state.diceUsed}
+            isDoubles={state.dice && isDoubles([state.dice[0], state.dice[1]])}
+            isRolling={isRolling}
+            canRoll={canRoll}
+            onRoll={handleRollDice}
+          />
+
+          {/* End turn button when no moves available */}
+          {state.phase === 'moving' && 
+           state.currentPlayer === 'white' && 
+           getAllLegalMoves(state).length === 0 && (
+            <button
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#ff9800',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+              onClick={handleEndTurn}
+            >
+              No Moves - End Turn
+            </button>
+          )}
+
+          {errorMessage && (
+            <div style={errorStyle}>{errorMessage}</div>
+          )}
+        </div>
+
+        {/* Board */}
+        <BackgammonBoard
+          gameState={state}
+          onPointClick={handlePointClick}
+          onCheckerClick={handleCheckerClick}
+          onBarClick={handleBarClick}
+          selectedPoint={selectedPoint}
+          validMoves={validMoves}
+        />
+
+        {/* Right sidebar - Doubling Cube & Info */}
+        <div style={sidebarStyle}>
+          <DoublingCube
+            value={state.doublingCube.value}
+            owner={state.doublingCube.owner}
+            canDouble={canDouble}
+            isOffered={isDoubleOffered}
+            currentPlayer={state.currentPlayer}
+            onOfferDouble={handleOfferDouble}
+            onAcceptDouble={handleAcceptDouble}
+            onDeclineDouble={handleDeclineDouble}
+          />
+
+          {/* Score info */}
+          <div style={statusStyle}>
+            <h4 style={{ marginBottom: '10px', color: '#ffd700' }}>Stakes</h4>
+            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+              {state.doublingCube.value}x
+            </div>
+            <div style={{ fontSize: '12px', color: '#888', marginTop: '5px' }}>
+              Base points
+            </div>
+          </div>
+
+          {/* Pip count */}
+          <div style={statusStyle}>
+            <h4 style={{ marginBottom: '10px' }}>Pip Count</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>You: {selectors.getCheckersOnBoard(state, 'white') > 0 ? 
+                '...' : state.bearOff.white}</span>
+              <span>AI: {selectors.getCheckersOnBoard(state, 'black') > 0 ? 
+                '...' : state.bearOff.black}</span>
+            </div>
+          </div>
+
+          {/* Timer */}
+          <div style={statusStyle}>
+            <h4 style={{ marginBottom: '10px' }}>Time</h4>
+            <div style={{ fontSize: '20px', fontFamily: 'monospace' }}>
+              {selectors.getFormattedDuration(state)}
+            </div>
+          </div>
+
+          {/* Verify link */}
+          <button
+            style={{
+              padding: '10px',
+              backgroundColor: 'transparent',
+              color: '#4CAF50',
+              border: '1px solid #4CAF50',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+            onClick={handleViewVerification}
+          >
+            🔗 View Blockchain Proof
+          </button>
+        </div>
+      </div>
+
+      {/* Game Over Modal */}
+      {showGameOver && (
+        <GameOverModal
+          winner={state.winner}
+          winType={state.winType}
+          finalScore={state.finalScore}
+          cubeValue={state.doublingCube.value}
+          difficulty={state.aiDifficulty}
+          duration={selectors.getGameDuration(state)}
+          gameId={state.gameId}
+          onNewGame={handleNewGame}
+          onViewVerification={handleViewVerification}
+        />
+      )}
+    </div>
+  );
+};
+
+export default BackgammonGame;

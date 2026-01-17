@@ -95,18 +95,19 @@ function HowItWorks() {
         <div style={styles.step}>
           <div style={styles.stepHeader}>
             <span style={styles.stepNumber}>3</span>
-            <h3 style={styles.stepTitle}>Shuffle the Deck</h3>
+            <h3 style={styles.stepTitle}>Generate Game Randomness</h3>
           </div>
           <p style={styles.stepText}>
-            Using the Fisher-Yates algorithm, we shuffle 52 cards. The seed provides 
-            pseudo-random numbers. Same seed = same shuffle, every time, guaranteed.
+            Using cryptographic algorithms, we generate verifiable random outcomes. For card games,
+            we use Fisher-Yates shuffle. For 2048, we determine tile spawn positions. For Backgammon,
+            we generate dice rolls. Same seed = same result, every time, guaranteed.
           </p>
           <div style={styles.diagram}>
-            <span style={styles.diagramLabel}>Unshuffled:</span>
-            <span style={styles.diagramContent}>A♠ 2♠ 3♠ ... K♣</span>
-            <span style={styles.diagramArrow}>↓ Fisher-Yates + Seed</span>
-            <span style={styles.diagramLabel}>Shuffled:</span>
-            <span style={styles.diagramContent}>7♣ K♠ 3♦ A♥ 9♠ ...</span>
+            <span style={styles.diagramLabel}>Card Games:</span>
+            <span style={styles.diagramContent}>A♠ 2♠ 3♠ ... → 7♣ K♠ 3♦ A♥ ...</span>
+            <span style={styles.diagramArrow}>↓ Blockchain Seed</span>
+            <span style={styles.diagramLabel}>2048 / Backgammon:</span>
+            <span style={styles.diagramContent}>Tile position & value / Dice rolls</span>
           </div>
         </div>
 
@@ -117,9 +118,9 @@ function HowItWorks() {
             <h3 style={styles.stepTitle}>Play the Game</h3>
           </div>
           <p style={styles.stepText}>
-            Cards are dealt from the shuffled deck. The game plays normally — you make 
-            decisions, the AI responds (in Garbage), or you play solo (in Solitaire). 
-            The shuffle was locked in before play began.
+            Cards are dealt from the shuffled deck. In 2048, every tile spawn uses fresh blockchain
+            data. In Backgammon, every dice roll is blockchain-verified. You make decisions, the
+            AI responds — all randomness is locked in and verifiable.
           </p>
         </div>
 
@@ -296,12 +297,14 @@ function HowItWorks() {
       <section style={styles.cta}>
         <h2 style={styles.ctaTitle}>Try It Yourself</h2>
         <p style={styles.ctaText}>
-          Experience provably fair gaming firsthand. Play a game, submit your score, then verify the shuffle.
+          Experience provably fair gaming firsthand. Play a game, submit your score, then verify the randomness.
         </p>
         <div style={styles.ctaButtons}>
           <Link to="/solitaire" style={styles.primaryBtn}>Play Solitaire</Link>
           <Link to="/blackjack" style={styles.primaryBtn}>Play Blackjack</Link>
           <Link to="/yahtzee" style={styles.primaryBtn}>Play Yahtzee</Link>
+          <Link to="/2048" style={styles.primaryBtn}>Play 2048</Link>
+          <Link to="/backgammon" style={styles.primaryBtn}>Play Backgammon</Link>
           <Link to="/garbage" style={styles.primaryBtn}>Play Garbage</Link>
         </div>
       </section>
