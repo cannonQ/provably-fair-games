@@ -51,6 +51,7 @@ function formatResults(results) {
 
 export default function BlackjackTable({
   state,
+  insuranceDeclined,
   onHit,
   onStand,
   onDoubleDown,
@@ -58,10 +59,12 @@ export default function BlackjackTable({
   onInsurance
 }) {
   const activeHand = state.playerHands[state.activeHandIndex] || [];
-  const showInsurance = canTakeInsurance(state.dealerHand, state.phase) && 
-                        state.insuranceBet === 0 && 
-                        activeHand.length === 2;
   const insuranceCost = Math.floor(state.currentBet / 2);
+  const canAffordInsurance = state.chipBalance >= insuranceCost;
+  const showInsurance = canTakeInsurance(state.dealerHand, state.phase) &&
+                        state.insuranceBet === 0 &&
+                        activeHand.length === 2 &&
+                        !insuranceDeclined;
   
   // Get split Aces hands array (default to empty if not present for backwards compatibility)
   const splitAcesHands = state.splitAcesHands || [];
@@ -102,7 +105,13 @@ export default function BlackjackTable({
       {showInsurance && (
         <div className="insurance-prompt">
           <span>Insurance? (${insuranceCost})</span>
-          <button onClick={() => onInsurance(true)} className="insurance-btn yes">Yes</button>
+          <button
+            onClick={() => onInsurance(true)}
+            disabled={!canAffordInsurance}
+            className="insurance-btn yes"
+          >
+            Yes
+          </button>
           <button onClick={() => onInsurance(false)} className="insurance-btn no">No</button>
         </div>
       )}

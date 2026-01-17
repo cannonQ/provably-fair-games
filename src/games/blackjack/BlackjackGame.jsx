@@ -359,6 +359,7 @@ export default function BlackjackGame() {
       <div className="game-container">
         <BlackjackTable
           state={state}
+          insuranceDeclined={insuranceDeclined}
           onHit={handleHit}
           onStand={handleStand}
           onDoubleDown={handleDoubleDown}
