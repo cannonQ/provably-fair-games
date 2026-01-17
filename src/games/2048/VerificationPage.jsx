@@ -250,29 +250,32 @@ const VerificationPage = () => {
       fontSize: '1rem'
     },
     detailsBox: {
-      backgroundColor: '#f5f5f5',
+      backgroundColor: '#e8e4df',
       padding: '15px',
       borderRadius: '6px',
       marginTop: '10px',
-      fontSize: '0.85rem'
+      fontSize: '0.85rem',
+      color: '#5a534a'
     },
     detailRow: {
       display: 'flex',
       justifyContent: 'space-between',
       padding: '5px 0',
-      borderBottom: '1px solid #e0e0e0',
+      borderBottom: '1px solid #ccc',
       flexWrap: 'wrap',
       gap: '10px'
     },
     detailLabel: {
-      color: '#888',
-      minWidth: '120px'
+      color: '#666',
+      minWidth: '120px',
+      fontWeight: 'bold'
     },
     detailValue: {
       fontFamily: 'monospace',
       wordBreak: 'break-all',
       flex: 1,
-      textAlign: 'right'
+      textAlign: 'right',
+      color: '#444'
     },
     matchBadge: {
       display: 'inline-block',
@@ -322,13 +325,14 @@ const VerificationPage = () => {
       color: '#9e948a'
     },
     compactData: {
-      backgroundColor: '#f5f5f5',
+      backgroundColor: '#e8e4df',
       padding: '10px',
       borderRadius: '6px',
       marginTop: '15px',
       fontSize: '0.8rem',
       fontFamily: 'monospace',
-      wordBreak: 'break-all'
+      wordBreak: 'break-all',
+      color: '#5a534a'
     }
   };
 
@@ -478,9 +482,9 @@ const VerificationPage = () => {
           <div style={styles.compactData}>
             <strong>Leaderboard Data (~{Math.ceil((gameId?.length || 0) + (anchorBlock?.blockHash?.length || 0) + encodedMoves.length) / 1024} KB):</strong>
             <br />
-            <span style={{ color: '#888' }}>Moves: </span>{encodedMoves.slice(0, 50)}{encodedMoves.length > 50 ? '...' : ''}
+            <span style={{ color: '#666', fontWeight: 'bold' }}>Moves: </span>{encodedMoves.slice(0, 50)}{encodedMoves.length > 50 ? '...' : ''}
             <br />
-            <span style={{ color: '#888' }}>({encodedMoves.length} chars = {Math.ceil(encodedMoves.length / 4)} bytes compressed)</span>
+            <span style={{ color: '#666' }}>({encodedMoves.length} chars = {Math.ceil(encodedMoves.length / 4)} bytes compressed)</span>
           </div>
         </div>
 

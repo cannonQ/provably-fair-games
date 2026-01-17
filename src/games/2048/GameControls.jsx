@@ -17,6 +17,9 @@ import { formatScore, getScoreRank } from './scoreLogic';
  * @param {function} props.onNewGame - New game handler
  * @param {function} props.onContinue - Continue after win handler
  * @param {function} props.onMove - Move handler (direction)
+ * @param {function} props.onSubmitScore - Submit score handler
+ * @param {boolean} props.scoreSubmitted - Whether score has been submitted
+ * @param {number} props.submittedRank - Rank after submission
  */
 const GameControls = ({
   score = 0,
@@ -26,7 +29,10 @@ const GameControls = ({
   canContinue = false,
   onNewGame,
   onContinue,
-  onMove
+  onMove,
+  onSubmitScore,
+  scoreSubmitted = false,
+  submittedRank = null
 }) => {
   const styles = {
     container: {
@@ -126,6 +132,15 @@ const GameControls = ({
     continueButton: {
       backgroundColor: '#edc22e',
       color: '#f9f6f2'
+    },
+    submitButton: {
+      backgroundColor: '#4CAF50',
+      color: '#f9f6f2'
+    },
+    submittedText: {
+      color: '#4CAF50',
+      fontWeight: 'bold',
+      marginTop: '10px'
     },
     arrowControls: {
       display: 'flex',
@@ -232,6 +247,16 @@ const GameControls = ({
                   Continue
                 </button>
               )}
+              {!scoreSubmitted && onSubmitScore && (
+                <button
+                  style={{ ...styles.button, ...styles.submitButton }}
+                  onClick={onSubmitScore}
+                  onMouseEnter={(e) => handleButtonHover(e, true)}
+                  onMouseLeave={(e) => handleButtonHover(e, false)}
+                >
+                  Submit Score
+                </button>
+              )}
               <button
                 style={{ ...styles.button, ...styles.newGameButton }}
                 onClick={onNewGame}
@@ -241,6 +266,11 @@ const GameControls = ({
                 New Game
               </button>
             </div>
+            {scoreSubmitted && (
+              <div style={styles.submittedText}>
+                ✓ Score submitted! {submittedRank ? `Rank: #${submittedRank}` : ''}
+              </div>
+            )}
           </div>
         </div>
       )}

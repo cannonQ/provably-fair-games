@@ -333,3 +333,20 @@ export const decodeMoveHistory = (encoded) => {
   const dirMap = { U: 'up', D: 'down', L: 'left', R: 'right' };
   return encoded.split('').map(c => dirMap[c] || 'up');
 };
+
+/**
+ * Get highest tile value from grid
+ * @param {Array<Array<Object>>} grid - Game grid
+ * @returns {number} Highest tile value
+ */
+export const getHighestTile = (grid) => {
+  let max = 0;
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 4; col++) {
+      if (grid[row][col].value > max) {
+        max = grid[row][col].value;
+      }
+    }
+  }
+  return max;
+};

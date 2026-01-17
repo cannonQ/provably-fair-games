@@ -158,8 +158,8 @@ export const slideGrid = (grid, direction) => {
   let totalScore = 0;
 
   // Rotate grid so we always slide left, then rotate back
-  // left: 0, up: 1 (90° CW), right: 2 (180°), down: 3 (270° CW)
-  const rotations = { left: 0, up: 1, right: 2, down: 3 };
+  // left: 0, down: 1 (90° CW), right: 2 (180°), up: 3 (270° CW)
+  const rotations = { left: 0, up: 3, right: 2, down: 1 };
   const rotation = rotations[direction];
 
   if (rotation > 0) {

@@ -8,10 +8,11 @@
 
 import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useGameState } from './gameState';
+import { useGameState, encodeMoveHistory, getHighestTile } from './gameState';
 import Grid from './Grid';
 import GameControls from './GameControls';
 import { getLatestBlock } from '../../blockchain/ergo-api';
+import { submitScore } from '../../services/leaderboard';
 
 /**
  * Main 2048 Game Component
@@ -27,6 +28,9 @@ const Game2048 = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
+  const [submittedRank, setSubmittedRank] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const touchStartRef = useRef(null);
   const gameContainerRef = useRef(null);
@@ -175,11 +179,46 @@ const Game2048 = () => {
    */
   const handleNewGame = useCallback(async () => {
     setIsLoading(true);
+    setScoreSubmitted(false);
+    setSubmittedRank(null);
     newGame();
     const blockData = await fetchBlockData();
     initGame(blockData);
     setIsLoading(false);
   }, [newGame, initGame, fetchBlockData]);
+
+  /**
+   * Handle score submission to leaderboard
+   */
+  const handleSubmitScore = useCallback(async () => {
+    if (isSubmitting || scoreSubmitted) return;
+    if (!state.anchorBlock?.blockHash) return;
+
+    setIsSubmitting(true);
+    try {
+      const result = await submitScore({
+        game: '2048',
+        gameId: state.gameId,
+        playerName: 'Anonymous',
+        score: state.score,
+        timeSeconds: 0,
+        moves: state.moveHistory.length,
+        blockHeight: state.anchorBlock.blockHeight,
+        blockHash: state.anchorBlock.blockHash,
+        blockTimestamp: state.anchorBlock.timestamp,
+        moveHistory: encodeMoveHistory(state.moveHistory),
+        highestTile: getHighestTile(state.grid)
+      });
+
+      setScoreSubmitted(true);
+      setSubmittedRank(result.rank);
+    } catch (err) {
+      console.error('Failed to submit score:', err);
+      setError('Failed to submit score. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [isSubmitting, scoreSubmitted, state]);
 
   /**
    * Keyboard controls
@@ -322,6 +361,9 @@ const Game2048 = () => {
           onNewGame={handleNewGame}
           onContinue={continueAfterWin}
           onMove={handleMove}
+          onSubmitScore={handleSubmitScore}
+          scoreSubmitted={scoreSubmitted}
+          submittedRank={submittedRank}
         />
 
         {/* Grid Section */}
