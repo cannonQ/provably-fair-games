@@ -57,7 +57,7 @@ const GameReplay = ({
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(500); // ms per step
+  const [playbackSpeed, setPlaybackSpeed] = useState(1200); // ms per step (higher = slower)
   const [gameStates, setGameStates] = useState([]);
   const [error, setError] = useState(null);
 
@@ -376,7 +376,7 @@ const GameReplay = ({
   }
 
   const progress = gameStates.length > 1 ? (currentStep / (gameStates.length - 1)) * 100 : 0;
-  const speedLabel = playbackSpeed <= 200 ? 'Fast' : playbackSpeed <= 500 ? 'Normal' : 'Slow';
+  const speedLabel = playbackSpeed <= 400 ? 'Fast' : playbackSpeed <= 800 ? 'Normal' : 'Slow';
 
   return (
     <div style={styles.container}>
@@ -439,10 +439,10 @@ const GameReplay = ({
         <input
           type="range"
           min="100"
-          max="1000"
+          max="1800"
           step="100"
-          value={1100 - playbackSpeed}
-          onChange={(e) => setPlaybackSpeed(1100 - parseInt(e.target.value))}
+          value={1900 - playbackSpeed}
+          onChange={(e) => setPlaybackSpeed(1900 - parseInt(e.target.value))}
           style={styles.speedSlider}
         />
       </div>
