@@ -737,6 +737,7 @@ const VerificationPage = () => {
                       <td style={styles.td}>
                         <span style={{
                           backgroundColor: result.spawn.value === 4 ? '#edc850' : '#eee4da',
+                          color: '#776e65',
                           padding: '2px 8px',
                           borderRadius: '4px',
                           fontWeight: 'bold'
