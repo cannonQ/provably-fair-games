@@ -52,6 +52,7 @@ const BackgammonGame = () => {
   
   // Refs for cleanup
   const aiTimeoutRef = useRef(null);
+  const aiCooldownRef = useRef(null);  // Separate ref for aiThinking cooldown to avoid cleanup conflicts
   const turnNumberRef = useRef(null);
 
   // AI make move - defined early to avoid reference errors
@@ -71,7 +72,8 @@ const BackgammonGame = () => {
       dispatch(actions.moveChecker(selectedMove.from, selectedMove.to));
 
       // Short delay then allow next move check
-      aiTimeoutRef.current = setTimeout(() => {
+      // Use separate ref to avoid useEffect cleanup clearing this timeout
+      aiCooldownRef.current = setTimeout(() => {
         setAiThinking(false);
       }, 400);
     } else {
@@ -86,6 +88,9 @@ const BackgammonGame = () => {
     return () => {
       if (aiTimeoutRef.current) {
         clearTimeout(aiTimeoutRef.current);
+      }
+      if (aiCooldownRef.current) {
+        clearTimeout(aiCooldownRef.current);
       }
     };
   }, []);
