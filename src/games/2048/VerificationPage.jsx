@@ -159,12 +159,14 @@ const VerificationPage = () => {
   const [expandedSpawns, setExpandedSpawns] = useState(new Set());
   const [copiedSeed, setCopiedSeed] = useState(null);
 
+  // Dark theme styles
   const styles = {
     container: {
       minHeight: '100vh',
-      backgroundColor: '#faf8ef',
+      backgroundColor: '#1a1a2e',
       padding: '20px',
-      fontFamily: 'Arial, sans-serif'
+      fontFamily: 'Arial, sans-serif',
+      color: '#eee'
     },
     wrapper: {
       maxWidth: '900px',
@@ -181,40 +183,41 @@ const VerificationPage = () => {
     title: {
       fontSize: '1.8rem',
       fontWeight: 'bold',
-      color: '#776e65',
+      color: '#fff',
       margin: 0
     },
     backLink: {
-      color: '#8f7a66',
+      color: '#4ade80',
       textDecoration: 'none',
       fontSize: '0.9rem',
       cursor: 'pointer'
     },
     section: {
-      backgroundColor: '#ffffff',
+      backgroundColor: '#16213e',
       borderRadius: '8px',
       padding: '20px',
       marginBottom: '20px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      border: '1px solid #2a3a5e'
     },
     anchorSection: {
-      backgroundColor: '#edc53f',
+      backgroundColor: '#1a3a5c',
       borderRadius: '8px',
       padding: '20px',
       marginBottom: '20px',
-      color: '#776e65'
+      color: '#eee',
+      border: '2px solid #4ade80'
     },
     sectionTitle: {
       fontSize: '1.2rem',
       fontWeight: 'bold',
-      color: '#776e65',
+      color: '#fff',
       marginTop: 0,
       marginBottom: '15px'
     },
     anchorTitle: {
       fontSize: '1.2rem',
       fontWeight: 'bold',
-      color: '#776e65',
+      color: '#4ade80',
       marginTop: 0,
       marginBottom: '15px'
     },
@@ -226,31 +229,33 @@ const VerificationPage = () => {
     summaryItem: {
       textAlign: 'center',
       padding: '15px',
-      backgroundColor: '#bbada0',
+      backgroundColor: '#2a3a5e',
       borderRadius: '6px'
     },
     summaryLabel: {
       fontSize: '0.75rem',
-      color: '#eee4da',
+      color: '#888',
       textTransform: 'uppercase',
       marginBottom: '5px'
     },
     summaryValue: {
       fontSize: '1.2rem',
       fontWeight: 'bold',
-      color: '#ffffff'
+      color: '#4ade80'
     },
     anchorDetail: {
       marginBottom: '10px'
     },
     anchorLabel: {
       fontWeight: 'bold',
-      marginRight: '10px'
+      marginRight: '10px',
+      color: '#4ade80'
     },
     anchorValue: {
       fontFamily: 'monospace',
       fontSize: '0.9rem',
-      wordBreak: 'break-all'
+      wordBreak: 'break-all',
+      color: '#aaa'
     },
     table: {
       width: '100%',
@@ -259,41 +264,42 @@ const VerificationPage = () => {
     th: {
       textAlign: 'left',
       padding: '12px 8px',
-      borderBottom: '2px solid #bbada0',
-      color: '#776e65',
+      borderBottom: '2px solid #2a3a5e',
+      color: '#888',
       fontSize: '0.85rem'
     },
     td: {
       padding: '12px 8px',
-      borderBottom: '1px solid #eee4da',
+      borderBottom: '1px solid #2a3a5e',
       fontSize: '0.9rem',
-      color: '#776e65'
+      color: '#ccc'
     },
     expandButton: {
       background: 'none',
       border: 'none',
-      color: '#8f7a66',
+      color: '#4ade80',
       cursor: 'pointer',
       fontSize: '1rem'
     },
     detailsBox: {
-      backgroundColor: '#e8e4df',
+      backgroundColor: '#0d1525',
       padding: '15px',
       borderRadius: '6px',
       marginTop: '10px',
       fontSize: '0.85rem',
-      color: '#5a534a'
+      color: '#aaa',
+      border: '1px solid #2a3a5e'
     },
     detailRow: {
       display: 'flex',
       justifyContent: 'space-between',
       padding: '5px 0',
-      borderBottom: '1px solid #ccc',
+      borderBottom: '1px solid #2a3a5e',
       flexWrap: 'wrap',
       gap: '10px'
     },
     detailLabel: {
-      color: '#666',
+      color: '#888',
       minWidth: '120px',
       fontWeight: 'bold'
     },
@@ -302,7 +308,7 @@ const VerificationPage = () => {
       wordBreak: 'break-all',
       flex: 1,
       textAlign: 'right',
-      color: '#444'
+      color: '#ccc'
     },
     matchBadge: {
       display: 'inline-block',
@@ -321,19 +327,19 @@ const VerificationPage = () => {
     },
     copyButton: {
       background: 'none',
-      border: '1px solid #bbada0',
+      border: '1px solid #2a3a5e',
       borderRadius: '4px',
       padding: '2px 8px',
       cursor: 'pointer',
       fontSize: '0.75rem',
       marginLeft: '8px',
-      color: '#8f7a66'
+      color: '#4ade80'
     },
     downloadButton: {
       display: 'inline-block',
       padding: '12px 24px',
-      backgroundColor: '#8f7a66',
-      color: '#f9f6f2',
+      backgroundColor: '#4ade80',
+      color: '#000',
       textDecoration: 'none',
       borderRadius: '6px',
       fontWeight: 'bold',
@@ -343,23 +349,24 @@ const VerificationPage = () => {
       marginRight: '10px'
     },
     explorerLink: {
-      color: '#8f7a66',
+      color: '#64b5f6',
       textDecoration: 'underline'
     },
     emptyState: {
       textAlign: 'center',
       padding: '40px',
-      color: '#9e948a'
+      color: '#888'
     },
     compactData: {
-      backgroundColor: '#e8e4df',
+      backgroundColor: '#0d1525',
       padding: '10px',
       borderRadius: '6px',
       marginTop: '15px',
       fontSize: '0.8rem',
       fontFamily: 'monospace',
       wordBreak: 'break-all',
-      color: '#5a534a'
+      color: '#aaa',
+      border: '1px solid #2a3a5e'
     }
   };
 

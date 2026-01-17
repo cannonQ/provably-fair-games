@@ -36,11 +36,11 @@ const Game2048 = () => {
   const touchStartRef = useRef(null);
   const gameContainerRef = useRef(null);
 
-  // Styles
+  // Styles - Dark theme to match site
   const styles = {
     container: {
       minHeight: '100vh',
-      backgroundColor: '#faf8ef',
+      backgroundColor: '#1a1a2e',
       padding: '20px',
       boxSizing: 'border-box'
     },
@@ -57,7 +57,7 @@ const Game2048 = () => {
     title: {
       fontSize: '2.5rem',
       fontWeight: 'bold',
-      color: '#776e65',
+      color: '#fff',
       fontFamily: 'Arial, sans-serif',
       margin: 0
     },
@@ -66,7 +66,7 @@ const Game2048 = () => {
       gap: '15px'
     },
     link: {
-      color: '#8f7a66',
+      color: '#4ade80',
       textDecoration: 'none',
       fontSize: '0.9rem',
       fontFamily: 'Arial, sans-serif'
@@ -81,7 +81,7 @@ const Game2048 = () => {
       left: 0,
       right: 0,
       bottom: 0,
-      backgroundColor: 'rgba(250, 248, 239, 0.9)',
+      backgroundColor: 'rgba(26, 26, 46, 0.9)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -90,12 +90,12 @@ const Game2048 = () => {
     },
     loadingText: {
       fontSize: '1.2rem',
-      color: '#776e65',
+      color: '#4ade80',
       fontFamily: 'Arial, sans-serif'
     },
     errorBox: {
-      backgroundColor: '#f67c5f',
-      color: '#f9f6f2',
+      backgroundColor: '#f44336',
+      color: '#fff',
       padding: '10px 15px',
       borderRadius: '6px',
       marginBottom: '15px',
@@ -107,24 +107,25 @@ const Game2048 = () => {
     errorClose: {
       background: 'none',
       border: 'none',
-      color: '#f9f6f2',
+      color: '#fff',
       fontSize: '1.2rem',
       cursor: 'pointer'
     },
     footer: {
       textAlign: 'center',
       marginTop: '20px',
-      color: '#9e948a',
+      color: '#888',
       fontSize: '0.85rem',
       fontFamily: 'Arial, sans-serif'
     },
     anchorInfo: {
-      backgroundColor: '#eee4da',
+      backgroundColor: '#16213e',
       padding: '10px',
       borderRadius: '6px',
       marginTop: '10px',
       fontSize: '0.75rem',
-      color: '#776e65'
+      color: '#aaa',
+      border: '1px solid #2a3a5e'
     }
   };
 

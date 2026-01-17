@@ -14,14 +14,14 @@ import Tile from './Tile';
  * @param {Set<number>} props.mergedTiles - Set of tile IDs to animate as merged
  */
 const Grid = ({ grid, newTiles = new Set(), mergedTiles = new Set() }) => {
-  // Container style - responsive square
+  // Container style - responsive square (dark theme)
   const containerStyle = {
     width: '100%',
     maxWidth: '500px',
     aspectRatio: '1 / 1',
     margin: '0 auto',
     padding: '10px',
-    backgroundColor: '#bbada0',
+    backgroundColor: '#2a3a5e',
     borderRadius: '8px',
     boxSizing: 'border-box'
   };
@@ -46,9 +46,9 @@ const Grid = ({ grid, newTiles = new Set(), mergedTiles = new Set() }) => {
     left: 0
   };
 
-  // Empty cell style
+  // Empty cell style (dark theme)
   const emptyCellStyle = {
-    backgroundColor: '#cdc1b4',
+    backgroundColor: '#16213e',
     borderRadius: '6px'
   };
 

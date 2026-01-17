@@ -38,6 +38,7 @@ const GameControls = ({
   playerName = '',
   onPlayerNameChange
 }) => {
+  // Dark theme styles
   const styles = {
     container: {
       width: '100%',
@@ -54,14 +55,15 @@ const GameControls = ({
     },
     scoreBox: {
       flex: 1,
-      backgroundColor: '#bbada0',
+      backgroundColor: '#16213e',
       borderRadius: '6px',
       padding: '10px 15px',
-      textAlign: 'center'
+      textAlign: 'center',
+      border: '1px solid #2a3a5e'
     },
     scoreLabel: {
       fontSize: '0.75rem',
-      color: '#eee4da',
+      color: '#888',
       textTransform: 'uppercase',
       fontWeight: 'bold',
       marginBottom: '4px'
@@ -69,22 +71,22 @@ const GameControls = ({
     scoreValue: {
       fontSize: '1.5rem',
       fontWeight: 'bold',
-      color: '#ffffff'
+      color: '#4ade80'
     },
     highScoreValue: {
       fontSize: '1.25rem',
       fontWeight: 'bold',
-      color: '#ffffff'
+      color: '#fff'
     },
     moveCount: {
       fontSize: '0.9rem',
-      color: '#776e65',
+      color: '#888',
       marginBottom: '10px',
       textAlign: 'center'
     },
     rank: {
       fontSize: '0.8rem',
-      color: '#eee4da',
+      color: '#aaa',
       marginTop: '2px'
     },
     statusOverlay: {
@@ -92,26 +94,29 @@ const GameControls = ({
       marginBottom: '15px'
     },
     statusMessage: {
-      backgroundColor: 'rgba(238, 228, 218, 0.95)',
+      backgroundColor: 'rgba(22, 33, 62, 0.98)',
       borderRadius: '8px',
       padding: '20px',
-      textAlign: 'center'
+      textAlign: 'center',
+      border: '2px solid #2a3a5e'
     },
     wonMessage: {
-      backgroundColor: 'rgba(237, 194, 46, 0.95)'
+      backgroundColor: 'rgba(22, 33, 62, 0.98)',
+      borderColor: '#4ade80'
     },
     lostMessage: {
-      backgroundColor: 'rgba(238, 228, 218, 0.95)'
+      backgroundColor: 'rgba(22, 33, 62, 0.98)',
+      borderColor: '#f44336'
     },
     statusTitle: {
       fontSize: '2rem',
       fontWeight: 'bold',
-      color: '#776e65',
+      color: '#fff',
       marginBottom: '10px'
     },
     statusSubtitle: {
       fontSize: '1rem',
-      color: '#776e65',
+      color: '#aaa',
       marginBottom: '15px'
     },
     buttonRow: {
@@ -130,31 +135,33 @@ const GameControls = ({
       transition: 'transform 0.1s, opacity 0.1s'
     },
     newGameButton: {
-      backgroundColor: '#8f7a66',
-      color: '#f9f6f2'
+      backgroundColor: '#2a3a5e',
+      color: '#fff'
     },
     continueButton: {
-      backgroundColor: '#edc22e',
-      color: '#f9f6f2'
+      backgroundColor: '#4ade80',
+      color: '#000'
     },
     submitButton: {
       backgroundColor: '#4CAF50',
-      color: '#f9f6f2'
+      color: '#fff'
     },
     submittedText: {
-      color: '#4CAF50',
+      color: '#4ade80',
       fontWeight: 'bold',
       marginTop: '10px'
     },
     nameInput: {
       padding: '10px 15px',
       fontSize: '1rem',
-      border: '2px solid #bbada0',
+      border: '2px solid #2a3a5e',
       borderRadius: '6px',
       marginRight: '10px',
       width: '150px',
       textAlign: 'center',
-      outline: 'none'
+      outline: 'none',
+      backgroundColor: '#16213e',
+      color: '#fff'
     },
     nameInputRow: {
       display: 'flex',
@@ -179,8 +186,8 @@ const GameControls = ({
       width: '60px',
       height: '60px',
       fontSize: '1.5rem',
-      backgroundColor: '#bbada0',
-      color: '#f9f6f2',
+      backgroundColor: '#2a3a5e',
+      color: '#fff',
       border: 'none',
       borderRadius: '8px',
       cursor: 'pointer',
@@ -195,7 +202,7 @@ const GameControls = ({
     },
     keyboardHint: {
       fontSize: '0.75rem',
-      color: '#9e948a',
+      color: '#888',
       textAlign: 'center',
       marginTop: '10px'
     },
