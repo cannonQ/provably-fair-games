@@ -292,7 +292,7 @@ export function gameReducer(state, action) {
       let dieValue;
       if (from === 'bar') {
         // Moving from bar
-        dieValue = player === 'white' ? (25 - to) : to;
+        dieValue = player === 'white' ? (24 - to) : (to + 1);
       } else if (to === 'bearOff') {
         // Bearing off
         dieValue = player === 'white' ? from + 1 : 24 - from;
