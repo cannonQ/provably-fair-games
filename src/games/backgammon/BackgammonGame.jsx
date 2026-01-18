@@ -33,6 +33,9 @@ import RotatePrompt from './RotatePrompt';
 // Blockchain API
 import { getLatestBlock } from '../../blockchain/ergo-api';
 
+// Storage (localStorage persistence)
+import { saveGameState, loadGameState, clearGameState } from './storage';
+
 const BackgammonGame = () => {
   const navigate = useNavigate();
   
@@ -105,6 +108,36 @@ const BackgammonGame = () => {
       }
     };
   }, []);
+
+  // Save game state to localStorage whenever it changes
+  useEffect(() => {
+    if (state.gameId && gameStarted && state.phase !== 'gameOver') {
+      saveGameState(state.gameId, state);
+    }
+  }, [state, gameStarted]);
+
+  // Load saved game state on mount
+  useEffect(() => {
+    // Only run once on mount
+    const savedState = loadGameState('current');
+    if (savedState && savedState.gameId) {
+      dispatch({ type: 'RESTORE_STATE', payload: savedState });
+      setGameStarted(true);
+      setDifficulty(savedState.aiDifficulty);
+    }
+  }, []); // Empty dependency array = runs once on mount
+
+  // Clear localStorage when game ends
+  useEffect(() => {
+    if (state.phase === 'gameOver' && state.gameId) {
+      // Wait a bit before clearing (allows player to see final state)
+      const clearTimer = setTimeout(() => {
+        clearGameState(state.gameId);
+      }, 1000);
+
+      return () => clearTimeout(clearTimer);
+    }
+  }, [state.phase, state.gameId]);
 
   // Calculate valid moves when selection changes
   useEffect(() => {

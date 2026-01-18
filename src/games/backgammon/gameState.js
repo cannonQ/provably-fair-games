@@ -134,7 +134,8 @@ export const ActionTypes = {
   END_GAME: 'END_GAME',
   NEW_GAME: 'NEW_GAME',
   SET_VALID_MOVES: 'SET_VALID_MOVES',
-  CLEAR_SELECTION: 'CLEAR_SELECTION'
+  CLEAR_SELECTION: 'CLEAR_SELECTION',
+  RESTORE_STATE: 'RESTORE_STATE'
 };
 
 // ============================================
@@ -460,7 +461,17 @@ export function gameReducer(state, action) {
         aiDifficulty: state.aiDifficulty
       };
     }
-    
+
+    case ActionTypes.RESTORE_STATE: {
+      // Restore saved game state from localStorage
+      return {
+        ...action.payload,
+        // Reset UI-only state
+        selectedPoint: null,
+        validMoves: []
+      };
+    }
+
     default:
       return state;
   }
