@@ -5,6 +5,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { withLogging } from '../lib/api-logger.js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -13,7 +14,7 @@ const supabase = createClient(
 
 const VALID_GAMES = ['solitaire', 'garbage', 'yahtzee', 'blackjack', '2048', 'backgammon'];
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Only allow GET
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -82,3 +83,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 }
+
+// Export handler with logging middleware
+export default withLogging(handler);

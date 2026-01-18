@@ -14,6 +14,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { validateGameSubmission, ValidationLevel } from '../lib/validation/index.js';
+import { withLogging } from '../lib/api-logger.js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -56,7 +57,7 @@ async function getPlayerHistory(playerName, limit = 10) {
 /**
  * Main handler
  */
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -284,3 +285,6 @@ export default async function handler(req, res) {
     });
   }
 }
+
+// Export handler with logging middleware
+export default withLogging(handler);
