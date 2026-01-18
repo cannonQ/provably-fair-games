@@ -392,6 +392,14 @@ const AdminDashboard = ({ adminPassword }) => {
         }
 
         h3 {
+          color: #ffffff;
+          font-size: 18px;
+          font-weight: 600;
+          margin: 20px 0 10px 0;
+        }
+
+        /* h3 inside light backgrounds should be dark */
+        .stats-summary h3 {
           color: #333;
         }
 
