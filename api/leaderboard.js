@@ -7,6 +7,12 @@
 import { createClient } from '@supabase/supabase-js';
 import { withLogging } from '../lib/api-logger.js';
 
+// SECURITY: Credentials must be set in environment variables
+// Never use fallback values for credentials - fail fast if not configured
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  throw new Error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY');
+}
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
