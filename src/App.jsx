@@ -27,6 +27,9 @@ import Tutorial2048 from './games/2048/Tutorial';
 // Admin import
 import AdminPage from './pages/Admin';
 
+// Error Boundary import
+import ErrorBoundary from './components/ErrorBoundary';
+
 // 404 Not Found Component
 function NotFound() {
   return (
@@ -137,8 +140,9 @@ function App() {
 
         {/* Route definitions */}
         <main style={styles.main}>
-          <Routes>
-            <Route path="/" element={<Home />} />
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Home />} />
             <Route path="/garbage" element={<GarbageGame />} />
             <Route path="/play" element={<GarbageGame />} />
             <Route path="/solitaire" element={<SolitaireGame />} />
@@ -165,9 +169,10 @@ function App() {
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             {/* Admin route */}
             <Route path="/admin" element={<AdminPage />} />
-            {/* 404 catch-all route - must be last */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* 404 catch-all route - must be last */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ErrorBoundary>
         </main>
 
         {/* Simple footer */}

@@ -19,6 +19,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Set cache headers (5 minutes for leaderboard data)
+  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
+
   try {
     const { game, limit = 10, gameId } = req.query;
 

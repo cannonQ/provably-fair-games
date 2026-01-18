@@ -61,6 +61,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Never cache score submissions
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
   try {
     const {
       game,

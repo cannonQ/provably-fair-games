@@ -312,6 +312,9 @@ function authenticateAdmin(req) {
  * Main handler - routes to appropriate function
  */
 export default async function handler(req, res) {
+  // Never cache admin data
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+
   // Authenticate all admin requests
   const auth = authenticateAdmin(req);
   if (!auth.authenticated) {
