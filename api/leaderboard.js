@@ -26,8 +26,11 @@ async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Set cache headers (5 minutes for leaderboard data)
-  res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
+  // Set cache headers (1 minute for leaderboard data - faster updates)
+  res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=60');
+
+  // Add timestamp so frontend can show "last updated"
+  res.setHeader('X-Cache-Time', new Date().toISOString());
 
   try {
     const { game, limit = 10, gameId } = req.query;

@@ -1,0 +1,227 @@
+{
+  "metadata": {
+    "description": "Backgammon Opening Book for AI",
+    "perspective": "Black (moving 24→1)",
+    "notation": "point/destination - higher numbers are opponent's home board",
+    "source": "Standard opening theory based on modern rollout analysis",
+    "version": "1.0",
+    "generated_by": "Claude Opus",
+    "date": "2026-01-18"
+  },
+  "starting_position": {
+    "black": {
+      "24": 2,
+      "13": 5,
+      "8": 3,
+      "6": 5
+    },
+    "white": {
+      "1": 2,
+      "12": 5,
+      "17": 3,
+      "19": 5
+    }
+  },
+  "opening_moves": [
+    {
+      "roll": "6-5",
+      "best_move": "24/13",
+      "notation_detail": ["24/18", "18/13"],
+      "reasoning": "The 'Lover's Leap' - escapes one back checker completely to safety, the only opening roll that accomplishes this in one turn.",
+      "alternatives": [],
+      "confidence": "definitive"
+    },
+    {
+      "roll": "6-4",
+      "best_move": "24/14",
+      "notation_detail": ["24/18", "18/14"],
+      "reasoning": "Running with a back checker to a relatively safe advanced anchor point; the 14-point is awkward for opponent to attack.",
+      "alternatives": [
+        {
+          "move": "8/2 6/2",
+          "reasoning": "Makes the 2-point early, but it's too deep and leaves the back checkers stranded."
+        }
+      ],
+      "confidence": "strong"
+    },
+    {
+      "roll": "6-3",
+      "best_move": "24/15",
+      "notation_detail": ["24/18", "18/15"],
+      "reasoning": "Running to the mid-outfield; while exposed, it creates good racing chances and diversifies threats.",
+      "alternatives": [
+        {
+          "move": "24/18 13/10",
+          "reasoning": "Safer but more passive; splits the back checkers while building toward the outer board."
+        }
+      ],
+      "confidence": "moderate"
+    },
+    {
+      "roll": "6-2",
+      "best_move": "24/18 13/11",
+      "notation_detail": ["24/18", "13/11"],
+      "reasoning": "Splits the back checkers to the bar point (18) while beginning to slot builders in the outer board.",
+      "alternatives": [
+        {
+          "move": "13/5",
+          "reasoning": "Slots the 5-point directly; aggressive but risky if hit."
+        }
+      ],
+      "confidence": "moderate"
+    },
+    {
+      "roll": "6-1",
+      "best_move": "13/7 8/7",
+      "notation_detail": ["13/7", "8/7"],
+      "reasoning": "Makes the bar point (7-point) immediately - a key blocking point that impedes opponent's back checkers.",
+      "alternatives": [],
+      "confidence": "definitive"
+    },
+    {
+      "roll": "5-4",
+      "best_move": "13/8 13/9",
+      "notation_detail": ["13/8", "13/9"],
+      "reasoning": "Brings two builders down to the outer board, preparing to make inner board points on subsequent rolls.",
+      "alternatives": [
+        {
+          "move": "24/20 13/8",
+          "reasoning": "Splits back while bringing one builder; more flexible but less immediately constructive."
+        }
+      ],
+      "confidence": "moderate"
+    },
+    {
+      "roll": "5-3",
+      "best_move": "8/3 6/3",
+      "notation_detail": ["8/3", "6/3"],
+      "reasoning": "Makes the 3-point - while slightly deep, it's a made point in the home board and begins the prime-building process.",
+      "alternatives": [
+        {
+          "move": "13/10 13/8",
+          "reasoning": "Brings builders down without committing; keeps more flexibility."
+        }
+      ],
+      "confidence": "moderate"
+    },
+    {
+      "roll": "5-2",
+      "best_move": "13/11 13/8",
+      "notation_detail": ["13/11", "13/8"],
+      "reasoning": "Develops two builders to the outer board, creating multiple point-making opportunities next turn.",
+      "alternatives": [
+        {
+          "move": "24/22 13/8",
+          "reasoning": "Splits the back checkers; more balanced between offense and defense."
+        }
+      ],
+      "confidence": "moderate"
+    },
+    {
+      "roll": "5-1",
+      "best_move": "24/23 13/8",
+      "notation_detail": ["24/23", "13/8"],
+      "reasoning": "Splits to opponent's 2-point while bringing a builder down; creates anchor threats while developing.",
+      "alternatives": [
+        {
+          "move": "13/8 6/5",
+          "reasoning": "Slots the crucial 5-point; higher variance but potentially very rewarding if covered."
+        }
+      ],
+      "confidence": "close"
+    },
+    {
+      "roll": "4-3",
+      "best_move": "13/10 13/9",
+      "notation_detail": ["13/10", "13/9"],
+      "reasoning": "Brings two builders into the outer board, creating a flexible structure for making key points.",
+      "alternatives": [
+        {
+          "move": "24/20 24/21",
+          "reasoning": "Splits both back checkers aggressively toward anchoring."
+        }
+      ],
+      "confidence": "moderate"
+    },
+    {
+      "roll": "4-2",
+      "best_move": "8/4 6/4",
+      "notation_detail": ["8/4", "6/4"],
+      "reasoning": "Makes the 4-point in the home board - a valuable blocking point that strengthens the inner board immediately.",
+      "alternatives": [],
+      "confidence": "definitive"
+    },
+    {
+      "roll": "4-1",
+      "best_move": "24/23 13/9",
+      "notation_detail": ["24/23", "13/9"],
+      "reasoning": "Splits to the 23-point while bringing a builder to the 9-point; balances back game potential with board development.",
+      "alternatives": [
+        {
+          "move": "13/9 6/5",
+          "reasoning": "Slots the 5-point while bringing a builder; more aggressive home board focus."
+        }
+      ],
+      "confidence": "close"
+    },
+    {
+      "roll": "3-2",
+      "best_move": "13/11 13/10",
+      "notation_detail": ["13/11", "13/10"],
+      "reasoning": "Develops two builders to the outer board, maximizing flexibility for making the 4, 5, or 7 point next turn.",
+      "alternatives": [
+        {
+          "move": "24/21 13/11",
+          "reasoning": "Splits to the 21-point; creates an advanced anchor threat."
+        }
+      ],
+      "confidence": "moderate"
+    },
+    {
+      "roll": "3-1",
+      "best_move": "8/5 6/5",
+      "notation_detail": ["8/5", "6/5"],
+      "reasoning": "Makes the golden 5-point - the most valuable point in the home board, essential for both blocking and bearing off.",
+      "alternatives": [],
+      "confidence": "definitive"
+    },
+    {
+      "roll": "2-1",
+      "best_move": "13/11 6/5",
+      "notation_detail": ["13/11", "6/5"],
+      "reasoning": "Slots the 5-point while placing a builder on the 11; aggressive play aiming to make the 5-point next turn.",
+      "alternatives": [
+        {
+          "move": "24/23 13/11",
+          "reasoning": "Splits back checkers while bringing a builder; safer but less immediately ambitious."
+        },
+        {
+          "move": "13/11 24/23",
+          "reasoning": "Same as above, just different move order."
+        }
+      ],
+      "confidence": "close"
+    }
+  ],
+  "key_principles": {
+    "point_priorities": [
+      "5-point (golden point) - highest priority",
+      "4-point and 7-point (bar point) - very valuable",
+      "3-point - useful but somewhat deep",
+      "2-point - too deep early, avoid making first"
+    ],
+    "strategic_concepts": [
+      "Making points is generally better than leaving blots",
+      "The 5-point is the most valuable point in your home board",
+      "Splitting back checkers creates flexibility but risk",
+      "Builders in the outer board (8-11) create point-making potential",
+      "Running plays work best with large rolls (6-5, 6-4)"
+    ],
+    "confidence_levels": {
+      "definitive": "Clear best move with significant equity advantage",
+      "strong": "Best move with meaningful but not overwhelming advantage",
+      "moderate": "Best move but alternatives are reasonable",
+      "close": "Multiple moves are nearly equivalent in equity"
+    }
+  }
+}
