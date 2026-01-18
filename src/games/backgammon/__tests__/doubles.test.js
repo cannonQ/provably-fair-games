@@ -289,7 +289,7 @@ describe('Doubles Bearing Off', () => {
     const moves = getAllLegalMoves(state);
 
     // Can bear off all 4 checkers from point 5
-    const bearOffMoves = moves.filter(m => m.to === 'off');
+    const bearOffMoves = moves.filter(m => m.to === 'bearOff');
     expect(bearOffMoves.length).toBeGreaterThan(0);
   });
 
@@ -302,7 +302,7 @@ describe('Doubles Bearing Off', () => {
     const moves = getAllLegalMoves(state);
 
     // Die 6 can bear off from point 3 (furthest)
-    const bearOffFrom3 = moves.find(m => m.from === 2 && m.to === 'off');
+    const bearOffFrom3 = moves.find(m => m.from === 2 && m.to === 'bearOff');
     expect(bearOffFrom3).toBeDefined();
   });
 
