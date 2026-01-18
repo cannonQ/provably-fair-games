@@ -10,13 +10,13 @@
 
 ### 1. Validation Infrastructure (Day 1)
 
-**Shared Utilities** (`api/validation/shared/`):
+**Shared Utilities** (`lib/validation/shared/`):
 - `blockchainUtils.js` - Ergo blockchain verification
 - `fraudDetection.js` - Statistical analysis and pattern detection
 
 **Directory Structure**:
 ```
-api/validation/
+lib/validation/
 ├── shared/
 │   ├── blockchainUtils.js (220 lines)
 │   └── fraudDetection.js (390 lines)
@@ -191,7 +191,7 @@ if (avgTimePerRound < 2s) → TOO FAST
 
 ### 3. Master Validator (Dispatcher)
 
-**File**: `api/validation/index.js` (200 lines)
+**File**: `lib/validation/index.js` (200 lines)
 
 **Multi-Level Validation**:
 ```javascript
@@ -396,7 +396,7 @@ calculateMaxPossibleScore:
 
 ### Basic Validation (Logic Only)
 ```javascript
-import { validateGameLogicOnly } from './api/validation/index.js';
+import { validateGameLogicOnly } from '../lib/validation/index.js';
 
 const result = validateGameLogicOnly({
   game: 'yahtzee',
@@ -413,7 +413,7 @@ if (!result.valid) {
 
 ### Full Validation (Blockchain + Fraud)
 ```javascript
-import { validateGameSubmission } from './api/validation/index.js';
+import { validateGameSubmission } from '../lib/validation/index.js';
 
 const result = await validateGameSubmission({
   game: 'yahtzee',
@@ -437,7 +437,7 @@ if (!result.valid) {
 
 ### With Rate Limiting
 ```javascript
-import { validateWithRateLimit } from './api/validation/index.js';
+import { validateWithRateLimit } from '../lib/validation/index.js';
 
 const result = await validateWithRateLimit({
   game: 'blackjack',
@@ -562,19 +562,19 @@ export default async function handler(req, res) {
 ## 📁 Files Created
 
 ### Validation Framework (12 files)
-1. `api/validation/shared/blockchainUtils.js`
-2. `api/validation/shared/fraudDetection.js`
-3. `api/validation/games/yahtzee/scoringLogic.js`
-4. `api/validation/games/yahtzee/historyValidator.js`
-5. `api/validation/games/backgammon/gameLogic.js`
-6. `api/validation/games/backgammon/moveValidation.js`
-7. `api/validation/games/backgammon/historyValidator.js`
-8. `api/validation/games/blackjack/gameLogic.js`
-9. `api/validation/games/blackjack/historyValidator.js`
-10. `api/validation/games/2048/scoreValidator.js`
-11. `api/validation/games/solitaire/scoreValidator.js`
-12. `api/validation/games/garbage/scoreValidator.js`
-13. `api/validation/index.js` (master dispatcher)
+1. `lib/validation/shared/blockchainUtils.js`
+2. `lib/validation/shared/fraudDetection.js`
+3. `lib/validation/games/yahtzee/scoringLogic.js`
+4. `lib/validation/games/yahtzee/historyValidator.js`
+5. `lib/validation/games/backgammon/gameLogic.js`
+6. `lib/validation/games/backgammon/moveValidation.js`
+7. `lib/validation/games/backgammon/historyValidator.js`
+8. `lib/validation/games/blackjack/gameLogic.js`
+9. `lib/validation/games/blackjack/historyValidator.js`
+10. `lib/validation/games/2048/scoreValidator.js`
+11. `lib/validation/games/solitaire/scoreValidator.js`
+12. `lib/validation/games/garbage/scoreValidator.js`
+13. `lib/validation/index.js` (master dispatcher)
 
 ### Tests (1 file, more planned)
 14. `api/__tests__/validation/yahtzee.validator.test.js`

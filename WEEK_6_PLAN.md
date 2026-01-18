@@ -27,7 +27,7 @@
 ## 🎯 Week 6 Objectives
 
 ### Phase 1: Build Validation Infrastructure (Days 1-2)
-1. Create `/api/validation/` directory structure
+1. Create `/lib/validation/` directory structure
 2. Port game logic files to server-side (Node.js compatible)
 3. Build shared validation utilities
 4. Set up testing infrastructure for validators
@@ -124,7 +124,7 @@ function checkRateLimit(playerName, timeWindow)
 
 #### Backgammon (PRIORITY 1 - Most Complex)
 ```javascript
-// api/validation/games/backgammon/historyValidator.js
+// lib/validation/games/backgammon/historyValidator.js
 
 import { getAllLegalMoves } from './moveValidator.js';
 import { applyMove, rollDiceValues } from './gameLogic.js';
@@ -163,7 +163,7 @@ export function validateBackgammonGame(submission) {
 
 #### Yahtzee (PRIORITY 2 - Comprehensive Scoring)
 ```javascript
-// api/validation/games/yahtzee/historyValidator.js
+// lib/validation/games/yahtzee/historyValidator.js
 
 import { calculateGrandTotal, calculateCategoryScore } from './scoringLogic.js';
 
@@ -203,7 +203,7 @@ export function validateYahtzeeGame(submission) {
 
 #### Blackjack (PRIORITY 3 - Round Validation)
 ```javascript
-// api/validation/games/blackjack/historyValidator.js
+// lib/validation/games/blackjack/historyValidator.js
 
 import { calculateHandValue, compareHands, calculatePayout } from './gameLogic.js';
 
@@ -242,7 +242,7 @@ export function validateBlackjackGame(submission) {
 
 #### 2048 (PRIORITY 4 - Grid Replay)
 ```javascript
-// api/validation/games/2048/historyValidator.js
+// lib/validation/games/2048/historyValidator.js
 
 import { slideGrid, createEmptyGrid, hasWon } from './gridLogic.js';
 
@@ -336,7 +336,7 @@ api/__tests__/
 ## 🚧 Implementation Order (Priority)
 
 1. **Day 1-2**: Infrastructure
-   - ✅ Create `/api/validation/` structure
+   - ✅ Create `/lib/validation/` structure
    - ✅ Port Backgammon `moveValidation.js` to server
    - ✅ Port Yahtzee `scoringLogic.js` to server
    - ✅ Create shared utilities (blockchain, seed verification)
