@@ -335,7 +335,8 @@ function GarbageGame() {
         blockHeight: blockData.blockHeight,
         blockHash: blockData.blockHash,
         txHash: blockData.txHash,
-        blockTimestamp: blockData.timestamp
+        blockTimestamp: blockData.timestamp,
+        difficulty: difficulty
       });
 
       setSubmitted(true);

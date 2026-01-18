@@ -12,35 +12,30 @@ const API_BASE = '/api';
  * @returns {Promise<{success: boolean, rank: number, entry: Object}>}
  */
 export async function submitScore(scoreData) {
-  const {
-    game,
-    gameId,
-    playerName,
-    score,
-    timeSeconds,
-    moves,
-    blockHeight,
-    blockHash,
-    txHash,
-    blockTimestamp
-  } = scoreData;
-
   const response = await fetch(`${API_BASE}/submit-score`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      game,
-      gameId,
-      playerName: playerName || 'Anonymous',
-      score,
-      timeSeconds,
-      moves,
-      blockHeight,
-      blockHash,
-      txHash,
-      blockTimestamp
+      game: scoreData.game,
+      gameId: scoreData.gameId,
+      playerName: scoreData.playerName || 'Anonymous',
+      score: scoreData.score,
+      timeSeconds: scoreData.timeSeconds,
+      moves: scoreData.moves,
+      blockHeight: scoreData.blockHeight,
+      blockHash: scoreData.blockHash,
+      txHash: scoreData.txHash,
+      blockTimestamp: scoreData.blockTimestamp,
+      // Game-specific fields
+      moveHistory: scoreData.moveHistory,      // 2048
+      highestTile: scoreData.highestTile,      // 2048
+      rollHistory: scoreData.rollHistory,      // Yahtzee
+      roundHistory: scoreData.roundHistory,    // Blackjack
+      winType: scoreData.winType,              // Backgammon
+      difficulty: scoreData.difficulty,        // Backgammon/Garbage
+      cubeValue: scoreData.cubeValue           // Backgammon
     })
   });
 

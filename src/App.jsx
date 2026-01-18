@@ -14,6 +14,22 @@ import YahtzeeRules from './games/yahtzee/RulesPage';
 import BlackjackGame from './games/blackjack/BlackjackGame';
 import BlackjackVerification from './games/blackjack/VerificationPage';
 
+// Backgammon imports
+import BackgammonGame from './games/backgammon/BackgammonGame';
+import BackgammonVerification from './games/backgammon/VerificationPage';
+import BackgammonTutorial from './games/backgammon/Tutorial';
+
+// 2048 imports
+import Game2048 from './games/2048/Game2048';
+import Verification2048 from './games/2048/VerificationPage';
+import Tutorial2048 from './games/2048/Tutorial';
+
+// Admin import
+import AdminPage from './pages/Admin';
+
+// Error Boundary import
+import ErrorBoundary from './components/ErrorBoundary';
+
 // 404 Not Found Component
 function NotFound() {
   return (
@@ -98,6 +114,8 @@ function Header() {
         <Link to="/solitaire" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Solitaire</Link>
         <Link to="/blackjack" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Blackjack</Link>
         <Link to="/yahtzee" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Yahtzee</Link>
+        <Link to="/backgammon" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Backgammon</Link>
+        <Link to="/2048" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>2048</Link>
         <Link to="/leaderboard" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Leaderboard</Link>
         <Link to="/how-it-works" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>How It Works</Link>
       </nav>
@@ -122,8 +140,9 @@ function App() {
 
         {/* Route definitions */}
         <main style={styles.main}>
-          <Routes>
-            <Route path="/" element={<Home />} />
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Home />} />
             <Route path="/garbage" element={<GarbageGame />} />
             <Route path="/play" element={<GarbageGame />} />
             <Route path="/solitaire" element={<SolitaireGame />} />
@@ -135,11 +154,25 @@ function App() {
             <Route path="/yahtzee/rules" element={<YahtzeeRules />} />
             <Route path="/yahtzee/verify" element={<YahtzeeVerification />} />
             <Route path="/verify/yahtzee/:gameId" element={<YahtzeeVerification />} />
+            {/* Backgammon routes */}
+            <Route path="/backgammon" element={<BackgammonGame />} />
+            <Route path="/play/backgammon" element={<BackgammonGame />} />
+            <Route path="/backgammon/verify/:gameId" element={<BackgammonVerification />} />
+            <Route path="/verify/backgammon/:gameId" element={<BackgammonVerification />} />
+            <Route path="/backgammon/tutorial" element={<BackgammonTutorial />} />
+            {/* 2048 routes */}
+            <Route path="/2048" element={<Game2048 />} />
+            <Route path="/2048/verify" element={<Verification2048 />} />
+            <Route path="/verify/2048/:gameId" element={<Verification2048 />} />
+            <Route path="/2048/tutorial" element={<Tutorial2048 />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
-            {/* 404 catch-all route - must be last */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+            {/* Admin route */}
+            <Route path="/admin" element={<AdminPage />} />
+              {/* 404 catch-all route - must be last */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ErrorBoundary>
         </main>
 
         {/* Simple footer */}

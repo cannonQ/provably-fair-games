@@ -1,116 +1,68 @@
 /**
  * POST /api/submit-score
- * 
- * Verifies game result against blockchain, then saves to leaderboard.
- * 
+ *
+ * ENHANCED with comprehensive server-side validation
+ *
  * Verification steps:
- * 1. Fetch block from Ergo blockchain
- * 2. Regenerate seed from block data + gameId
- * 3. Verify score is plausible (cards <= 52, time > 0, etc.)
- * 4. Save to database
+ * 1. Rate limiting check
+ * 2. Game ID format validation
+ * 3. Blockchain verification (optional but recommended)
+ * 4. Game-specific history validation
+ * 5. Fraud detection
+ * 6. Save to database with validation metadata
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { validateGameSubmission, ValidationLevel } from '../lib/validation/index.js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-const ERGO_API = 'https://api.ergoplatform.com/api/v1';
+// Configuration
+const VALIDATION_LEVEL = process.env.VALIDATION_LEVEL || ValidationLevel.FULL;
+const ENABLE_RATE_LIMITING = process.env.ENABLE_RATE_LIMITING !== 'false';
+const ENABLE_FRAUD_DETECTION = process.env.ENABLE_FRAUD_DETECTION !== 'false';
 
 /**
- * Fetch block from Ergo blockchain to verify it exists
+ * Fetch recent games from player for fraud detection
  */
-async function verifyBlock(blockHash, blockHeight) {
+async function getPlayerHistory(playerName, limit = 10) {
+  if (!playerName || playerName === 'Anonymous') {
+    return [];
+  }
+
   try {
-    const response = await fetch(`${ERGO_API}/blocks/${blockHash}`);
-    if (!response.ok) return { valid: false, reason: 'Block not found on blockchain' };
+    const { data, error } = await supabase
+      .from('LeaderBoard')
+      .select('*')
+      .eq('player_name', playerName)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
-    const data = await response.json();
-    const block = data.block;
-
-    if (block.header.height !== blockHeight) {
-      return { valid: false, reason: 'Block height mismatch' };
+    if (error) {
+      console.error('Error fetching player history:', error);
+      return [];
     }
 
-    return { 
-      valid: true, 
-      txCount: block.blockTransactions?.length || 0,
-      timestamp: block.header.timestamp
-    };
+    return data || [];
   } catch (error) {
-    return { valid: false, reason: 'Failed to fetch block from Ergo API' };
+    console.error('Error fetching player history:', error);
+    return [];
   }
 }
 
 /**
- * Simple hash function (must match client-side shuffle.js)
+ * Main handler
  */
-function simpleHash(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(16);
-}
-
-/**
- * Generate seed (must match client-side shuffle.js)
- */
-function generateSeed(blockData, gameId) {
-  const { blockHash, txHash, timestamp, txIndex } = blockData;
-  const combined = `${blockHash}${txHash || ''}${timestamp || ''}${gameId}${txIndex || 0}`;
-
-  let seed = '';
-  for (let i = 0; i < 4; i++) {
-    seed += simpleHash(combined + i);
-  }
-  return seed;
-}
-
-/**
- * Validate score is plausible
- */
-function validateScore(game, score, timeSeconds, moves) {
-  // Basic sanity checks - timeSeconds optional for blackjack (uses session timer internally)
-  if (timeSeconds !== undefined && timeSeconds < 0) return { valid: false, reason: 'Invalid time' };
-
-  // Moves validation (optional for some games)
-  if (moves !== undefined && moves < 0) return { valid: false, reason: 'Invalid moves' };
-
-  if (game === 'solitaire') {
-    if (score < 0 || score > 52) return { valid: false, reason: 'Invalid card count' };
-    // Minimum moves to get X cards to foundation (rough estimate)
-    if (score > 0 && moves < score) return { valid: false, reason: 'Impossible move count' };
-  }
-
-  if (game === 'garbage') {
-    if (score < 0) return { valid: false, reason: 'Invalid score' };
-  }
-
-  if (game === 'yahtzee') {
-    // Yahtzee scores range from 0 to 375 (theoretical max with bonuses)
-    if (score < 0 || score > 375) return { valid: false, reason: 'Invalid Yahtzee score' };
-  }
-
-  if (game === 'blackjack') {
-    // Blackjack score is final chip balance (started with 1000)
-    // Theoretical max is very high with splits/doubles, min is 0 (busted out)
-    if (score < 0) return { valid: false, reason: 'Invalid chip balance' };
-    // Must have played at least 1 hand if submitting
-    if (moves !== undefined && moves < 1) return { valid: false, reason: 'Must play at least one hand' };
-  }
-
-  return { valid: true };
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // Never cache score submissions
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
   try {
     const {
@@ -126,11 +78,19 @@ export default async function handler(req, res) {
       blockTimestamp,
       txIndex,
       seed,
-      rollHistory,   // Yahtzee roll history
-      roundHistory   // Blackjack round history
+      // Game-specific history fields
+      rollHistory,      // Yahtzee
+      scorecard,        // Yahtzee
+      roundHistory,     // Blackjack
+      moveHistory,      // 2048, Backgammon
+      highestTile,      // 2048
+      winType,          // Backgammon
+      difficulty,       // Backgammon, Garbage
+      cubeValue,        // Backgammon
+      rounds            // Garbage
     } = req.body;
 
-    // Validate required fields - timeSeconds optional for blackjack
+    // Validate required fields
     if (!game || !gameId || score === undefined) {
       return res.status(400).json({
         error: 'Missing required fields',
@@ -138,63 +98,57 @@ export default async function handler(req, res) {
       });
     }
 
-    // Validate game type
-    if (!['solitaire', 'garbage', 'yahtzee', 'blackjack'].includes(game)) {
-      return res.status(400).json({ error: 'Invalid game type' });
-    }
+    // Prepare submission object for validation
+    const submission = {
+      game,
+      gameId,
+      playerName: playerName || 'Anonymous',
+      score,
+      timeSeconds,
+      moves,
+      blockHeight,
+      blockHash,
+      txHash,
+      blockTimestamp,
+      txIndex,
+      seed,
+      // Game-specific fields
+      rollHistory,
+      scorecard,
+      roundHistory,
+      moveHistory,
+      highestTile,
+      winType,
+      difficulty,
+      cubeValue,
+      rounds
+    };
 
-    // Validate gameId format
-    let gameIdPattern;
-    if (game === 'solitaire') gameIdPattern = /^SOL-\d+-\w+$/;
-    else if (game === 'garbage') gameIdPattern = /^GRB-\d+-\w+$/;
-    else if (game === 'yahtzee') gameIdPattern = /^YAH-\d+-\w+$/;
-    else if (game === 'blackjack') gameIdPattern = /^BJK-\d+-\w+$/;
+    // Fetch player history for fraud detection
+    const playerHistory = ENABLE_FRAUD_DETECTION
+      ? await getPlayerHistory(playerName)
+      : [];
 
-    if (!gameIdPattern.test(gameId)) {
-      return res.status(400).json({ error: 'Invalid game ID format' });
-    }
+    // COMPREHENSIVE VALIDATION
+    const validationOptions = {
+      skipBlockchain: !blockHash || !blockHeight, // Skip if no blockchain data
+      skipFraud: !ENABLE_FRAUD_DETECTION,
+      playerHistory
+    };
 
-    // Step 1: Verify block exists on blockchain
-    if (blockHash && blockHeight) {
-      const blockVerification = await verifyBlock(blockHash, blockHeight);
-      if (!blockVerification.valid) {
-        return res.status(400).json({ 
-          error: 'Block verification failed', 
-          reason: blockVerification.reason 
-        });
-      }
-    }
+    const validation = await validateGameSubmission(submission, validationOptions);
 
-    // Step 2: Validate score is plausible
-    const scoreValidation = validateScore(game, score, timeSeconds, moves);
-    if (!scoreValidation.valid) {
-      return res.status(400).json({ 
-        error: 'Score validation failed', 
-        reason: scoreValidation.reason 
+    // Check validation result
+    if (!validation.valid) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        reason: validation.reason,
+        validationResults: validation.validationResults,
+        riskScore: validation.riskScore
       });
     }
 
-    // Step 3: Verify seed can be regenerated (optional deep verification)
-    // This ensures the gameId + blockData combination is legitimate
-    if (blockHash && txHash && blockTimestamp) {
-      const blockData = { 
-        blockHash, 
-        txHash, 
-        timestamp: blockTimestamp, 
-        txIndex: txIndex || 0 
-      };
-      const regeneratedSeed = generateSeed(blockData, gameId);
-      // We can't fully verify the shuffle server-side without the full deck,
-      // but we've confirmed the block exists and inputs are valid
-      
-      // If client sent seed, verify it matches
-      if (seed && regeneratedSeed !== seed) {
-        console.warn(`Seed mismatch for ${gameId}: expected ${regeneratedSeed}, got ${seed}`);
-        // Don't reject - could be timing/format differences, just log it
-      }
-    }
-
-    // Step 4: Insert score
+    // Prepare database insert
     const insertData = {
       game,
       game_id: gameId,
@@ -209,7 +163,28 @@ export default async function handler(req, res) {
       created_at: new Date().toISOString()
     };
 
-    // Add tx_index and seed if provided (for enhanced verification)
+    // Add validation metadata (optional - requires schema update)
+    if (validation.validationResults) {
+      insertData.validation_passed = true;
+
+      // Add fraud risk score if available
+      if (validation.validationResults.fraudDetection) {
+        insertData.fraud_risk_score = validation.validationResults.fraudDetection.riskScore;
+        insertData.needs_review = validation.validationResults.needsReview || false;
+
+        // Store flags as JSON array
+        if (validation.validationResults.fraudDetection.flags.length > 0) {
+          insertData.validation_flags = validation.validationResults.fraudDetection.flags;
+        }
+      }
+
+      // Add calculated score if different from claimed
+      if (validation.calculatedScore !== undefined && validation.calculatedScore !== score) {
+        insertData.calculated_score = validation.calculatedScore;
+      }
+    }
+
+    // Add transaction index and seed if provided
     if (txIndex !== undefined) {
       insertData.tx_index = txIndex;
     }
@@ -217,16 +192,38 @@ export default async function handler(req, res) {
       insertData.seed = seed;
     }
 
-    // Add roll history for Yahtzee (enables leaderboard verification)
+    // Add game-specific history fields
     if (game === 'yahtzee' && rollHistory && Array.isArray(rollHistory)) {
       insertData.roll_history = rollHistory;
     }
 
-    // Add round history for Blackjack (enables leaderboard verification)
     if (game === 'blackjack' && roundHistory && Array.isArray(roundHistory)) {
       insertData.round_history = roundHistory;
     }
 
+    if (game === '2048') {
+      if (moveHistory) {
+        insertData.move_history = moveHistory;
+      }
+      if (highestTile) {
+        insertData.highest_tile = highestTile;
+      }
+    }
+
+    if ((game === 'backgammon' || game === 'garbage') && difficulty) {
+      insertData.difficulty = difficulty;
+    }
+
+    if (game === 'backgammon') {
+      if (winType) {
+        insertData.win_type = winType;
+      }
+      if (cubeValue) {
+        insertData.cube_value = cubeValue;
+      }
+    }
+
+    // Insert to database
     const { data, error } = await supabase
       .from('LeaderBoard')
       .insert(insertData)
@@ -235,41 +232,55 @@ export default async function handler(req, res) {
 
     if (error) {
       if (error.code === '23505') {
-        return res.status(409).json({ error: 'Score already submitted for this game' });
+        return res.status(409).json({
+          error: 'Score already submitted for this game',
+          duplicate: true
+        });
       }
+
+      // Log the error but don't expose details to client
+      console.error('Database insert error:', error);
       throw error;
     }
 
-    // Get rank - for blackjack, higher score (chip balance) is better
+    // Calculate rank
     let rankQuery = supabase
       .from('LeaderBoard')
       .select('*', { count: 'exact', head: true })
       .eq('game', game);
 
-    if (game === 'blackjack') {
-      // Higher chip balance = better rank
-      rankQuery = rankQuery.gt('score', score);
-    } else if (game === 'yahtzee') {
+    // Game-specific ranking logic
+    if (['blackjack', 'yahtzee', '2048', 'backgammon', 'garbage'].includes(game)) {
       // Higher score = better rank
       rankQuery = rankQuery.gt('score', score);
     } else {
-      // Solitaire/Garbage: higher cards + lower time = better
-      // This is simplified - you may want more complex ranking
+      // Solitaire: higher cards + lower time = better (simplified)
       rankQuery = rankQuery.gt('score', score);
     }
 
     const { count } = await rankQuery;
     const rank = (count || 0) + 1;
 
+    // Success response
     return res.status(200).json({
       success: true,
       verified: true,
+      validationLevel: VALIDATION_LEVEL,
       rank,
-      entry: data
+      entry: data,
+      validation: {
+        passed: true,
+        riskScore: validation.riskScore || 0,
+        needsReview: validation.validationResults?.needsReview || false,
+        calculatedScore: validation.calculatedScore
+      }
     });
 
   } catch (error) {
     console.error('Submit score error:', error);
-    return res.status(500).json({ error: 'Failed to submit score' });
+    return res.status(500).json({
+      error: 'Failed to submit score',
+      message: error.message
+    });
   }
 }
