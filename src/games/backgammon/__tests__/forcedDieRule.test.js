@@ -210,14 +210,15 @@ describe('Doubles - Must Use All 4 When Possible', () => {
 
   test('use as many as possible when cannot use all 4', () => {
     const state = createEmptyState();
-    placeChecker(state, 2, 'white', 1);   // Point 3
-    placeChecker(state, 0, 'black', 2);   // Block point 1 (bearing off)
+    placeChecker(state, 7, 'white', 1);   // Point 8
+    // After 3 moves: 8→6→4→2, then point 0 is blocked
+    placeChecker(state, 0, 'black', 2);   // Block point 1 (4th move destination)
     setDice(state, [2, 2, 2, 2]);  // Doubles
 
     const moves = getAllLegalMoves(state);
 
-    // Can move 3→1, but then blocked
-    // Should be able to use die 2
+    // Can move 8→6→4→2, but 4th move (2→0) is blocked
+    // Should return moves that allow using 3 dice (maximum possible)
     expect(moves.some(m => m.dieValue === 2)).toBe(true);
   });
 });

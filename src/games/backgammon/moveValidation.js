@@ -389,36 +389,117 @@ export function getLegalMovesFrom(state, from) {
  */
 function applyForcedDieRule(state, moves) {
   if (moves.length === 0) return moves;
-  
+
   const availableDice = getAvailableDice(state.dice, state.diceUsed);
-  
-  // If only one die left or doubles, no filtering needed
+
+  // If only one die left, no filtering needed
   if (availableDice.length <= 1) return moves;
-  
+
   // Check if it's doubles (all same value)
   const isDoubles = availableDice.every(d => d === availableDice[0]);
-  if (isDoubles) return moves;
-  
+
+  if (isDoubles) {
+    // For doubles, must use as many dice as possible
+    // Filter moves to only those that allow maximum dice usage
+    return filterMovesForMaximumDiceUsage(state, moves, availableDice.length);
+  }
+
   // We have two different dice - check if both can be used
   const canUseBoth = checkCanUseBothDice(state, moves);
-  
+
   if (canUseBoth) {
-    // Player must use both dice - all moves are valid since they all lead to using both
-    return moves;
+    // Player must use both dice - filter to only moves that lead to using both
+    return filterMovesForBothDice(state, moves);
   }
-  
+
   // Can only use one die - must use the larger one
   const largerDie = Math.max(...availableDice);
   const smallerDie = Math.min(...availableDice);
-  
+
   // Check if larger die can be used
   const movesWithLarger = moves.filter(m => m.dieValue === largerDie);
   if (movesWithLarger.length > 0) {
     return movesWithLarger;
   }
-  
+
   // Larger die can't be used, use smaller
   return moves.filter(m => m.dieValue === smallerDie);
+}
+
+/**
+ * Filter moves to only those that allow using maximum number of dice
+ * Used for doubles - returns moves that lead to using 4, 3, 2, or 1 dice
+ * @param {object} state - Game state
+ * @param {Array} moves - Available first moves
+ * @param {number} totalDice - Total number of dice available (2 or 4 for doubles)
+ * @returns {Array} Filtered moves
+ */
+function filterMovesForMaximumDiceUsage(state, moves, totalDice) {
+  if (moves.length === 0) return moves;
+
+  // For each first move, count how many total dice can be used
+  const movesWithCount = moves.map(move => {
+    const count = countMaxDiceUsable(state, move, totalDice);
+    return { move, count };
+  });
+
+  // Find the maximum number of dice that can be used
+  const maxCount = Math.max(...movesWithCount.map(mc => mc.count));
+
+  // Return only moves that allow using the maximum number
+  return movesWithCount
+    .filter(mc => mc.count === maxCount)
+    .map(mc => mc.move);
+}
+
+/**
+ * Count maximum number of dice that can be used starting with a given move
+ * @param {object} state - Game state
+ * @param {object} firstMove - The first move to make
+ * @param {number} totalDice - Total available dice
+ * @returns {number} Max dice usable
+ */
+function countMaxDiceUsable(state, firstMove, totalDice) {
+  let count = 1; // We're using one die for the first move
+  let currentState = applyMove(state, firstMove);
+
+  // Try to use remaining dice
+  for (let i = 1; i < totalDice; i++) {
+    const nextMoves = getAllLegalMovesForState(currentState);
+    if (nextMoves.length === 0) break;
+
+    // Use the first available move (any move will do for counting)
+    currentState = applyMove(currentState, nextMoves[0]);
+    count++;
+  }
+
+  return count;
+}
+
+/**
+ * Filter moves to only those that allow using both dice
+ * Used when both dice CAN be used - filters to moves that actually lead to using both
+ * @param {object} state - Game state
+ * @param {Array} moves - Available first moves
+ * @returns {Array} Filtered moves
+ */
+function filterMovesForBothDice(state, moves) {
+  if (moves.length === 0) return moves;
+
+  const availableDice = getAvailableDice(state.dice, state.diceUsed);
+  const uniqueDice = [...new Set(availableDice)];
+
+  // Filter to moves that allow using the other die value afterward
+  return moves.filter(move => {
+    const stateAfterMove = applyMove(state, move);
+    const remainingMoves = getAllLegalMovesForState(stateAfterMove);
+
+    // Check if we can use a different die value
+    const usedDie = move.dieValue;
+    const otherDie = uniqueDice.find(d => d !== usedDie);
+
+    return remainingMoves.some(m => m.dieValue === otherDie);
+  });
 }
 
 /**
