@@ -24,6 +24,9 @@ import Game2048 from './games/2048/Game2048';
 import Verification2048 from './games/2048/VerificationPage';
 import Tutorial2048 from './games/2048/Tutorial';
 
+// Admin import
+import AdminPage from './pages/Admin';
+
 // 404 Not Found Component
 function NotFound() {
   return (
@@ -160,6 +163,8 @@ function App() {
             <Route path="/2048/tutorial" element={<Tutorial2048 />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
+            {/* Admin route */}
+            <Route path="/admin" element={<AdminPage />} />
             {/* 404 catch-all route - must be last */}
             <Route path="*" element={<NotFound />} />
           </Routes>

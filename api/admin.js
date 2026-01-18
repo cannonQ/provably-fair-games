@@ -284,9 +284,43 @@ async function getValidationStats(req, res) {
 }
 
 /**
+ * Authenticate admin request
+ */
+function authenticateAdmin(req) {
+  const authHeader = req.headers.authorization;
+  const expectedPassword = 'CQgames';
+
+  // Check for Authorization header
+  if (!authHeader) {
+    return { authenticated: false, error: 'Missing Authorization header' };
+  }
+
+  // Extract token from "Bearer <token>" format
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.substring(7)
+    : authHeader;
+
+  // Validate password
+  if (token !== expectedPassword) {
+    return { authenticated: false, error: 'Invalid credentials' };
+  }
+
+  return { authenticated: true };
+}
+
+/**
  * Main handler - routes to appropriate function
  */
 export default async function handler(req, res) {
+  // Authenticate all admin requests
+  const auth = authenticateAdmin(req);
+  if (!auth.authenticated) {
+    return res.status(401).json({
+      error: 'Unauthorized',
+      message: auth.error
+    });
+  }
+
   const { action } = req.query;
 
   // Route based on action parameter

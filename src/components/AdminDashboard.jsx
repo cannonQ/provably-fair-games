@@ -13,12 +13,18 @@
 
 import React, { useState, useEffect } from 'react';
 
-const AdminDashboard = () => {
+const AdminDashboard = ({ adminPassword }) => {
   const [flaggedSubmissions, setFlaggedSubmissions] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({ game: 'all', minRisk: 50 });
   const [selectedSubmission, setSelectedSubmission] = useState(null);
+
+  // Helper to create auth headers
+  const getAuthHeaders = () => ({
+    'Authorization': `Bearer ${adminPassword}`,
+    'Content-Type': 'application/json'
+  });
 
   // Fetch flagged submissions
   const fetchFlaggedSubmissions = async () => {
@@ -33,7 +39,9 @@ const AdminDashboard = () => {
         params.append('game', filter.game);
       }
 
-      const response = await fetch(`/api/admin?${params}`);
+      const response = await fetch(`/api/admin?${params}`, {
+        headers: getAuthHeaders()
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -47,7 +55,9 @@ const AdminDashboard = () => {
   // Fetch validation stats
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin?action=validation-stats&days=7');
+      const response = await fetch('/api/admin?action=validation-stats&days=7', {
+        headers: getAuthHeaders()
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -74,7 +84,7 @@ const AdminDashboard = () => {
     try {
       const response = await fetch('/api/admin?action=review-submission', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ id, action, notes })
       });
 
