@@ -2,7 +2,7 @@
  * Admin Page with Password Protection
  *
  * Access at: /admin
- * Password: CQgames
+ * Password: Set via ADMIN_PASSWORD environment variable
  *
  * Shows admin dashboard for reviewing flagged submissions
  */
@@ -10,8 +10,10 @@
 import React, { useState, useEffect } from 'react';
 import AdminDashboard from '../components/AdminDashboard';
 
-const ADMIN_PASSWORD = 'CQgames';
+// SECURITY: Password validation now happens on backend via API
+// Frontend stores only a session token after successful authentication
 const SESSION_KEY = 'admin_authenticated';
+const SESSION_TOKEN_KEY = 'admin_token';
 
 const AdminPage = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -20,27 +22,44 @@ const AdminPage = () => {
 
   // Check if already authenticated from sessionStorage
   useEffect(() => {
-    const stored = sessionStorage.getItem(SESSION_KEY);
-    if (stored === ADMIN_PASSWORD) {
+    const isAuth = sessionStorage.getItem(SESSION_KEY) === 'true';
+    const token = sessionStorage.getItem(SESSION_TOKEN_KEY);
+    if (isAuth && token) {
       setIsAuthenticated(true);
     }
   }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError('');
 
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem(SESSION_KEY, password);
-      setIsAuthenticated(true);
-      setError('');
-    } else {
-      setError('Incorrect password');
+    try {
+      // Validate password via backend API call
+      const response = await fetch('/api/admin?action=validation-stats&days=1', {
+        headers: {
+          'Authorization': `Bearer ${password}`
+        }
+      });
+
+      if (response.ok) {
+        // Password is valid - store session
+        sessionStorage.setItem(SESSION_KEY, 'true');
+        sessionStorage.setItem(SESSION_TOKEN_KEY, password);
+        setIsAuthenticated(true);
+        setPassword('');
+      } else {
+        setError('Incorrect password');
+        setPassword('');
+      }
+    } catch (error) {
+      setError('Authentication failed. Please try again.');
       setPassword('');
     }
   };
 
   const handleLogout = () => {
     sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_TOKEN_KEY);
     setIsAuthenticated(false);
     setPassword('');
   };
@@ -77,6 +96,9 @@ const AdminPage = () => {
   }
 
   // Show admin dashboard if authenticated
+  // Get stored token for API calls
+  const adminToken = sessionStorage.getItem(SESSION_TOKEN_KEY);
+
   return (
     <div className="admin-page">
       <div style={styles.header}>
@@ -85,7 +107,7 @@ const AdminPage = () => {
           Logout
         </button>
       </div>
-      <AdminDashboard adminPassword={ADMIN_PASSWORD} />
+      <AdminDashboard adminPassword={adminToken} />
     </div>
   );
 };

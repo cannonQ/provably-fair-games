@@ -27,10 +27,26 @@ const getRankDisplay = (rank) => {
   return `#${rank}`;
 };
 
+const getTimeSince = (date) => {
+  const seconds = Math.floor((new Date() - date) / 1000);
+
+  if (seconds < 10) return 'just now';
+  if (seconds < 60) return `${seconds}s ago`;
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes === 1) return '1 min ago';
+  if (minutes < 60) return `${minutes} mins ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours === 1) return '1 hour ago';
+  return `${hours} hours ago`;
+};
+
 export default function Leaderboard({ game, currentGameId = null }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [cacheTime, setCacheTime] = useState(null);
 
   useEffect(() => {
     fetchLeaderboard();
@@ -46,6 +62,14 @@ export default function Leaderboard({ game, currentGameId = null }) {
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch');
+      }
+
+      // Capture cache time from response header
+      const cacheTimeHeader = response.headers.get('X-Cache-Time');
+      if (cacheTimeHeader) {
+        setCacheTime(new Date(cacheTimeHeader));
+      } else {
+        setCacheTime(new Date()); // Fallback to current time
       }
 
       setEntries(data.entries || []);
@@ -140,6 +164,16 @@ export default function Leaderboard({ game, currentGameId = null }) {
         <p style={styles.subtitle}>Ranked by: Score → Time → Moves</p>
       )}
 
+      {/* Cache Indicator */}
+      {cacheTime && (
+        <div style={styles.cacheIndicator}>
+          <span style={styles.cacheIcon}>⏱️</span>
+          <span style={styles.cacheText}>
+            Leaderboard refreshes every minute • Last updated: {getTimeSince(cacheTime)}
+          </span>
+        </div>
+      )}
+
       {entries.length === 0 ? (
         <div style={styles.empty}>No scores yet. Be the first!</div>
       ) : (
@@ -229,6 +263,23 @@ const styles = {
     margin: '0 0 15px 0',
     fontSize: '12px',
     color: '#888'
+  },
+  cacheIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '8px 12px',
+    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+    border: '1px solid rgba(74, 222, 128, 0.3)',
+    borderRadius: '6px',
+    marginBottom: '15px'
+  },
+  cacheIcon: {
+    fontSize: '14px'
+  },
+  cacheText: {
+    fontSize: '12px',
+    color: '#4ade80'
   },
   refreshBtn: {
     padding: '6px 12px',

@@ -374,16 +374,33 @@ const AdminDashboard = ({ adminPassword }) => {
           text-align: center;
           padding: 40px;
           font-size: 18px;
+          color: #ffffff;
         }
 
         h1 {
           margin-bottom: 30px;
-          color: #333;
+          color: #ffffff;
+          font-size: 32px;
+          font-weight: bold;
         }
 
         h2 {
           margin: 30px 0 15px 0;
-          color: #555;
+          color: #ffffff;
+          font-size: 24px;
+          font-weight: 600;
+        }
+
+        h3 {
+          color: #ffffff;
+          font-size: 18px;
+          font-weight: 600;
+          margin: 20px 0 10px 0;
+        }
+
+        /* h3 inside light backgrounds should be dark */
+        .stats-summary h3 {
+          color: #333;
         }
 
         .stats-summary {
@@ -443,6 +460,8 @@ const AdminDashboard = ({ adminPassword }) => {
         .bar .label {
           min-width: 120px;
           font-size: 14px;
+          color: #ffffff;
+          font-weight: 500;
         }
 
         .bar-fill {
@@ -496,6 +515,8 @@ const AdminDashboard = ({ adminPassword }) => {
           display: flex;
           flex-direction: column;
           gap: 5px;
+          color: #333;
+          font-weight: 500;
         }
 
         .filter-controls select {
