@@ -1,34 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 
-// Page imports
+// Core pages (loaded immediately)
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
 import LeaderboardPage from './pages/LeaderboardPage';
-import GarbageGame from './games/garbage/GarbageGame';
-import SolitaireGame from './games/solitaire/SolitaireGame';
-import SolitaireVerification from './games/solitaire/VerificationPage';
-import YahtzeeGame from './games/yahtzee/YahtzeeGame';
-import YahtzeeVerification from './games/yahtzee/VerificationPage';
-import YahtzeeRules from './games/yahtzee/RulesPage';
-import BlackjackGame from './games/blackjack/BlackjackGame';
-import BlackjackVerification from './games/blackjack/VerificationPage';
 
-// Backgammon imports
-import BackgammonGame from './games/backgammon/BackgammonGame';
-import BackgammonVerification from './games/backgammon/VerificationPage';
-import BackgammonTutorial from './games/backgammon/Tutorial';
-
-// 2048 imports
-import Game2048 from './games/2048/Game2048';
-import Verification2048 from './games/2048/VerificationPage';
-import Tutorial2048 from './games/2048/Tutorial';
-
-// Admin import
-import AdminPage from './pages/Admin';
-
-// Error Boundary import
+// Error Boundary and Loading (loaded immediately)
 import ErrorBoundary from './components/ErrorBoundary';
+import Loading from './components/Loading';
+
+// Lazy-loaded game components (loaded on demand)
+const GarbageGame = lazy(() => import('./games/garbage/GarbageGame'));
+const SolitaireGame = lazy(() => import('./games/solitaire/SolitaireGame'));
+const SolitaireVerification = lazy(() => import('./games/solitaire/VerificationPage'));
+const YahtzeeGame = lazy(() => import('./games/yahtzee/YahtzeeGame'));
+const YahtzeeVerification = lazy(() => import('./games/yahtzee/VerificationPage'));
+const YahtzeeRules = lazy(() => import('./games/yahtzee/RulesPage'));
+const BlackjackGame = lazy(() => import('./games/blackjack/BlackjackGame'));
+const BlackjackVerification = lazy(() => import('./games/blackjack/VerificationPage'));
+const BackgammonGame = lazy(() => import('./games/backgammon/BackgammonGame'));
+const BackgammonVerification = lazy(() => import('./games/backgammon/VerificationPage'));
+const BackgammonTutorial = lazy(() => import('./games/backgammon/Tutorial'));
+const Game2048 = lazy(() => import('./games/2048/Game2048'));
+const Verification2048 = lazy(() => import('./games/2048/VerificationPage'));
+const Tutorial2048 = lazy(() => import('./games/2048/Tutorial'));
+const AdminPage = lazy(() => import('./pages/Admin'));
 
 // 404 Not Found Component
 function NotFound() {
@@ -141,8 +138,9 @@ function App() {
         {/* Route definitions */}
         <main style={styles.main}>
           <ErrorBoundary>
-            <Routes>
-              <Route path="/" element={<Home />} />
+            <Suspense fallback={<Loading message="Loading game..." />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
             <Route path="/garbage" element={<GarbageGame />} />
             <Route path="/play" element={<GarbageGame />} />
             <Route path="/solitaire" element={<SolitaireGame />} />
@@ -169,9 +167,10 @@ function App() {
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             {/* Admin route */}
             <Route path="/admin" element={<AdminPage />} />
-              {/* 404 catch-all route - must be last */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                {/* 404 catch-all route - must be last */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </ErrorBoundary>
         </main>
 
