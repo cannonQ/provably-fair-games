@@ -19,7 +19,10 @@ ADD COLUMN IF NOT EXISTS validation_passed BOOLEAN DEFAULT true,
 ADD COLUMN IF NOT EXISTS fraud_risk_score INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS validation_flags JSONB DEFAULT '[]'::jsonb,
 ADD COLUMN IF NOT EXISTS needs_review BOOLEAN DEFAULT false,
-ADD COLUMN IF NOT EXISTS calculated_score INTEGER;
+ADD COLUMN IF NOT EXISTS calculated_score INTEGER,
+ADD COLUMN IF NOT EXISTS admin_reviewed_at TIMESTAMP,
+ADD COLUMN IF NOT EXISTS admin_notes TEXT,
+ADD COLUMN IF NOT EXISTS admin_action VARCHAR(20);
 
 -- Add indexes for querying flagged submissions
 CREATE INDEX IF NOT EXISTS idx_leaderboard_needs_review
@@ -36,6 +39,9 @@ COMMENT ON COLUMN "LeaderBoard".fraud_risk_score IS 'Fraud detection risk score 
 COMMENT ON COLUMN "LeaderBoard".validation_flags IS 'Array of validation warning flags';
 COMMENT ON COLUMN "LeaderBoard".needs_review IS 'Flagged for manual review';
 COMMENT ON COLUMN "LeaderBoard".calculated_score IS 'Server-calculated score (if different from claimed)';
+COMMENT ON COLUMN "LeaderBoard".admin_reviewed_at IS 'When admin reviewed this submission';
+COMMENT ON COLUMN "LeaderBoard".admin_notes IS 'Admin notes about review decision';
+COMMENT ON COLUMN "LeaderBoard".admin_action IS 'Admin action taken (approved/rejected)';
 ```
 
 ### 2. Create Admin View for Flagged Submissions (Optional)
