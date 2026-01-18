@@ -1,5 +1,80 @@
 # Security Policy
 
+## 🚨 Critical Security Update (2026-01-18)
+
+**IMMEDIATE ACTION REQUIRED** if deploying from this commit forward:
+
+### What Changed
+Fixed 4 critical security vulnerabilities discovered in comprehensive security audit:
+
+1. **Exposed Supabase Credentials** (CRITICAL)
+   - Previously hardcoded in `api/submit-score.js` and `api/leaderboard.js`
+   - Now requires environment variables (fails fast if not set)
+   - **ACTION**: Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel
+
+2. **Hardcoded Admin Password** (CRITICAL)
+   - Previously `'CQgames'` hardcoded in source code
+   - Now requires `ADMIN_PASSWORD` environment variable
+   - **ACTION**: Set strong random password in Vercel environment variables
+
+3. **Wildcard CORS Configuration** (CRITICAL)
+   - Changed from `Access-Control-Allow-Origin: *` to domain-specific
+   - Now restricted to `https://provably-fair-games.vercel.app`
+   - **ACTION**: Update `vercel.json` line 39 to match your production domain
+
+4. **Unenforced Rate Limiting** (CRITICAL)
+   - Rate limiting flag existed but was never checked
+   - Now properly enforced (10 submissions per minute per player)
+   - **ACTION**: None - automatically enabled when `ENABLE_RATE_LIMITING=true`
+
+### Exposed Credentials (MUST ROTATE)
+
+⚠️ **The following credentials were EXPOSED in git history and must be rotated:**
+
+```
+Supabase URL: https://rmutcncnppyzirywzozc.supabase.co
+Supabase Anon Key: sb_publishable_K-KApBISA6IiiNE9CCnjNA_3qhuNg8k
+Admin Password: CQgames
+```
+
+**Required Actions:**
+1. ✅ Rotate Supabase keys in Supabase Dashboard > Project Settings > API
+2. ✅ Set new `ADMIN_PASSWORD` in Vercel (never use "CQgames" again)
+3. ✅ Update all environment variables in Vercel Dashboard
+4. ✅ Redeploy after setting environment variables
+5. ✅ See `.env.example` for complete environment variable documentation
+
+### Environment Variables Setup
+
+See `.env.example` file for complete documentation. Required variables:
+
+```bash
+# Database (REQUIRED)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_KEY=your-service-key
+
+# Admin Authentication (REQUIRED)
+ADMIN_PASSWORD=your-strong-random-password
+
+# Ergo Blockchain for Cron (REQUIRED)
+ERGO_SERVER_MNEMONIC=your mnemonic
+ERGO_SERVER_ADDRESS=your address
+CRON_SECRET=your-secret
+
+# Security Flags (OPTIONAL - defaults shown)
+ENABLE_RATE_LIMITING=true
+ENABLE_FRAUD_DETECTION=true
+VALIDATION_LEVEL=full
+```
+
+**Setup Instructions:**
+1. Copy `.env.example` to `.env.local` for local development
+2. Set all variables in Vercel Dashboard > Settings > Environment Variables
+3. Redeploy after adding variables
+
+---
+
 ## Supported Security Features
 
 ### 🔐 Authentication & Authorization
@@ -87,14 +162,17 @@ Permissions-Policy: camera=(), microphone=(), geolocation=()
 
 ### 🌐 CORS Policy
 
-**API Endpoints:** Public access allowed
+**API Endpoints:** Domain-restricted for security
 ```
-Access-Control-Allow-Origin: *
+Access-Control-Allow-Origin: https://provably-fair-games.vercel.app
 Access-Control-Allow-Methods: GET, POST, OPTIONS
 Access-Control-Allow-Headers: Content-Type, Authorization
 ```
 
-**Why Public:**
+**Security Notice:**
+- Changed from wildcard (`*`) to specific domain for security
+- Prevents CSRF attacks and unauthorized cross-origin requests
+- Update `vercel.json` line 39 to match your production domain
 - Leaderboard is read-only public data
 - Score submission requires blockchain proof (not forgeable)
 - Admin endpoints protected by authentication
@@ -240,45 +318,55 @@ We only support the latest version. Please update to main branch for security fi
 ## Known Limitations
 
 **Current Security Gaps:**
-1. **Admin Password Hardcoded**
-   - Password is in source code, not environment variable
-   - Rotating password requires code change and redeploy
-   - Mitigation: Consider moving to environment variable
-
-2. **No Password Hashing**
-   - Admin password compared as plaintext
+1. **No Password Hashing**
+   - Admin password compared as plaintext (constant-time comparison recommended)
    - Not a major issue for single-admin system
-   - Mitigation: Use strong unique password
+   - Mitigation: Use strong unique password, bcrypt hashing recommended for future
 
-3. **Session Storage Only**
+2. **Session Storage Only**
    - Admin session clears on tab close
    - Can be annoying for long admin sessions
    - Mitigation: Consider localStorage with expiration
 
-4. **In-Memory Rate Limiting**
-   - Rate limits reset on server restart
+3. **In-Memory Rate Limiting**
+   - Rate limits reset on server restart (~15 min on Vercel)
    - Doesn't persist across multiple instances
-   - Mitigation: Consider Redis for distributed rate limiting
+   - Mitigation: Consider Redis for distributed rate limiting in high-traffic scenarios
 
-5. **No Email Verification**
+4. **No Email Verification**
    - Player names not verified
    - Name collisions possible
    - Mitigation: Leaderboard shows all matching names
 
+**Recently Fixed (2026-01-18):**
+- ✅ Admin password now in environment variable (not hardcoded)
+- ✅ Supabase credentials no longer hardcoded (fail-fast validation)
+- ✅ CORS changed from wildcard to domain-specific
+- ✅ Rate limiting now actually enforced (was configured but not used)
+
 ## Security Roadmap
+
+**Completed Enhancements:**
+
+1. ✅ **Admin Authentication** (Completed - Week 7)
+2. ✅ **Security Headers** (Completed - Week 7)
+3. ✅ **Rate Limiting** (Completed - Week 7)
+4. ✅ **Comprehensive Validation** (Completed - Week 6)
+5. ✅ **Admin Password in Environment Variable** (Completed - 2026-01-18)
+6. ✅ **Credential Security Hardening** (Completed - 2026-01-18)
+7. ✅ **CORS Security Restriction** (Completed - 2026-01-18)
+8. ✅ **Rate Limiting Enforcement** (Completed - 2026-01-18)
 
 **Future Enhancements (Priority Order):**
 
-1. ✅ **Admin Authentication** (Completed)
-2. ✅ **Security Headers** (Completed)
-3. ✅ **Rate Limiting** (Completed)
-4. ✅ **Comprehensive Validation** (Completed)
-5. 🔄 **Admin Password in Environment Variable** (Recommended)
-6. 🔄 **Persistent Rate Limiting** (Redis integration)
-7. 🔄 **Audit Logging** (Track all admin actions)
-8. 🔄 **Two-Factor Authentication** (For admin access)
-9. 🔄 **IP-Based Rate Limiting** (More granular control)
-10. 🔄 **Automated Security Scanning** (CI/CD integration)
+1. 🔄 **Password Hashing with bcrypt** (High priority - prevents credential exposure)
+2. 🔄 **Persistent Rate Limiting** (Redis integration for distributed systems)
+3. 🔄 **Audit Logging** (Track all admin actions with timestamps)
+4. 🔄 **Two-Factor Authentication** (For admin access)
+5. 🔄 **IP-Based Rate Limiting** (More granular control)
+6. 🔄 **Content Security Policy Header** (Additional XSS protection)
+7. 🔄 **Automated Security Scanning** (CI/CD integration)
+8. 🔄 **Automated Credential Rotation** (Periodic password rotation)
 
 ## Contact
 

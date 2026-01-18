@@ -15,6 +15,13 @@
 import { createClient } from '@supabase/supabase-js';
 import { validateGameSubmission, ValidationLevel } from '../lib/validation/index.js';
 import { withLogging } from '../lib/api-logger.js';
+import { checkRateLimit } from '../lib/validation/shared/fraudDetection.js';
+
+// SECURITY: Credentials must be set in environment variables
+// Never use fallback values for credentials - fail fast if not configured
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  throw new Error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY');
+}
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -97,6 +104,19 @@ async function handler(req, res) {
         error: 'Missing required fields',
         required: ['game', 'gameId', 'score']
       });
+    }
+
+    // RATE LIMITING: Check if player is submitting too frequently
+    if (ENABLE_RATE_LIMITING) {
+      const rateCheck = checkRateLimit(playerName || 'Anonymous', 10, 60000); // 10 submissions per minute
+      if (!rateCheck.allowed) {
+        return res.status(429).json({
+          error: 'Rate limit exceeded',
+          reason: rateCheck.reason,
+          waitTime: rateCheck.waitTime,
+          retryAfter: rateCheck.waitTime
+        });
+      }
     }
 
     // Prepare submission object for validation

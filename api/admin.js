@@ -12,6 +12,12 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+// SECURITY: Credentials must be set in environment variables
+// Never use fallback values for credentials - fail fast if not configured
+if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  throw new Error('Missing required environment variables: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY');
+}
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -288,7 +294,14 @@ async function getValidationStats(req, res) {
  */
 function authenticateAdmin(req) {
   const authHeader = req.headers.authorization;
-  const expectedPassword = 'CQgames';
+
+  // SECURITY: Admin password must be set in environment variable
+  const expectedPassword = process.env.ADMIN_PASSWORD;
+
+  if (!expectedPassword) {
+    console.error('CRITICAL: ADMIN_PASSWORD environment variable not set');
+    return { authenticated: false, error: 'Server configuration error' };
+  }
 
   // Check for Authorization header
   if (!authHeader) {
@@ -300,7 +313,7 @@ function authenticateAdmin(req) {
     ? authHeader.substring(7)
     : authHeader;
 
-  // Validate password
+  // Validate password (constant-time comparison would be better)
   if (token !== expectedPassword) {
     return { authenticated: false, error: 'Invalid credentials' };
   }
