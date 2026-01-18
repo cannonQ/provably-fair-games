@@ -8,19 +8,22 @@ Now that you've added the Supabase validation columns, you have access to a comp
 
 ## What's Included
 
-### 1. Admin API Endpoints (3 new endpoints)
+### 1. Consolidated Admin API Endpoint
 
-#### GET `/api/admin/flagged-submissions`
+**Note**: To avoid Vercel's 12 serverless function limit on the Hobby plan, all admin functionality is consolidated into a single endpoint with an `action` parameter.
+
+#### GET `/api/admin?action=flagged-submissions`
 - Retrieves submissions flagged for manual review
 - Sorted by risk score (highest first)
 - Supports filtering by game and minimum risk score
 
 **Query Parameters**:
 ```
-?limit=50              # Results per page (default: 50)
-&offset=0              # Pagination offset (default: 0)
-&game=yahtzee          # Filter by game (optional)
-&minRisk=50            # Minimum risk score (default: 50)
+?action=flagged-submissions  # Required: action type
+&limit=50                    # Results per page (default: 50)
+&offset=0                    # Pagination offset (default: 0)
+&game=yahtzee                # Filter by game (optional)
+&minRisk=50                  # Minimum risk score (default: 50)
 ```
 
 **Response**:
@@ -53,7 +56,7 @@ Now that you've added the Supabase validation columns, you have access to a comp
 }
 ```
 
-#### POST `/api/admin/review-submission`
+#### POST `/api/admin?action=review-submission`
 - Approve or reject a flagged submission
 - Adds admin review metadata
 
@@ -79,13 +82,14 @@ Now that you've added the Supabase validation columns, you have access to a comp
 - **Approve**: Clears `needs_review` flag, adds review timestamp/notes
 - **Reject**: Deletes submission from leaderboard
 
-#### GET `/api/admin/validation-stats`
+#### GET `/api/admin?action=validation-stats`
 - Get validation and fraud detection statistics
 
 **Query Parameters**:
 ```
-?days=7                # Timeframe in days (default: 7)
-&game=yahtzee          # Filter by game (optional)
+?action=validation-stats  # Required: action type
+&days=7                   # Timeframe in days (default: 7)
+&game=yahtzee             # Filter by game (optional)
 ```
 
 **Response**:
@@ -546,9 +550,9 @@ You now have:
 
 ### API Endpoints
 ```
-GET  /api/admin/flagged-submissions?game=yahtzee&minRisk=50
-POST /api/admin/review-submission
-GET  /api/admin/validation-stats?days=7
+GET  /api/admin?action=flagged-submissions&game=yahtzee&minRisk=50
+POST /api/admin?action=review-submission
+GET  /api/admin?action=validation-stats&days=7
 ```
 
 ### Risk Levels

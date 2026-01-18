@@ -24,6 +24,7 @@ const AdminDashboard = () => {
   const fetchFlaggedSubmissions = async () => {
     try {
       const params = new URLSearchParams({
+        action: 'flagged-submissions',
         limit: 50,
         minRisk: filter.minRisk
       });
@@ -32,7 +33,7 @@ const AdminDashboard = () => {
         params.append('game', filter.game);
       }
 
-      const response = await fetch(`/api/admin/flagged-submissions?${params}`);
+      const response = await fetch(`/api/admin?${params}`);
       const data = await response.json();
 
       if (data.success) {
@@ -46,7 +47,7 @@ const AdminDashboard = () => {
   // Fetch validation stats
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin/validation-stats?days=7');
+      const response = await fetch('/api/admin?action=validation-stats&days=7');
       const data = await response.json();
 
       if (data.success) {
@@ -71,7 +72,7 @@ const AdminDashboard = () => {
   // Review submission (approve or reject)
   const reviewSubmission = async (id, action, notes = '') => {
     try {
-      const response = await fetch('/api/admin/review-submission', {
+      const response = await fetch('/api/admin?action=review-submission', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, action, notes })
