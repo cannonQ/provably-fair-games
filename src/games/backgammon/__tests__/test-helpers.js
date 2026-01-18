@@ -20,7 +20,8 @@ export function createEmptyState() {
     currentPlayer: 'white',
     dice: [3, 5],
     diceUsed: [false, false],
-    phase: 'moving'
+    phase: 'moving',
+    moveHistory: []
   };
 }
 
