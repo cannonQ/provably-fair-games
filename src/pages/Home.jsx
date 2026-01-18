@@ -36,6 +36,11 @@ function Home() {
               <span>👤 Solo</span>
               <span>~10 min</span>
             </div>
+            <ul style={styles.gameFeatures}>
+              <li>Provably fair shuffle</li>
+              <li>Undo moves available</li>
+              <li>Track completion time</li>
+            </ul>
             <div style={styles.playBadge}>Play Now →</div>
           </Link>
 
@@ -69,6 +74,11 @@ function Home() {
               <span>👤 Solo</span>
               <span>~10 min</span>
             </div>
+            <ul style={styles.gameFeatures}>
+              <li>Blockchain-verified dice</li>
+              <li>All 13 categories</li>
+              <li>Upper section bonus</li>
+            </ul>
             <div style={styles.playBadge}>Play Now →</div>
           </Link>
 
@@ -83,7 +93,49 @@ function Home() {
               <span>👤 vs 🤖</span>
               <span>~5 min</span>
             </div>
+            <ul style={styles.gameFeatures}>
+              <li>3 difficulty levels</li>
+              <li>Jacks are wild cards</li>
+              <li>Provably fair shuffle</li>
+            </ul>
             <div style={styles.playBadge}>Play Now →</div>
+          </Link>
+
+          {/* 2048 Card */}
+          <Link to="/2048" style={styles.gameCard}>
+            <div style={styles.gameIcon}>🔢</div>
+            <h3 style={styles.gameTitle}>2048</h3>
+            <p style={styles.gameDesc}>
+              Slide tiles to combine matching numbers. Reach 2048 with blockchain-verified tile spawns!
+            </p>
+            <div style={styles.gameStats}>
+              <span>👤 Solo</span>
+              <span>~5 min</span>
+            </div>
+            <ul style={styles.gameFeatures}>
+              <li>Blockchain-verified spawns</li>
+              <li>Each tile position verifiable</li>
+            </ul>
+            <div style={styles.playBadge}>Play 2048 →</div>
+          </Link>
+
+          {/* Backgammon Card */}
+          <Link to="/backgammon" style={styles.gameCard}>
+            <div style={styles.gameIcon}>🎲</div>
+            <h3 style={styles.gameTitle}>Backgammon</h3>
+            <p style={styles.gameDesc}>
+              Classic backgammon against AI with blockchain-verified dice rolls. Features doubling cube!
+            </p>
+            <div style={styles.gameStats}>
+              <span>👤 vs 🤖</span>
+              <span>~15 min</span>
+            </div>
+            <ul style={styles.gameFeatures}>
+              <li>Provably fair dice</li>
+              <li>3 difficulty levels</li>
+              <li>Doubling cube</li>
+            </ul>
+            <div style={styles.playBadge}>Play Backgammon →</div>
           </Link>
 
           {/* Coming Soon Card */}
