@@ -35,10 +35,10 @@ export default function StockPile({
   const isWasteSelected = selectedCards?.source?.type === 'waste';
   const visibleWaste = waste.slice(-3);
 
-  // Responsive sizing for landscape mode
-  const isLandscape = typeof window !== 'undefined' && window.innerHeight < window.innerWidth;
-  const cardWidth = isLandscape ? 'clamp(45px, 7vmin, 60px)' : '60px';
-  const cardHeight = isLandscape ? 'clamp(63px, 10vmin, 84px)' : '84px';
+  // Responsive sizing - larger for desktop, smaller for mobile
+  const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 768;
+  const cardWidth = isSmallScreen ? 'clamp(45px, 7vmin, 60px)' : '75px';
+  const cardHeight = isSmallScreen ? 'clamp(63px, 10vmin, 84px)' : '105px';
 
   return (
     <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
@@ -104,7 +104,7 @@ export default function StockPile({
               onClick={isTopCard ? onWasteCardClick : undefined}
               style={{
                 position: 'absolute',
-                left: `calc(${i} * ${isLandscape ? '0.2 * ' + cardWidth : '12px'})`,
+                left: `calc(${i} * ${isSmallScreen ? '0.2 * ' + cardWidth : '15px'})`,
                 width: cardWidth,
                 height: cardHeight,
                 backgroundColor: '#fff',
