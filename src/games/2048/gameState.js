@@ -66,6 +66,7 @@ export const initialState = {
   moveHistory: [],       // Array of move directions ['up', 'left', ...]
   spawnHistory: [],      // Array of spawn records for verification
   spawnIndex: 0,         // Current spawn index for anchor/fanning
+  startTime: null,       // Timestamp when game started (for elapsed time tracking)
   // Anchor block data - stored once at game start
   anchorBlock: {
     blockHeight: 0,
@@ -157,6 +158,7 @@ export const gameReducer = (state, action) => {
         moveHistory: [],
         spawnHistory,
         spawnIndex,
+        startTime: timestamp,
         anchorBlock: {
           blockHeight: blockData.blockHeight,
           blockHash: blockData.blockHash,
