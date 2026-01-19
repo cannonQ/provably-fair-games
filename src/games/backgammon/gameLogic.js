@@ -13,6 +13,7 @@ import CryptoJS from 'crypto-js';
 
 /**
  * Generate provably fair dice values from blockchain data
+ * Uses rejection sampling to eliminate modulo bias
  * @param {string} blockHash - Blockchain block hash
  * @param {string} gameId - Unique game identifier
  * @param {number} turnNumber - Current turn number for uniqueness
@@ -22,15 +23,32 @@ export function rollDiceValues(blockHash, gameId, turnNumber) {
   // Create deterministic seed from blockchain + game data
   const seedInput = `${blockHash}${gameId}${turnNumber}`;
   const hash = CryptoJS.SHA256(seedInput).toString(CryptoJS.enc.Hex);
-  
-  // Use first two bytes for dice values
-  const byte1 = parseInt(hash.substring(0, 2), 16);
-  const byte2 = parseInt(hash.substring(2, 4), 16);
-  
-  const die1 = (byte1 % 6) + 1;
-  const die2 = (byte2 % 6) + 1;
-  
-  return [die1, die2];
+
+  const dice = [];
+  let byteIndex = 0;
+
+  // Use rejection sampling to eliminate modulo bias
+  // Reject values >= 252 (252 = 42 * 6, evenly divisible)
+  while (dice.length < 2 && byteIndex < hash.length - 1) {
+    const byte = parseInt(hash.substring(byteIndex, byteIndex + 2), 16);
+    byteIndex += 2;
+
+    // Only accept values that don't introduce bias
+    if (byte < 252) {
+      dice.push((byte % 6) + 1);
+    }
+  }
+
+  // Fallback if we run out of bytes (extremely unlikely)
+  while (dice.length < 2) {
+    const extraHash = CryptoJS.SHA256(seedInput + dice.length).toString(CryptoJS.enc.Hex);
+    const byte = parseInt(extraHash.substring(0, 2), 16);
+    if (byte < 252) {
+      dice.push((byte % 6) + 1);
+    }
+  }
+
+  return [dice[0], dice[1]];
 }
 
 /**

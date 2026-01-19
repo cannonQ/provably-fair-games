@@ -1,6 +1,6 @@
 /**
  * Backgammon Game State Management
- * 
+ *
  * Board representation:
  * - Points 1-6: White home board (bearing off zone)
  * - Points 7-12: White outer board
@@ -9,21 +9,22 @@
  * - White moves from 24 → 1, Black moves from 1 → 24
  */
 
+import CryptoJS from 'crypto-js';
+import { getAllLegalMoves } from './moveValidation';
+
 // ============================================
 // HELPERS
 // ============================================
 
 /**
- * Generate unique game ID
+ * Generate unique game ID using blockchain hash for randomness
  * Format: BGM-{timestamp}-{random9chars}
  */
-export function generateGameId() {
+export function generateGameId(blockHash) {
   const timestamp = Date.now();
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-  let random = '';
-  for (let i = 0; i < 9; i++) {
-    random += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+  const seed = `${blockHash}-${timestamp}`;
+  const hash = CryptoJS.SHA256(seed).toString(CryptoJS.enc.Hex);
+  const random = hash.substring(0, 9);
   return `BGM-${timestamp}-${random}`;
 }
 
@@ -208,7 +209,7 @@ export function gameReducer(state, action) {
       const { aiDifficulty, blockchainData } = action.payload;
       return {
         ...initialState,
-        gameId: generateGameId(),
+        gameId: generateGameId(blockchainData.blockHash),
         points: createInitialBoard(),
         aiDifficulty: aiDifficulty || 'normal',
         blockchainData,
@@ -282,6 +283,16 @@ export function gameReducer(state, action) {
     
     case ActionTypes.MOVE_CHECKER: {
       const { from, to } = action.payload;
+
+      // Validate move is legal before applying
+      const legalMoves = getAllLegalMoves(state);
+      const isLegal = legalMoves.some(m => m.from === from && m.to === to);
+
+      if (!isLegal) {
+        console.error('Illegal move rejected:', { from, to, legalMoves });
+        return state; // Don't apply illegal moves
+      }
+
       const newPoints = state.points.map(p => ({ ...p }));
       const newBar = { ...state.bar };
       const newBearOff = { ...state.bearOff };
