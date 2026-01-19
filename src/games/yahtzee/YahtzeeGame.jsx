@@ -101,21 +101,25 @@ function YahtzeeGame() {
    */
   const handleRoll = useCallback(async () => {
     if (rollsRemaining <= 0 || isLoading || !anchor) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const rollNumber = 4 - rollsRemaining; // 1, 2, or 3
-      
+
       // Get roll source via block traversal
+      // Note: getSourceForRoll mutates traceState internally
       const rollSource = await getSourceForRoll(
         anchor,
         traceState,
         currentTurn,
         rollNumber
       );
-      
+
+      // Update React state with mutated traceState (create new object to trigger re-render)
+      setTraceState({ ...traceState });
+
       // Roll the dice using blockchain seed
       const result = rollDice(
         dice,
@@ -124,7 +128,7 @@ function YahtzeeGame() {
         currentTurn,
         rollNumber
       );
-      
+
       // Record roll in history for verification
       const historyEntry = {
         turn: currentTurn,
@@ -141,11 +145,11 @@ function YahtzeeGame() {
         seed: result.seed,
         diceValues: getDiceValues(result.dice)
       };
-      
+
       setRollHistory(prev => [...prev, historyEntry]);
       setDice(result.dice);
       setRollsRemaining(prev => prev - 1);
-      
+
     } catch (err) {
       console.error('Roll failed:', err);
       setError('Failed to fetch blockchain data. Please try again.');

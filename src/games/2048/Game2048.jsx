@@ -199,12 +199,16 @@ const Game2048 = () => {
 
     setIsSubmitting(true);
     try {
+      // Calculate elapsed time in seconds
+      const elapsedMs = Date.now() - (state.startTime || Date.now());
+      const elapsedSeconds = Math.floor(elapsedMs / 1000);
+
       const result = await submitScore({
         game: '2048',
         gameId: state.gameId,
         playerName: playerName.trim() || 'Anonymous',
         score: state.score,
-        timeSeconds: 0,
+        timeSeconds: elapsedSeconds,
         moves: state.moveHistory.length,
         blockHeight: state.anchorBlock.blockHeight,
         blockHash: state.anchorBlock.blockHash,
