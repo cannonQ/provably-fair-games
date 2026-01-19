@@ -35,14 +35,19 @@ export default function StockPile({
   const isWasteSelected = selectedCards?.source?.type === 'waste';
   const visibleWaste = waste.slice(-3);
 
+  // Responsive sizing for landscape mode
+  const isLandscape = typeof window !== 'undefined' && window.innerHeight < window.innerWidth;
+  const cardWidth = isLandscape ? 'clamp(45px, 7vmin, 60px)' : '60px';
+  const cardHeight = isLandscape ? 'clamp(63px, 10vmin, 84px)' : '84px';
+
   return (
     <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start' }}>
       {/* Stock Pile */}
       <div
         onClick={handleStockClick}
         style={{
-          width: '60px',
-          height: '84px',
+          width: cardWidth,
+          height: cardHeight,
           borderRadius: '5px',
           cursor: stock.length > 0 || waste.length > 0 ? 'pointer' : 'default',
           display: 'flex',
@@ -88,7 +93,7 @@ export default function StockPile({
       </div>
 
       {/* Waste Pile */}
-      <div style={{ position: 'relative', width: '90px', height: '84px' }}>
+      <div style={{ position: 'relative', width: 'calc(1.5 * ' + cardWidth + ')', height: cardHeight }}>
         {visibleWaste.map((card, i) => {
           const isTopCard = i === visibleWaste.length - 1;
           const isSelected = isTopCard && isWasteSelected;
@@ -99,9 +104,9 @@ export default function StockPile({
               onClick={isTopCard ? onWasteCardClick : undefined}
               style={{
                 position: 'absolute',
-                left: `${i * 12}px`,
-                width: '60px',
-                height: '84px',
+                left: `calc(${i} * ${isLandscape ? '0.2 * ' + cardWidth : '12px'})`,
+                width: cardWidth,
+                height: cardHeight,
                 backgroundColor: '#fff',
                 borderRadius: '5px',
                 border: '1px solid #ccc',

@@ -35,17 +35,21 @@ const getColors = (value) => {
 };
 
 /**
- * Get font size based on value length
+ * Get font size based on value length (responsive for mobile)
+ * Uses clamp() to scale between min and max sizes based on viewport
  * @param {number} value - Tile value
  * @returns {string} Font size
  */
 const getFontSize = (value) => {
   if (value === 0) return '0px';
   const digits = value.toString().length;
-  if (digits <= 2) return '2rem';
-  if (digits === 3) return '1.75rem';
-  if (digits === 4) return '1.4rem';
-  return '1.1rem';
+
+  // Use clamp() for responsive scaling: clamp(min, preferred, max)
+  // Scales with viewport while maintaining readability
+  if (digits <= 2) return 'clamp(1.5rem, 5vmin, 2rem)';
+  if (digits === 3) return 'clamp(1.25rem, 4.5vmin, 1.75rem)';
+  if (digits === 4) return 'clamp(1rem, 3.5vmin, 1.4rem)';
+  return 'clamp(0.85rem, 3vmin, 1.1rem)';
 };
 
 /**

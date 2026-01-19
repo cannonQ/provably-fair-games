@@ -27,6 +27,11 @@ export default function FoundationPile({
   const topCard = cards[cards.length - 1];
   const suitColor = isRedSuit(suit) ? '#d32f2f' : '#1a1a1a';
 
+  // Responsive sizing for landscape mode
+  const isLandscape = typeof window !== 'undefined' && window.innerHeight < window.innerWidth;
+  const cardWidth = isLandscape ? 'clamp(45px, 7vmin, 60px)' : '60px';
+  const cardHeight = isLandscape ? 'clamp(63px, 10vmin, 84px)' : '84px';
+
   const handleClick = () => {
     if (isValidDropTarget) {
       onDrop(suit);
@@ -37,8 +42,8 @@ export default function FoundationPile({
     <div
       onClick={handleClick}
       style={{
-        width: '60px',
-        height: '84px',
+        width: cardWidth,
+        height: cardHeight,
         borderRadius: '5px',
         margin: '0 2px',
         cursor: isValidDropTarget ? 'pointer' : 'default',

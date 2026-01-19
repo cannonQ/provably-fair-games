@@ -26,6 +26,13 @@ export default function TableauColumn({
 }) {
   const isEmpty = cards.length === 0;
 
+  // Responsive card sizing for mobile/landscape
+  const isLandscape = typeof window !== 'undefined' && window.innerHeight < window.innerWidth;
+  const cardWidth = isLandscape ? 'clamp(45px, 7vmin, 60px)' : '60px';
+  const cardHeight = isLandscape ? 'clamp(63px, 10vmin, 84px)' : '84px';
+  const cardSpacing = isLandscape ? 'clamp(12px, 2.5vmin, 18px)' : '18px';
+  const minColumnHeight = isLandscape ? 'clamp(180px, 35vmin, 260px)' : '260px';
+
   // Check if a card is part of current selection
   const isSelected = (cardIndex) => {
     if (!selectedCards) return false;
@@ -49,8 +56,8 @@ export default function TableauColumn({
     <div
       style={{
         position: 'relative',
-        width: '60px',
-        minHeight: '260px',
+        width: cardWidth,
+        minHeight: minColumnHeight,
         margin: '0 2px',
         flexShrink: 0
       }}
@@ -60,10 +67,10 @@ export default function TableauColumn({
         <div
           onClick={handleEmptyClick}
           style={{
-            width: '60px',
-            height: '84px',
-            border: isValidDropTarget 
-              ? '2px solid rgba(255, 215, 0, 0.7)' 
+            width: cardWidth,
+            height: cardHeight,
+            border: isValidDropTarget
+              ? '2px solid rgba(255, 215, 0, 0.7)'
               : '2px dashed rgba(255,255,255,0.3)',
             borderRadius: '5px',
             display: 'flex',
@@ -87,9 +94,9 @@ export default function TableauColumn({
           onClick={() => handleClick(index)}
           style={{
             position: 'absolute',
-            top: `${index * 18}px`,
-            width: '60px',
-            height: '84px',
+            top: `calc(${index} * ${cardSpacing})`,
+            width: cardWidth,
+            height: cardHeight,
             borderRadius: '5px',
             cursor: card.faceUp ? 'pointer' : 'default',
             transform: isSelected(index) ? 'translateX(4px)' : 'none',

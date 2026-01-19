@@ -22,6 +22,11 @@ const BackgammonBoard = ({
 }) => {
   const { points, bar, bearOff, currentPlayer } = gameState;
 
+  // Responsive sizing for mobile/landscape mode
+  const isLandscape = typeof window !== 'undefined' && window.innerHeight < window.innerWidth;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const scale = (isLandscape || isMobile) ? 0.65 : 1;
+
   // Check if a point is a valid destination
   const isValidDestination = (pointIndex) => {
     return validMoves.some(move => move.to === pointIndex);
@@ -42,7 +47,9 @@ const BackgammonBoard = ({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: '20px'
+    padding: isLandscape ? '5px' : '20px',
+    transform: isLandscape ? `scale(${scale})` : 'scale(1)',
+    transformOrigin: 'top center'
   };
 
   // Main board style with wood texture
@@ -56,10 +63,10 @@ const BackgammonBoard = ({
       linear-gradient(90deg, transparent 0%, rgba(139,90,43,0.3) 50%, transparent 100%)
     `,
     backgroundSize: '20px 20px, 20px 20px, 100% 100%',
-    borderRadius: '12px',
-    border: '8px solid #3E2723',
+    borderRadius: isLandscape ? '8px' : '12px',
+    border: `${isLandscape ? '6px' : '8px'} solid #3E2723`,
     boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 2px 8px rgba(0,0,0,0.2)',
-    padding: '10px',
+    padding: isLandscape ? '6px' : '10px',
     gap: '0'
   };
 
@@ -69,7 +76,7 @@ const BackgammonBoard = ({
     flexDirection: 'column',
     backgroundColor: '#2d5016',
     borderRadius: '4px',
-    padding: '8px 4px',
+    padding: isLandscape ? '4px 2px' : '8px 4px',
     boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.3)'
   };
 
@@ -77,22 +84,22 @@ const BackgammonBoard = ({
   const pointRowStyle = {
     display: 'flex',
     flexDirection: 'row',
-    height: '200px',
+    height: isLandscape ? '140px' : '200px',
     justifyContent: 'center'
   };
 
   // Center bar style
   const barStyle = {
-    width: '60px',
+    width: isLandscape ? '40px' : '60px',
     backgroundColor: '#4E342E',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '10px 5px',
+    padding: isLandscape ? '6px 3px' : '10px 5px',
     borderRadius: '4px',
     boxShadow: 'inset 0 0 10px rgba(0,0,0,0.3)',
-    margin: '0 5px'
+    margin: isLandscape ? '0 3px' : '0 5px'
   };
 
   // Bar section for each player's checkers
@@ -115,13 +122,13 @@ const BackgammonBoard = ({
 
   // Bear-off tray style
   const bearOffTrayStyle = (side) => ({
-    width: '50px',
+    width: isLandscape ? '35px' : '50px',
     backgroundColor: '#3E2723',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: side === 'top' ? 'flex-start' : 'flex-end',
     alignItems: 'center',
-    padding: '10px 5px',
+    padding: isLandscape ? '6px 3px' : '10px 5px',
     borderRadius: '4px',
     boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.4)',
     gap: '2px'
@@ -129,8 +136,8 @@ const BackgammonBoard = ({
 
   // Bear-off valid indicator
   const bearOffIndicatorStyle = {
-    width: '40px',
-    height: '40px',
+    width: isLandscape ? '28px' : '40px',
+    height: isLandscape ? '28px' : '40px',
     borderRadius: '50%',
     backgroundColor: isBearOffValid() ? 'rgba(76, 175, 80, 0.4)' : 'transparent',
     border: isBearOffValid() ? '2px solid #4CAF50' : '2px dashed rgba(255,255,255,0.2)',
