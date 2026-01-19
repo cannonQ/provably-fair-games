@@ -160,6 +160,9 @@ export function solitaireReducer(state, action) {
     }
 
     case 'MOVE_TO_TABLEAU': {
+      // Prevent moves when game is over
+      if (state.gameStatus !== 'playing') return state;
+
       const { targetIndex } = action.payload;
       const { cards, source } = state.selectedCards;
       const snapshot = createSnapshot(state);
@@ -207,6 +210,9 @@ export function solitaireReducer(state, action) {
     }
 
     case 'MOVE_TO_FOUNDATION': {
+      // Prevent moves when game is over
+      if (state.gameStatus !== 'playing') return state;
+
       const { suit } = action.payload;
       const { cards, source } = state.selectedCards;
       const card = cards[0];
@@ -252,11 +258,13 @@ export function solitaireReducer(state, action) {
     }
 
     case 'DRAW_FROM_STOCK': {
+      // Prevent moves when game is over
+      if (state.gameStatus !== 'playing') return state;
       if (state.stock.length === 0) return state;
       const snapshot = createSnapshot(state);
 
       const drawnCard = { ...state.stock[state.stock.length - 1], faceUp: true };
-      
+
       return {
         ...state,
         stock: state.stock.slice(0, -1),
@@ -268,6 +276,8 @@ export function solitaireReducer(state, action) {
     }
 
     case 'RECYCLE_STOCK': {
+      // Prevent moves when game is over
+      if (state.gameStatus !== 'playing') return state;
       if (state.stock.length > 0 || state.waste.length === 0) return state;
       const snapshot = createSnapshot(state);
 
