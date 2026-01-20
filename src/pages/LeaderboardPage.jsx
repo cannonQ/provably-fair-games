@@ -51,6 +51,12 @@ function LeaderboardPage() {
         >
           🎲 Backgammon
         </button>
+        <button
+          onClick={() => setActiveGame('chess')}
+          style={activeGame === 'chess' ? styles.tabActive : styles.tab}
+        >
+          ♟️ Chess
+        </button>
       </div>
 
       {/* Leaderboard */}
@@ -331,6 +337,63 @@ function LeaderboardPage() {
             </div>
           </div>
         )}
+
+        {activeGame === 'chess' && (
+          <div style={styles.scoringContent}>
+            <div style={styles.rankingBox}>
+              <h3 style={styles.rankingTitle}>Ranking Order</h3>
+              <div style={styles.rankingList}>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>1st</span>
+                  <span style={styles.rankLabel}>Final Score</span>
+                  <span style={styles.rankDesc}>Win points × difficulty multiplier</span>
+                </div>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>2nd</span>
+                  <span style={styles.rankLabel}>AI Difficulty</span>
+                  <span style={styles.rankDesc}>Higher AI ELO = higher rank</span>
+                </div>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>3rd</span>
+                  <span style={styles.rankLabel}>Moves</span>
+                  <span style={styles.rankDesc}>Fewer moves to win = higher rank</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.infoGrid}>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>🏆 Scoring System</h4>
+                <p style={styles.infoText}>
+                  <strong>Win:</strong> 100 pts × (AI ELO ÷ 100)<br/>
+                  <strong>Draw:</strong> 25 pts × (AI ELO ÷ 100)<br/>
+                  <strong>Loss:</strong> 10 pts × (AI ELO ÷ 100)<br/>
+                  <br/>
+                  <strong>Examples:</strong><br/>
+                  Beat 1400 ELO = 1,400 pts<br/>
+                  Lose to 1400 ELO = 140 pts<br/>
+                  Lose to 700 ELO = 70 pts
+                </p>
+              </div>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>♟️ AI Difficulty Levels</h4>
+                <p style={styles.infoText}>
+                  Choose your challenge level from 400 to 2800 ELO.
+                  Higher difficulty opponents give more points when beaten.
+                  Play against Stockfish AI with blockchain-proven settings!
+                </p>
+              </div>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>🔒 Provably Fair Chess</h4>
+                <p style={styles.infoText}>
+                  Color assignment uses blockchain hash (white/black is proven random).
+                  AI difficulty is cryptographically committed before the game starts.
+                  Completely verifiable!
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Verification Note */}
@@ -355,6 +418,7 @@ function LeaderboardPage() {
           <Link to="/yahtzee" style={styles.primaryBtn}>Play Yahtzee</Link>
           <Link to="/2048" style={styles.primaryBtn}>Play 2048</Link>
           <Link to="/backgammon" style={styles.primaryBtn}>Play Backgammon</Link>
+          <Link to="/chess" style={styles.primaryBtn}>Play Chess</Link>
         </div>
       </section>
     </div>

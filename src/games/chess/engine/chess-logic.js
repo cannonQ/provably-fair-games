@@ -8,8 +8,11 @@ import { Chess } from 'chess.js';
 /**
  * Creates a new chess game instance
  */
-export function createGame(fen = null) {
-  return new Chess(fen);
+export function createGame(fen) {
+  if (fen) {
+    return new Chess(fen);
+  }
+  return new Chess();
 }
 
 /**
