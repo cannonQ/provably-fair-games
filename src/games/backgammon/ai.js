@@ -1,19 +1,22 @@
 /**
  * Backgammon AI
- * 
- * Three difficulty levels with different evaluation strategies:
+ *
+ * Four difficulty levels with different evaluation strategies:
  * - Easy: Random moves, occasional doubling
  * - Normal: Basic evaluation, prefers hits and safe moves
  * - Hard: Full evaluation with lookahead
+ * - Hardest: GNU Backgammon world-class AI (~2000 FIBS rating)
  */
 
-import { 
-  getPipCount, 
+import {
+  getPipCount,
   hasCheckersOnBar,
   getHomeRange,
   allCheckersInHome
 } from './gameLogic';
 import { applyMove, getAllLegalMoves } from './moveValidation';
+import { getGnubgInterface } from './gnubg/gnubg-interface';
+import { isGnubgLoaded } from './gnubg/gnubg-loader';
 
 // ============================================
 // POSITION EVALUATION
@@ -358,16 +361,16 @@ function evaluateMoveSequence(state, moves, player) {
  * Select best move(s) for AI
  * @param {Array} legalMoves - Available legal moves
  * @param {object} state - Current game state
- * @param {string} difficulty - 'easy' | 'normal' | 'hard'
- * @returns {object|null} Selected move or null if no moves
+ * @param {string} difficulty - 'easy' | 'normal' | 'hard' | 'hardest'
+ * @returns {Promise<object>|object|null} Selected move or null if no moves (async for hardest)
  */
-export function selectMove(legalMoves, state, difficulty = 'normal') {
+export async function selectMove(legalMoves, state, difficulty = 'normal') {
   if (!legalMoves || legalMoves.length === 0) {
     return null;
   }
-  
+
   const player = state.currentPlayer;
-  
+
   switch (difficulty) {
     case 'easy':
       return selectMoveEasy(legalMoves);
@@ -375,6 +378,8 @@ export function selectMove(legalMoves, state, difficulty = 'normal') {
       return selectMoveNormal(legalMoves, state, player);
     case 'hard':
       return selectMoveHard(legalMoves, state, player);
+    case 'hardest':
+      return await selectMoveHardest(legalMoves, state, player);
     default:
       return selectMoveNormal(legalMoves, state, player);
   }
@@ -456,6 +461,92 @@ function selectMoveHard(legalMoves, state, player) {
   }
   
   return bestMove;
+}
+
+/**
+ * Hardest AI: GNU Backgammon world-class engine
+ * Uses gnubg WASM module for move selection with 2-ply lookahead
+ * Falls back to Hard AI if gnubg not available
+ */
+async function selectMoveHardest(legalMoves, state, player) {
+  // Check if gnubg is loaded
+  if (!isGnubgLoaded()) {
+    console.warn('[AI] gnubg not loaded, falling back to Hard difficulty');
+    return selectMoveHard(legalMoves, state, player);
+  }
+
+  try {
+    const gnubg = getGnubgInterface();
+
+    // Convert state to gnubg format
+    const gnubgState = convertStateForGnubg(state);
+
+    // Get dice values (use first two dice for gnubg)
+    // For doubles, gnubg handles the 4-dice internally
+    const diceToUse = [state.dice[0], state.dice[1]];
+
+    // Get best move from gnubg
+    const gnubgMoves = await gnubg.getBestMove(gnubgState, diceToUse, player);
+
+    // Find matching move in our legal moves
+    if (gnubgMoves && gnubgMoves.length > 0) {
+      const selectedMove = matchGnubgMoveToLegal(gnubgMoves[0], legalMoves);
+      if (selectedMove) {
+        return selectedMove;
+      }
+    }
+
+    // Fallback to Hard if gnubg didn't return a valid move
+    console.warn('[AI] gnubg returned no valid move, using Hard fallback');
+    return selectMoveHard(legalMoves, state, player);
+  } catch (error) {
+    console.error('[AI] gnubg error:', error);
+    return selectMoveHard(legalMoves, state, player);
+  }
+}
+
+/**
+ * Convert game state to format expected by gnubg
+ */
+function convertStateForGnubg(state) {
+  // gnubg expects: { board: [], bar: {}, home: {} }
+  // where board[i] = { player: 'white'|'black'|null, checkers: number }
+
+  // Handle both state.board and state.points formats
+  const points = state.board || state.points;
+
+  const board = points.map(point => ({
+    player: point.player || point.color || null,
+    checkers: point.checkers || 0
+  }));
+
+  return {
+    board,
+    bar: state.bar || { white: 0, black: 0 },
+    home: state.home || state.bearOff || { white: 0, black: 0 }
+  };
+}
+
+/**
+ * Match gnubg move to our legal moves
+ * gnubg returns {from, to} where from/to can be point index, 'bar', or 'off'
+ */
+function matchGnubgMoveToLegal(gnubgMove, legalMoves) {
+  for (const move of legalMoves) {
+    if (move.from === gnubgMove.from && move.to === gnubgMove.to) {
+      return move;
+    }
+
+    // Handle 'off' vs bearoff point mapping
+    if (gnubgMove.to === 'off' && move.to === 'bearoff') {
+      if (move.from === gnubgMove.from) {
+        return move;
+      }
+    }
+  }
+
+  // No exact match found
+  return null;
 }
 
 /**
@@ -549,6 +640,7 @@ export function shouldDouble(state, player, difficulty = 'normal') {
     case 'normal':
       return shouldDoubleNormal(state, player, opponent);
     case 'hard':
+    case 'hardest':
       return shouldDoubleHard(state, player, opponent);
     default:
       return false;
@@ -658,13 +750,14 @@ export function getThinkingDelay(difficulty, numMoves = 1) {
   const baseDelay = {
     easy: 300,
     normal: 500,
-    hard: 800
+    hard: 800,
+    hardest: 1200  // Longer delay for gnubg processing
   };
-  
+
   const base = baseDelay[difficulty] || 500;
   const complexity = Math.min(numMoves * 50, 300);
   const variance = Math.random() * 200;
-  
+
   return base + complexity + variance;
 }
 
