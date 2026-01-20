@@ -20,12 +20,27 @@ export class StockfishInterface {
    * Handles messages from Stockfish
    */
   handleMessage(message) {
-    const msg = message.trim();
-    this.messageQueue.push(msg);
+    // Handle wrapped message format from worker
+    let msg = message;
+    if (message && message.type === 'stockfish' && message.data) {
+      msg = message.data;
+    }
+
+    // Skip non-string messages
+    if (typeof msg !== 'string') {
+      return;
+    }
+
+    const trimmedMsg = msg.trim();
+    if (!trimmedMsg) {
+      return;
+    }
+
+    this.messageQueue.push(trimmedMsg);
 
     // Notify all listeners
     this.listeners.forEach((callback) => {
-      callback(msg);
+      callback(trimmedMsg);
     });
   }
 

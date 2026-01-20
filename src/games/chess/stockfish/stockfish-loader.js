@@ -28,19 +28,25 @@ export async function loadStockfish() {
         // Load Stockfish from CDN
         importScripts('https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js');
 
+        // Notify that Stockfish is loaded
+        postMessage({ type: 'ready' });
+
         // Forward messages between Stockfish and main thread
         onmessage = function(e) {
+          if (e.data === 'ping') {
+            postMessage({ type: 'pong' });
+            return;
+          }
+
           if (typeof STOCKFISH !== 'undefined' && STOCKFISH.postMessage) {
             STOCKFISH.postMessage(e.data);
-          } else {
-            postMessage('Stockfish not loaded');
           }
         };
 
         // Listen to Stockfish output
         if (typeof STOCKFISH !== 'undefined') {
           STOCKFISH.onmessage = function(e) {
-            postMessage(e.data || e);
+            postMessage({ type: 'stockfish', data: e.data || e });
           };
         }
       `;
@@ -52,25 +58,34 @@ export async function loadStockfish() {
 
       // Wait for worker to be ready
       const timeout = setTimeout(() => {
+        worker.terminate();
+        URL.revokeObjectURL(workerUrl);
+        loadingPromise = null;
         reject(new Error('Stockfish loading timeout'));
-      }, 10000);
+      }, 15000);
 
       worker.onmessage = (e) => {
-        clearTimeout(timeout);
-        stockfishWorker = worker;
-        resolve(worker);
+        // Only resolve when we get the 'ready' message
+        if (e.data && e.data.type === 'ready') {
+          clearTimeout(timeout);
+          URL.revokeObjectURL(workerUrl);
+          stockfishWorker = worker;
+          loadingPromise = null;
+          resolve(worker);
+        }
       };
 
       worker.onerror = (error) => {
         clearTimeout(timeout);
+        URL.revokeObjectURL(workerUrl);
+        loadingPromise = null;
         console.error('Worker error:', error);
         reject(new Error('Failed to load Stockfish worker'));
       };
 
-      // Send initial message to trigger worker
-      worker.postMessage('uci');
     } catch (error) {
       console.error('Error creating Stockfish worker:', error);
+      loadingPromise = null;
       reject(error);
     }
   });
