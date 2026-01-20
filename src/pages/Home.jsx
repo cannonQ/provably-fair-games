@@ -138,6 +138,25 @@ function Home() {
             <div style={styles.playBadge}>Play Backgammon →</div>
           </Link>
 
+          {/* Chess Card */}
+          <Link to="/chess" style={styles.gameCard}>
+            <div style={styles.gameIcon}>♟️</div>
+            <h3 style={styles.gameTitle}>Chess</h3>
+            <p style={styles.gameDesc}>
+              Challenge Stockfish AI at your skill level. Blockchain-proven color assignment and locked AI difficulty!
+            </p>
+            <div style={styles.gameStats}>
+              <span>👤 vs 🤖</span>
+              <span>~20 min</span>
+            </div>
+            <ul style={styles.gameFeatures}>
+              <li>Adjustable AI (400-2800 ELO)</li>
+              <li>Blockchain color assignment</li>
+              <li>AI commitment proof</li>
+            </ul>
+            <div style={styles.playBadge}>Play Chess →</div>
+          </Link>
+
           {/* Coming Soon Card */}
           <div style={styles.gameCardDisabled}>
             <div style={styles.gameIcon}>🎴</div>
