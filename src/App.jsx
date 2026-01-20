@@ -25,6 +25,7 @@ const BackgammonTutorial = lazy(() => import('./games/backgammon/Tutorial'));
 const Game2048 = lazy(() => import('./games/2048/Game2048'));
 const Verification2048 = lazy(() => import('./games/2048/VerificationPage'));
 const Tutorial2048 = lazy(() => import('./games/2048/Tutorial'));
+const ChessGame = lazy(() => import('./games/chess/ChessGame'));
 const AdminPage = lazy(() => import('./pages/Admin'));
 
 // 404 Not Found Component
@@ -112,6 +113,7 @@ function Header() {
         <Link to="/blackjack" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Blackjack</Link>
         <Link to="/yahtzee" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Yahtzee</Link>
         <Link to="/backgammon" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Backgammon</Link>
+        <Link to="/chess" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Chess</Link>
         <Link to="/2048" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>2048</Link>
         <Link to="/leaderboard" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>Leaderboard</Link>
         <Link to="/how-it-works" style={isMobile ? styles.linkMobile : styles.link} onClick={closeMenu}>How It Works</Link>
@@ -163,6 +165,9 @@ function App() {
             <Route path="/2048/verify" element={<Verification2048 />} />
             <Route path="/verify/2048/:gameId" element={<Verification2048 />} />
             <Route path="/2048/tutorial" element={<Tutorial2048 />} />
+            {/* Chess routes */}
+            <Route path="/chess" element={<ChessGame />} />
+            <Route path="/play/chess" element={<ChessGame />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             {/* Admin route */}
