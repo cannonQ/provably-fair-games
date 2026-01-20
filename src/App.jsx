@@ -9,6 +9,8 @@ import LeaderboardPage from './pages/LeaderboardPage';
 // Error Boundary and Loading (loaded immediately)
 import ErrorBoundary from './components/ErrorBoundary';
 import Loading from './components/Loading';
+import InstallPrompt from './components/InstallPrompt';
+import UpdatePrompt from './components/UpdatePrompt';
 
 // Lazy-loaded game components (loaded on demand)
 const GarbageGame = lazy(() => import('./games/garbage/GarbageGame'));
@@ -193,6 +195,10 @@ function App() {
         <footer style={styles.footer}>
           Randomness powered by Ergo blockchain
         </footer>
+
+        {/* PWA Components */}
+        <InstallPrompt />
+        <UpdatePrompt />
       </div>
     </BrowserRouter>
   );
