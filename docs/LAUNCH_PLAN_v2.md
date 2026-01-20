@@ -57,13 +57,13 @@ This document outlines the complete launch plan for the Provably Fair Games plat
 
 | Game | Suit | Tagline | Expanded Description | Status |
 |------|------|---------|---------------------|--------|
-| Solitaire | Hearts | TODO | TODO | TODO |
-| Blackjack | Hearts | TODO | TODO | TODO |
-| Garbage | Hearts | TODO | TODO | TODO |
-| Yahtzee | Diamonds | TODO | TODO | TODO |
-| 2048 | Clubs | TODO | TODO | TODO |
-| Backgammon | Spades | TODO | TODO | TODO |
-| Chess | Spades | TODO | TODO | TODO |
+| Solitaire | Hearts | "Classic Klondike, blockchain shuffle" | TODO | TODO |
+| Blackjack | Hearts | "Beat the dealer, verify every card" | TODO | TODO |
+| Garbage | Hearts | "Race to clear your cards" | TODO | TODO |
+| Yahtzee | Diamonds | "Roll the dice, prove the rolls" | TODO | TODO |
+| 2048 | Clubs | TODO | "Slide, merge, verify every tile" | TODO |
+| Backgammon | Spades | "Ancient strategy, modern fairness" | TODO | TODO |
+| Chess | Spades | "Outplay Master ELO, fair color picks" | TODO | TODO |
 
 **Suit Legend:**
 - Hearts = Card games (Solitaire, Blackjack, Garbage)
