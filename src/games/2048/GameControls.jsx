@@ -1,27 +1,15 @@
 /**
  * 2048 Game Controls - Score display, status messages, and control buttons
  * @module GameControls
+ *
+ * Mobile-optimized with compact layout
  */
 
 import React from 'react';
 import { formatScore, getScoreRank } from './scoreLogic';
 
 /**
- * GameControls component
- * @param {Object} props - Component props
- * @param {number} props.score - Current score
- * @param {number} props.highScore - High score
- * @param {number} props.moveCount - Total moves
- * @param {'playing'|'won'|'lost'} props.gameStatus - Current game status
- * @param {boolean} props.canContinue - Can continue after winning
- * @param {function} props.onNewGame - New game handler
- * @param {function} props.onContinue - Continue after win handler
- * @param {function} props.onMove - Move handler (direction)
- * @param {function} props.onSubmitScore - Submit score handler
- * @param {boolean} props.scoreSubmitted - Whether score has been submitted
- * @param {number} props.submittedRank - Rank after submission
- * @param {string} props.playerName - Player name for submission
- * @param {function} props.onPlayerNameChange - Handler for name change
+ * GameControls component - Compact mobile-first design
  */
 const GameControls = ({
   score = 0,
@@ -38,215 +26,20 @@ const GameControls = ({
   playerName = '',
   onPlayerNameChange
 }) => {
-  // Dark theme styles
-  const styles = {
-    container: {
-      width: '100%',
-      maxWidth: '500px',
-      margin: '0 auto',
-      fontFamily: 'Arial, sans-serif'
-    },
-    scoreSection: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'stretch',
-      gap: '10px',
-      marginBottom: '15px'
-    },
-    scoreBox: {
-      flex: 1,
-      backgroundColor: '#16213e',
-      borderRadius: '6px',
-      padding: '10px 15px',
-      textAlign: 'center',
-      border: '1px solid #2a3a5e'
-    },
-    scoreLabel: {
-      fontSize: '0.75rem',
-      color: '#888',
-      textTransform: 'uppercase',
-      fontWeight: 'bold',
-      marginBottom: '4px'
-    },
-    scoreValue: {
-      fontSize: '1.5rem',
-      fontWeight: 'bold',
-      color: '#4ade80'
-    },
-    highScoreValue: {
-      fontSize: '1.25rem',
-      fontWeight: 'bold',
-      color: '#fff'
-    },
-    moveCount: {
-      fontSize: '0.9rem',
-      color: '#888',
-      marginBottom: '10px',
-      textAlign: 'center'
-    },
-    rank: {
-      fontSize: '0.8rem',
-      color: '#aaa',
-      marginTop: '2px'
-    },
-    statusOverlay: {
-      position: 'relative',
-      marginBottom: '15px'
-    },
-    statusMessage: {
-      backgroundColor: 'rgba(22, 33, 62, 0.98)',
-      borderRadius: '8px',
-      padding: '20px',
-      textAlign: 'center',
-      border: '2px solid #2a3a5e'
-    },
-    wonMessage: {
-      backgroundColor: 'rgba(22, 33, 62, 0.98)',
-      borderColor: '#4ade80'
-    },
-    lostMessage: {
-      backgroundColor: 'rgba(22, 33, 62, 0.98)',
-      borderColor: '#f44336'
-    },
-    statusTitle: {
-      fontSize: '2rem',
-      fontWeight: 'bold',
-      color: '#fff',
-      marginBottom: '10px'
-    },
-    statusSubtitle: {
-      fontSize: '1rem',
-      color: '#aaa',
-      marginBottom: '15px'
-    },
-    buttonRow: {
-      display: 'flex',
-      gap: '10px',
-      justifyContent: 'center',
-      flexWrap: 'wrap'
-    },
-    button: {
-      padding: '12px 24px',
-      fontSize: '1rem',
-      fontWeight: 'bold',
-      border: 'none',
-      borderRadius: '6px',
-      cursor: 'pointer',
-      transition: 'transform 0.1s, opacity 0.1s'
-    },
-    newGameButton: {
-      backgroundColor: '#2a3a5e',
-      color: '#fff'
-    },
-    continueButton: {
-      backgroundColor: '#4ade80',
-      color: '#000'
-    },
-    submitButton: {
-      backgroundColor: '#4CAF50',
-      color: '#fff'
-    },
-    submittedText: {
-      color: '#4ade80',
-      fontWeight: 'bold',
-      marginTop: '10px'
-    },
-    nameInput: {
-      padding: '10px 15px',
-      fontSize: '1rem',
-      border: '2px solid #2a3a5e',
-      borderRadius: '6px',
-      marginRight: '10px',
-      width: '150px',
-      textAlign: 'center',
-      outline: 'none',
-      backgroundColor: '#16213e',
-      color: '#fff'
-    },
-    nameInputRow: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: '10px',
-      flexWrap: 'wrap',
-      gap: '10px'
-    },
-    arrowControls: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '5px',
-      marginTop: '15px'
-    },
-    arrowRow: {
-      display: 'flex',
-      gap: '5px'
-    },
-    arrowButton: {
-      width: '60px',
-      height: '60px',
-      fontSize: '1.5rem',
-      backgroundColor: '#2a3a5e',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      transition: 'background-color 0.1s'
-    },
-    arrowPlaceholder: {
-      width: '60px',
-      height: '60px'
-    },
-    keyboardHint: {
-      fontSize: '0.75rem',
-      color: '#888',
-      textAlign: 'center',
-      marginTop: '10px'
-    },
-    mobileOnly: {
-      display: 'block'
-    }
-  };
-
-  // Check if touch device
-  const [isMobile, setIsMobile] = React.useState(false);
-  
-  React.useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const handleButtonHover = (e, isHover) => {
-    e.target.style.opacity = isHover ? '0.85' : '1';
-  };
-
-  const showStatus = gameStatus === 'won' && !canContinue || gameStatus === 'lost';
+  const showStatus = (gameStatus === 'won' && !canContinue) || gameStatus === 'lost';
 
   return (
     <div style={styles.container}>
-      {/* Score Section */}
+      {/* Score Section - Compact horizontal layout */}
       <div style={styles.scoreSection}>
         <div style={styles.scoreBox}>
-          <div style={styles.scoreLabel}>Score</div>
+          <div style={styles.scoreLabel}>SCORE</div>
           <div style={styles.scoreValue}>{formatScore(score)}</div>
-          <div style={styles.rank}>{getScoreRank(score)}</div>
         </div>
         <div style={styles.scoreBox}>
-          <div style={styles.scoreLabel}>Best</div>
+          <div style={styles.scoreLabel}>BEST</div>
           <div style={styles.highScoreValue}>{formatScore(highScore)}</div>
         </div>
-      </div>
-
-      {/* Move Count */}
-      <div style={styles.moveCount}>
-        Moves: {moveCount}
       </div>
 
       {/* Status Messages */}
@@ -260,9 +53,9 @@ const GameControls = ({
               {gameStatus === 'won' ? '🎉 You Won!' : 'Game Over'}
             </div>
             <div style={styles.statusSubtitle}>
-              {gameStatus === 'won' 
-                ? 'You reached 2048! Keep going?' 
-                : `Final Score: ${formatScore(score)}`
+              {gameStatus === 'won'
+                ? 'You reached 2048!'
+                : `Score: ${formatScore(score)}`
               }
             </div>
             {/* Name input for score submission */}
@@ -280,105 +73,157 @@ const GameControls = ({
             )}
             <div style={styles.buttonRow}>
               {gameStatus === 'won' && (
-                <button
-                  style={{ ...styles.button, ...styles.continueButton }}
-                  onClick={onContinue}
-                  onMouseEnter={(e) => handleButtonHover(e, true)}
-                  onMouseLeave={(e) => handleButtonHover(e, false)}
-                >
+                <button style={{ ...styles.button, ...styles.continueButton }} onClick={onContinue}>
                   Continue
                 </button>
               )}
               {!scoreSubmitted && onSubmitScore && (
-                <button
-                  style={{ ...styles.button, ...styles.submitButton }}
-                  onClick={onSubmitScore}
-                  onMouseEnter={(e) => handleButtonHover(e, true)}
-                  onMouseLeave={(e) => handleButtonHover(e, false)}
-                >
-                  Submit Score
+                <button style={{ ...styles.button, ...styles.submitButton }} onClick={onSubmitScore}>
+                  Submit
                 </button>
               )}
-              <button
-                style={{ ...styles.button, ...styles.newGameButton }}
-                onClick={onNewGame}
-                onMouseEnter={(e) => handleButtonHover(e, true)}
-                onMouseLeave={(e) => handleButtonHover(e, false)}
-              >
+              <button style={{ ...styles.button, ...styles.newGameButton }} onClick={onNewGame}>
                 New Game
               </button>
             </div>
             {scoreSubmitted && (
               <div style={styles.submittedText}>
-                ✓ Score submitted! {submittedRank ? `Rank: #${submittedRank}` : ''}
+                ✓ Submitted! {submittedRank ? `Rank #${submittedRank}` : ''}
               </div>
             )}
           </div>
         </div>
       )}
-
-      {/* New Game Button (when playing) */}
-      {!showStatus && (
-        <div style={{ ...styles.buttonRow, marginBottom: '15px' }}>
-          <button
-            style={{ ...styles.button, ...styles.newGameButton }}
-            onClick={onNewGame}
-            onMouseEnter={(e) => handleButtonHover(e, true)}
-            onMouseLeave={(e) => handleButtonHover(e, false)}
-          >
-            New Game
-          </button>
-        </div>
-      )}
-
-      {/* Arrow Controls (Mobile) */}
-      {isMobile && (
-        <div style={styles.arrowControls}>
-          <div style={styles.arrowRow}>
-            <div style={styles.arrowPlaceholder} />
-            <button
-              style={styles.arrowButton}
-              onClick={() => onMove('up')}
-              aria-label="Move Up"
-            >
-              ↑
-            </button>
-            <div style={styles.arrowPlaceholder} />
-          </div>
-          <div style={styles.arrowRow}>
-            <button
-              style={styles.arrowButton}
-              onClick={() => onMove('left')}
-              aria-label="Move Left"
-            >
-              ←
-            </button>
-            <button
-              style={styles.arrowButton}
-              onClick={() => onMove('down')}
-              aria-label="Move Down"
-            >
-              ↓
-            </button>
-            <button
-              style={styles.arrowButton}
-              onClick={() => onMove('right')}
-              aria-label="Move Right"
-            >
-              →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Keyboard Hint (Desktop) */}
-      {!isMobile && (
-        <div style={styles.keyboardHint}>
-          Use arrow keys or WASD to move tiles
-        </div>
-      )}
     </div>
   );
+};
+
+// Compact mobile-first styles
+const styles = {
+  container: {
+    width: '100%',
+    maxWidth: '400px',
+    margin: '0 auto 12px',
+    fontFamily: 'system-ui, sans-serif'
+  },
+  scoreSection: {
+    display: 'flex',
+    gap: '8px'
+  },
+  scoreBox: {
+    flex: 1,
+    backgroundColor: '#1e293b',
+    borderRadius: '8px',
+    padding: '8px 12px',
+    textAlign: 'center'
+  },
+  scoreLabel: {
+    fontSize: '0.65rem',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+    letterSpacing: '0.5px'
+  },
+  scoreValue: {
+    fontSize: 'clamp(1.25rem, 5vw, 1.5rem)',
+    fontWeight: 'bold',
+    color: '#f1f5f9'
+  },
+  highScoreValue: {
+    fontSize: 'clamp(1.25rem, 5vw, 1.5rem)',
+    fontWeight: 'bold',
+    color: '#94a3b8'
+  },
+  statusOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '20px'
+  },
+  statusMessage: {
+    backgroundColor: '#1e293b',
+    borderRadius: '16px',
+    padding: '24px',
+    textAlign: 'center',
+    border: '2px solid #334155',
+    maxWidth: '320px',
+    width: '100%'
+  },
+  wonMessage: {
+    borderColor: '#22c55e'
+  },
+  lostMessage: {
+    borderColor: '#ef4444'
+  },
+  statusTitle: {
+    fontSize: '1.5rem',
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    marginBottom: '8px'
+  },
+  statusSubtitle: {
+    fontSize: '1rem',
+    color: '#94a3b8',
+    marginBottom: '16px'
+  },
+  buttonRow: {
+    display: 'flex',
+    gap: '8px',
+    justifyContent: 'center',
+    flexWrap: 'wrap'
+  },
+  button: {
+    padding: '10px 20px',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    touchAction: 'manipulation'
+  },
+  newGameButton: {
+    backgroundColor: '#334155',
+    color: '#f1f5f9'
+  },
+  continueButton: {
+    backgroundColor: '#22c55e',
+    color: '#fff'
+  },
+  submitButton: {
+    backgroundColor: '#3b82f6',
+    color: '#fff'
+  },
+  submittedText: {
+    color: '#22c55e',
+    fontWeight: '600',
+    marginTop: '12px',
+    fontSize: '0.9rem'
+  },
+  nameInput: {
+    padding: '10px 12px',
+    fontSize: '0.9rem',
+    border: '2px solid #334155',
+    borderRadius: '8px',
+    width: '100%',
+    maxWidth: '200px',
+    textAlign: 'center',
+    outline: 'none',
+    backgroundColor: '#0f172a',
+    color: '#f1f5f9'
+  },
+  nameInputRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '12px'
+  }
 };
 
 export default GameControls;

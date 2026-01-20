@@ -4,6 +4,11 @@
  *
  * Only fetches blockchain data ONCE at game start.
  * All subsequent spawns use the same anchor block.
+ *
+ * Mobile-optimized with:
+ * - touch-action: none to prevent browser gestures
+ * - 100dvh for proper mobile viewport
+ * - Cleaner compact layout
  */
 
 import React, { useEffect, useCallback, useState, useRef } from 'react';
@@ -32,102 +37,10 @@ const Game2048 = () => {
   const [submittedRank, setSubmittedRank] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [playerName, setPlayerName] = useState('');
+  const [showMenu, setShowMenu] = useState(false);
 
   const touchStartRef = useRef(null);
   const gameContainerRef = useRef(null);
-
-  // Styles - Dark theme to match site
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      backgroundColor: '#1a1a2e',
-      padding: '20px',
-      boxSizing: 'border-box'
-    },
-    gameWrapper: {
-      maxWidth: '500px',
-      margin: '0 auto'
-    },
-    header: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '20px'
-    },
-    title: {
-      fontSize: '2.5rem',
-      fontWeight: 'bold',
-      color: '#fff',
-      fontFamily: 'Arial, sans-serif',
-      margin: 0
-    },
-    links: {
-      display: 'flex',
-      gap: '15px'
-    },
-    link: {
-      color: '#4ade80',
-      textDecoration: 'none',
-      fontSize: '0.9rem',
-      fontFamily: 'Arial, sans-serif'
-    },
-    gridSection: {
-      marginBottom: '20px',
-      position: 'relative'
-    },
-    loadingOverlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(26, 26, 46, 0.9)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: '8px',
-      zIndex: 100
-    },
-    loadingText: {
-      fontSize: '1.2rem',
-      color: '#4ade80',
-      fontFamily: 'Arial, sans-serif'
-    },
-    errorBox: {
-      backgroundColor: '#f44336',
-      color: '#fff',
-      padding: '10px 15px',
-      borderRadius: '6px',
-      marginBottom: '15px',
-      fontFamily: 'Arial, sans-serif',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center'
-    },
-    errorClose: {
-      background: 'none',
-      border: 'none',
-      color: '#fff',
-      fontSize: '1.2rem',
-      cursor: 'pointer'
-    },
-    footer: {
-      textAlign: 'center',
-      marginTop: '20px',
-      color: '#888',
-      fontSize: '0.85rem',
-      fontFamily: 'Arial, sans-serif'
-    },
-    anchorInfo: {
-      backgroundColor: '#16213e',
-      padding: '10px',
-      borderRadius: '6px',
-      marginTop: '10px',
-      fontSize: '0.75rem',
-      color: '#aaa',
-      border: '1px solid #2a3a5e'
-    }
-  };
 
   /**
    * Fetch blockchain data for randomness (only called at game start)
@@ -140,7 +53,6 @@ const Game2048 = () => {
     } catch (err) {
       console.error('Failed to fetch blockchain data:', err);
       setError('Failed to fetch blockchain data. Using fallback randomness.');
-      // Fallback: use timestamp-based pseudo-random (less secure but functional)
       return {
         blockHeight: Date.now(),
         blockHash: Date.now().toString(16) + Math.random().toString(16).slice(2),
@@ -154,30 +66,41 @@ const Game2048 = () => {
    */
   useEffect(() => {
     const startGame = async () => {
-      if (state.gameId) return; // Already initialized
-
+      if (state.gameId) return;
       setIsLoading(true);
       const blockData = await fetchBlockData();
       initGame(blockData);
       setIsLoading(false);
     };
-
     startGame();
   }, []);
 
   /**
-   * Handle move - spawns are now synchronous (no API call needed!)
+   * Prevent default touch behavior on the whole page when game is active
+   */
+  useEffect(() => {
+    const preventDefault = (e) => {
+      if (e.target.closest('[data-game-area]')) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchmove', preventDefault, { passive: false });
+    return () => document.removeEventListener('touchmove', preventDefault);
+  }, []);
+
+  /**
+   * Handle move
    */
   const handleMove = useCallback((direction) => {
     if (isLoading) return;
     if (state.gameStatus === 'lost') return;
     if (state.gameStatus === 'won' && !state.canContinue) return;
-
     move(direction);
   }, [isLoading, state.gameStatus, state.canContinue, move]);
 
   /**
-   * Handle new game - fetch fresh anchor block
+   * Handle new game
    */
   const handleNewGame = useCallback(async () => {
     setIsLoading(true);
@@ -191,7 +114,7 @@ const Game2048 = () => {
   }, [newGame, initGame, fetchBlockData]);
 
   /**
-   * Handle score submission to leaderboard
+   * Handle score submission
    */
   const handleSubmitScore = useCallback(async () => {
     if (isSubmitting || scoreSubmitted) return;
@@ -199,7 +122,6 @@ const Game2048 = () => {
 
     setIsSubmitting(true);
     try {
-      // Calculate elapsed time in seconds
       const elapsedMs = Date.now() - (state.startTime || Date.now());
       const elapsedSeconds = Math.floor(elapsedMs / 1000);
 
@@ -232,7 +154,6 @@ const Game2048 = () => {
    */
   useEffect(() => {
     const handleKeyDown = (e) => {
-      // Ignore keyboard shortcuts when typing in an input field
       const activeElement = document.activeElement;
       const isTyping = activeElement?.tagName === 'INPUT' ||
                        activeElement?.tagName === 'TEXTAREA' ||
@@ -240,40 +161,17 @@ const Game2048 = () => {
 
       if (isTyping) return;
 
-      // Prevent default for arrow keys to stop page scrolling
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
       }
 
       switch (e.key) {
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-          handleMove('up');
-          break;
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-          handleMove('down');
-          break;
-        case 'ArrowLeft':
-        case 'a':
-        case 'A':
-          handleMove('left');
-          break;
-        case 'ArrowRight':
-        case 'd':
-        case 'D':
-          handleMove('right');
-          break;
-        case 'n':
-        case 'N':
-        case 'r':
-        case 'R':
-          handleNewGame();
-          break;
-        default:
-          break;
+        case 'ArrowUp': case 'w': case 'W': handleMove('up'); break;
+        case 'ArrowDown': case 's': case 'S': handleMove('down'); break;
+        case 'ArrowLeft': case 'a': case 'A': handleMove('left'); break;
+        case 'ArrowRight': case 'd': case 'D': handleMove('right'); break;
+        case 'n': case 'N': case 'r': case 'R': handleNewGame(); break;
+        default: break;
       }
     };
 
@@ -282,13 +180,14 @@ const Game2048 = () => {
   }, [handleMove, handleNewGame]);
 
   /**
-   * Touch/swipe controls
+   * Touch/swipe controls - improved for mobile
    */
   const handleTouchStart = useCallback((e) => {
     const touch = e.touches[0];
     touchStartRef.current = {
       x: touch.clientX,
-      y: touch.clientY
+      y: touch.clientY,
+      time: Date.now()
     };
   }, []);
 
@@ -298,79 +197,82 @@ const Game2048 = () => {
     const touch = e.changedTouches[0];
     const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = touch.clientY - touchStartRef.current.y;
+    const deltaTime = Date.now() - touchStartRef.current.time;
+
+    // Require minimum distance and max time for swipe
     const minSwipeDistance = 30;
+    const maxSwipeTime = 500;
 
     const absX = Math.abs(deltaX);
     const absY = Math.abs(deltaY);
 
-    if (Math.max(absX, absY) < minSwipeDistance) {
+    if (deltaTime > maxSwipeTime || Math.max(absX, absY) < minSwipeDistance) {
       touchStartRef.current = null;
       return;
     }
 
     if (absX > absY) {
-      // Horizontal swipe
       handleMove(deltaX > 0 ? 'right' : 'left');
     } else {
-      // Vertical swipe
       handleMove(deltaY > 0 ? 'down' : 'up');
     }
 
     touchStartRef.current = null;
   }, [handleMove]);
 
-  const handleTouchMove = useCallback((e) => {
-    // Prevent scrolling while swiping on the game
-    if (touchStartRef.current) {
-      e.preventDefault();
-    }
-  }, []);
+  const handleVerify = () => {
+    const verifyData = {
+      gameId: state.gameId,
+      score: state.score,
+      spawnHistory: state.spawnHistory,
+      moveHistory: state.moveHistory,
+      gameStatus: state.gameStatus,
+      anchorBlock: state.anchorBlock
+    };
+    localStorage.setItem('2048_verify_data', JSON.stringify(verifyData));
+    window.open('/2048/verify', '_blank');
+  };
 
   return (
     <div style={styles.container}>
       <div style={styles.gameWrapper}>
-        {/* Header */}
+        {/* Compact Header */}
         <div style={styles.header}>
-          <h1 style={styles.title}>2048</h1>
-          <div style={styles.links}>
-            <Link to="/2048/tutorial" style={styles.link}>How to Play</Link>
-            <span
-              style={{ ...styles.link, cursor: 'pointer' }}
-              onClick={() => {
-                // Store game state for verify page
-                const verifyData = {
-                  gameId: state.gameId,
-                  score: state.score,
-                  spawnHistory: state.spawnHistory,
-                  moveHistory: state.moveHistory,
-                  gameStatus: state.gameStatus,
-                  anchorBlock: state.anchorBlock
-                };
-                localStorage.setItem('2048_verify_data', JSON.stringify(verifyData));
-                window.open('/2048/verify', '_blank');
-              }}
-            >
-              Verify ↗
-            </span>
-            <Link to="/" style={styles.link}>Home</Link>
+          <div style={styles.titleSection}>
+            <button style={styles.menuBtn} onClick={() => setShowMenu(!showMenu)}>☰</button>
+            <h1 style={styles.title}>2048</h1>
+            <span style={styles.badge}>provably fair</span>
           </div>
+          <button style={styles.refreshBtn} onClick={handleNewGame} title="New Game">↻</button>
         </div>
+
+        {/* Dropdown Menu */}
+        {showMenu && (
+          <div style={styles.menu}>
+            <Link to="/2048/tutorial" style={styles.menuItem} onClick={() => setShowMenu(false)}>
+              📖 How to Play
+            </Link>
+            <button style={styles.menuItem} onClick={() => { handleVerify(); setShowMenu(false); }}>
+              ✓ Verify Game
+            </button>
+            <Link to="/leaderboard?game=2048" style={styles.menuItem} onClick={() => setShowMenu(false)}>
+              🏆 Leaderboard
+            </Link>
+            <Link to="/" style={styles.menuItem} onClick={() => setShowMenu(false)}>
+              🏠 Home
+            </Link>
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (
           <div style={styles.errorBox}>
             <span>{error}</span>
-            <button
-              style={styles.errorClose}
-              onClick={() => setError(null)}
-              aria-label="Close error"
-            >
-              ×
-            </button>
+            <button style={styles.errorClose} onClick={() => setError(null)}>×</button>
           </div>
         )}
 
-        {/* Game Controls (Score, Status, Buttons) */}
+        {/* Score Section - Compact */}
         <GameControls
           score={state.score}
           highScore={state.highScore}
@@ -387,13 +289,13 @@ const Game2048 = () => {
           onPlayerNameChange={setPlayerName}
         />
 
-        {/* Grid Section */}
+        {/* Grid Section - Touch enabled */}
         <div
+          data-game-area
           style={styles.gridSection}
           ref={gameContainerRef}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          onTouchMove={handleTouchMove}
         >
           <Grid
             grid={state.grid}
@@ -401,29 +303,188 @@ const Game2048 = () => {
             mergedTiles={new Set()}
           />
 
-          {/* Loading Overlay */}
           {isLoading && (
             <div style={styles.loadingOverlay}>
-              <span style={styles.loadingText}>Loading blockchain data...</span>
+              <span style={styles.loadingText}>Loading...</span>
             </div>
           )}
         </div>
 
-        {/* Footer */}
+        {/* Minimal Footer */}
         <div style={styles.footer}>
-          <p>Provably fair using Ergo blockchain</p>
-          <p>Game ID: {state.gameId ? state.gameId.slice(0, 20) + '...' : 'Loading...'}</p>
+          <span>Ergo Blockchain Verified</span>
           {state.anchorBlock?.blockHeight > 0 && (
-            <div style={styles.anchorInfo}>
-              <strong>Anchor Block:</strong> #{state.anchorBlock.blockHeight} |
-              Spawns: {state.spawnHistory.length} |
-              Moves: {state.moveHistory.length}
-            </div>
+            <span style={styles.blockInfo}>
+              Block #{state.anchorBlock.blockHeight}
+            </span>
           )}
         </div>
       </div>
     </div>
   );
+};
+
+// Styles - Mobile-optimized dark theme
+const styles = {
+  container: {
+    minHeight: '100vh',
+    minHeight: '100dvh',
+    backgroundColor: '#0f172a',
+    padding: '12px',
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    touchAction: 'none',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none'
+  },
+  gameWrapper: {
+    maxWidth: '420px',
+    width: '100%',
+    margin: '0 auto',
+    display: 'flex',
+    flexDirection: 'column',
+    flex: 1
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '12px',
+    padding: '0 4px'
+  },
+  titleSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  },
+  menuBtn: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#94a3b8',
+    fontSize: '1.25rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  title: {
+    fontSize: 'clamp(1.75rem, 8vw, 2.25rem)',
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    fontFamily: 'system-ui, sans-serif',
+    margin: 0,
+    letterSpacing: '-0.5px'
+  },
+  badge: {
+    fontSize: '0.55rem',
+    padding: '3px 6px',
+    backgroundColor: '#22c55e',
+    color: '#fff',
+    borderRadius: '4px',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: '0.3px'
+  },
+  refreshBtn: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#94a3b8',
+    fontSize: '1.5rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  menu: {
+    backgroundColor: '#1e293b',
+    borderRadius: '8px',
+    marginBottom: '12px',
+    padding: '4px',
+    border: '1px solid #334155'
+  },
+  menuItem: {
+    display: 'block',
+    width: '100%',
+    padding: '10px 12px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '6px',
+    color: '#f1f5f9',
+    fontSize: '0.9rem',
+    textDecoration: 'none',
+    textAlign: 'left',
+    cursor: 'pointer',
+    fontFamily: 'system-ui, sans-serif'
+  },
+  gridSection: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    touchAction: 'none',
+    minHeight: 0,
+    padding: '8px 0'
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '12px',
+    zIndex: 100
+  },
+  loadingText: {
+    fontSize: '1rem',
+    color: '#3b82f6',
+    fontFamily: 'system-ui, sans-serif'
+  },
+  errorBox: {
+    backgroundColor: '#ef4444',
+    color: '#fff',
+    padding: '10px 12px',
+    borderRadius: '8px',
+    marginBottom: '12px',
+    fontFamily: 'system-ui, sans-serif',
+    fontSize: '0.85rem',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  errorClose: {
+    background: 'none',
+    border: 'none',
+    color: '#fff',
+    fontSize: '1.2rem',
+    cursor: 'pointer',
+    padding: '0 4px'
+  },
+  footer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '8px 4px',
+    color: '#64748b',
+    fontSize: '0.7rem',
+    fontFamily: 'system-ui, sans-serif'
+  },
+  blockInfo: {
+    color: '#475569'
+  }
 };
 
 export default Game2048;
