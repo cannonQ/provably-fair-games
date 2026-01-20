@@ -258,6 +258,9 @@ const BackgammonGame = () => {
         setGnubgLoading(true);
         setGnubgProgress({ percentage: 0, filename: '', loaded: 0, total: 0 });
 
+        const loadStartTime = Date.now();
+        const MIN_DISPLAY_TIME = 1500; // Show modal for at least 1.5 seconds
+
         try {
           await loadGnubg(
             (progress) => {
@@ -269,6 +272,12 @@ const BackgammonGame = () => {
           console.log('[Backgammon] GNU Backgammon loaded successfully');
         } catch (error) {
           console.error('[Backgammon] Failed to load gnubg:', error);
+
+          // Ensure modal is visible for minimum time
+          const elapsed = Date.now() - loadStartTime;
+          if (elapsed < MIN_DISPLAY_TIME) {
+            await new Promise(resolve => setTimeout(resolve, MIN_DISPLAY_TIME - elapsed));
+          }
 
           // Fallback to Hard difficulty
           setDifficulty('hard');
