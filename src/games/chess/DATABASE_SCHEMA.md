@@ -30,13 +30,17 @@ CREATE INDEX idx_leaderboard_score ON leaderboard(game, score DESC, time_seconds
 ```
 Win:  100 × (AI_ELO ÷ 100) = points
 Draw: 25 × (AI_ELO ÷ 100) = points
-Loss: 0 points
+Loss: 10 × (AI_ELO ÷ 100) = points
 
 Examples:
 - Beating 1400 ELO: 100 × 14 = 1,400 points
 - Drawing 1800 ELO: 25 × 18 = 450 points
+- Losing to 1400 ELO: 10 × 14 = 140 points
+- Losing to 700 ELO: 10 × 7 = 70 points
 - Beating 2200 ELO: 100 × 22 = 2,200 points
 ```
+
+**Rationale:** Losing to a stronger opponent (1400 ELO) gives 2× the points of losing to a weak opponent (700 ELO). This rewards players for challenging themselves against harder difficulties.
 
 ### Ranking Order
 1. **Score** (descending) - Higher score = higher rank
@@ -176,16 +180,22 @@ const handleSubmitScore = async () => {
 ## Score Calculation Function
 
 ```javascript
-function calculateChessScore(result, aiElo) {
+function calculateChessScore(result, aiElo, playerColor) {
   if (result.winner === playerColor) {
-    // Win
+    // Win: 100 points per 100 ELO
     return Math.floor(100 * (aiElo / 100));
-  } else if (result.winner === null && result.reason !== 'resignation') {
-    // Draw (not by resignation)
+  } else if (result.winner === null) {
+    // Draw: 25 points per 100 ELO
     return Math.floor(25 * (aiElo / 100));
   } else {
-    // Loss
-    return 0;
+    // Loss: 10 points per 100 ELO (rewards challenging harder opponents)
+    return Math.floor(10 * (aiElo / 100));
   }
 }
+
+// Examples:
+// Win vs 1400 ELO:  100 × 14 = 1,400 pts
+// Draw vs 1400 ELO: 25 × 14 = 350 pts
+// Loss vs 1400 ELO: 10 × 14 = 140 pts
+// Loss vs 700 ELO:  10 × 7 = 70 pts (half the points of losing to 1400)
 ```

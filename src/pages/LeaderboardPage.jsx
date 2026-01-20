@@ -367,9 +367,12 @@ function LeaderboardPage() {
                 <p style={styles.infoText}>
                   <strong>Win:</strong> 100 pts × (AI ELO ÷ 100)<br/>
                   <strong>Draw:</strong> 25 pts × (AI ELO ÷ 100)<br/>
-                  <strong>Loss:</strong> 0 pts<br/>
+                  <strong>Loss:</strong> 10 pts × (AI ELO ÷ 100)<br/>
                   <br/>
-                  Example: Beating 1400 ELO = 100 × 14 = 1,400 points!
+                  <strong>Examples:</strong><br/>
+                  Beat 1400 ELO = 1,400 pts<br/>
+                  Lose to 1400 ELO = 140 pts<br/>
+                  Lose to 700 ELO = 70 pts
                 </p>
               </div>
               <div style={styles.infoCard}>
