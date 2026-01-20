@@ -27,10 +27,10 @@ export default function FoundationPile({
   const topCard = cards[cards.length - 1];
   const suitColor = isRedSuit(suit) ? '#d32f2f' : '#1a1a1a';
 
-  // Responsive sizing for landscape mode
-  const isLandscape = typeof window !== 'undefined' && window.innerHeight < window.innerWidth;
-  const cardWidth = isLandscape ? 'clamp(45px, 7vmin, 60px)' : '60px';
-  const cardHeight = isLandscape ? 'clamp(63px, 10vmin, 84px)' : '84px';
+  // Responsive sizing - larger for desktop, smaller for mobile
+  const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 768;
+  const cardWidth = isSmallScreen ? 'clamp(45px, 7vmin, 60px)' : '75px';
+  const cardHeight = isSmallScreen ? 'clamp(63px, 10vmin, 84px)' : '105px';
 
   const handleClick = () => {
     if (isValidDropTarget) {

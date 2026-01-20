@@ -26,12 +26,12 @@ export default function TableauColumn({
 }) {
   const isEmpty = cards.length === 0;
 
-  // Responsive card sizing for mobile/landscape
-  const isLandscape = typeof window !== 'undefined' && window.innerHeight < window.innerWidth;
-  const cardWidth = isLandscape ? 'clamp(45px, 7vmin, 60px)' : '60px';
-  const cardHeight = isLandscape ? 'clamp(63px, 10vmin, 84px)' : '84px';
-  const cardSpacing = isLandscape ? 'clamp(12px, 2.5vmin, 18px)' : '18px';
-  const minColumnHeight = isLandscape ? 'clamp(180px, 35vmin, 260px)' : '260px';
+  // Responsive card sizing - larger for desktop, smaller for mobile
+  const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 768;
+  const cardWidth = isSmallScreen ? 'clamp(45px, 7vmin, 60px)' : '75px';
+  const cardHeight = isSmallScreen ? 'clamp(63px, 10vmin, 84px)' : '105px';
+  const cardSpacing = isSmallScreen ? 'clamp(12px, 2.5vmin, 18px)' : '22px';
+  const minColumnHeight = isSmallScreen ? 'clamp(180px, 35vmin, 260px)' : '320px';
 
   // Check if a card is part of current selection
   const isSelected = (cardIndex) => {
