@@ -102,6 +102,7 @@ export default function Leaderboard({ game, currentGameId = null }) {
   const isSolitaire = game === 'solitaire';
   const isYahtzee = game === 'yahtzee';
   const isBlackjack = game === 'blackjack';
+  const isChess = game === 'chess';
 
   const getScoreDisplay = (entry) => {
     if (isSolitaire) {
@@ -125,6 +126,14 @@ export default function Leaderboard({ game, currentGameId = null }) {
       return (
         <span style={{ color: isProfit ? '#4caf50' : entry.score < 1000 ? '#f87171' : '#64b5f6', fontWeight: 'bold' }}>
           ${entry.score.toLocaleString()}
+        </span>
+      );
+    }
+    if (isChess) {
+      const isHighScore = entry.score >= 1400;
+      return (
+        <span style={{ color: isHighScore ? '#4caf50' : '#64b5f6', fontWeight: 'bold' }}>
+          {entry.score.toLocaleString()} pts
         </span>
       );
     }
@@ -160,7 +169,10 @@ export default function Leaderboard({ game, currentGameId = null }) {
       {isBlackjack && (
         <p style={styles.subtitle}>Ranked by: Balance → Hands Won → Blackjacks</p>
       )}
-      {!isSolitaire && !isYahtzee && !isBlackjack && (
+      {isChess && (
+        <p style={styles.subtitle}>Ranked by: Score → AI Difficulty → Moves</p>
+      )}
+      {!isSolitaire && !isYahtzee && !isBlackjack && !isChess && (
         <p style={styles.subtitle}>Ranked by: Score → Time → Moves</p>
       )}
 
