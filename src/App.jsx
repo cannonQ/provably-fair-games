@@ -26,6 +26,8 @@ const Game2048 = lazy(() => import('./games/2048/Game2048'));
 const Verification2048 = lazy(() => import('./games/2048/VerificationPage'));
 const Tutorial2048 = lazy(() => import('./games/2048/Tutorial'));
 const ChessGame = lazy(() => import('./games/chess/ChessGame'));
+const ChessVerification = lazy(() => import('./games/chess/VerificationPage'));
+const GarbageVerification = lazy(() => import('./games/garbage/VerificationPage'));
 const AdminPage = lazy(() => import('./pages/Admin'));
 
 // 404 Not Found Component
@@ -146,13 +148,16 @@ function App() {
             <Route path="/garbage" element={<GarbageGame />} />
             <Route path="/play" element={<GarbageGame />} />
             <Route path="/solitaire" element={<SolitaireGame />} />
+            <Route path="/solitaire/verify/:gameId" element={<SolitaireVerification />} />
             <Route path="/verify/solitaire/:gameId" element={<SolitaireVerification />} />
             <Route path="/blackjack" element={<BlackjackGame />} />
             <Route path="/play/blackjack" element={<BlackjackGame />} />
+            <Route path="/blackjack/verify/:gameId" element={<BlackjackVerification />} />
             <Route path="/verify/blackjack/:gameId" element={<BlackjackVerification />} />
             <Route path="/yahtzee" element={<YahtzeeGame />} />
             <Route path="/yahtzee/rules" element={<YahtzeeRules />} />
             <Route path="/yahtzee/verify" element={<YahtzeeVerification />} />
+            <Route path="/yahtzee/verify/:gameId" element={<YahtzeeVerification />} />
             <Route path="/verify/yahtzee/:gameId" element={<YahtzeeVerification />} />
             {/* Backgammon routes */}
             <Route path="/backgammon" element={<BackgammonGame />} />
@@ -168,6 +173,11 @@ function App() {
             {/* Chess routes */}
             <Route path="/chess" element={<ChessGame />} />
             <Route path="/play/chess" element={<ChessGame />} />
+            <Route path="/chess/verify/:gameId" element={<ChessVerification />} />
+            <Route path="/verify/chess/:gameId" element={<ChessVerification />} />
+            {/* Garbage verification */}
+            <Route path="/garbage/verify/:gameId" element={<GarbageVerification />} />
+            <Route path="/verify/garbage/:gameId" element={<GarbageVerification />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
             {/* Admin route */}

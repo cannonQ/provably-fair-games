@@ -1,19 +1,22 @@
 /**
- * VerificationPage - Blackjack game verification with blockchain proof
- * Matches Solitaire verification page style (inline styles, no Tailwind)
+ * Blackjack Verification Page
+ * Uses the unified verification component with game-specific rendering
  */
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import UnifiedVerification from '../../components/UnifiedVerification';
 import { generateSeed, shuffleArray } from '../../blockchain/shuffle';
 import { createSixDeckShoe } from './gameState';
 import { calculateHandValue, isBlackjack } from './gameLogic';
 import BlackjackReplay from './BlackjackReplay';
 
+// ============================================
+// CARD DISPLAY HELPERS
+// ============================================
 const SUIT_SYMBOLS = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
 const isRedSuit = (suit) => suit === 'hearts' || suit === 'diamonds';
 
-// Mini card display component
 const MiniCard = ({ card }) => (
   <span style={{
     display: 'inline-block',
@@ -30,7 +33,9 @@ const MiniCard = ({ card }) => (
   </span>
 );
 
-// Round breakdown component
+// ============================================
+// ROUND BREAKDOWN COMPONENT
+// ============================================
 function RoundBreakdown({ round, index }) {
   const [expanded, setExpanded] = useState(false);
   const playerValue = calculateHandValue(round.playerHands[0]);
@@ -41,43 +46,40 @@ function RoundBreakdown({ round, index }) {
   const hasInsurance = round.insuranceBet > 0;
 
   return (
-    <div style={styles.roundCard}>
-      <div
-        style={styles.roundHeader}
-        onClick={() => setExpanded(!expanded)}
-      >
-        <span style={styles.roundNumber}>Round {index + 1}</span>
+    <div style={roundStyles.card}>
+      <div style={roundStyles.header} onClick={() => setExpanded(!expanded)}>
+        <span style={roundStyles.number}>Round {index + 1}</span>
         <span style={{
-          color: netResult > 0 ? '#4caf50' : netResult < 0 ? '#f44336' : '#888',
+          color: netResult > 0 ? '#22c55e' : netResult < 0 ? '#ef4444' : '#94a3b8',
           fontWeight: 'bold'
         }}>
           {netResult > 0 ? `+$${netResult}` : netResult < 0 ? `-$${Math.abs(netResult)}` : 'Push'}
         </span>
-        <span style={{ color: '#666', fontSize: '12px' }}>{expanded ? '▼' : '▶'}</span>
+        <span style={{ color: '#64748b', fontSize: '12px' }}>{expanded ? '▼' : '▶'}</span>
       </div>
 
       {expanded && (
-        <div style={styles.roundDetails}>
-          <div style={styles.handsRow}>
-            <div style={styles.handColumn}>
-              <span style={styles.handLabel}>Player:</span>
+        <div style={roundStyles.details}>
+          <div style={roundStyles.handsRow}>
+            <div style={roundStyles.handColumn}>
+              <span style={roundStyles.handLabel}>Player:</span>
               <div>{round.playerHands[0].map((c, i) => <MiniCard key={i} card={c} />)}</div>
-              <span style={{ color: '#4ade80', fontSize: '12px' }}>
+              <span style={{ color: '#22c55e', fontSize: '12px' }}>
                 {isBlackjack(round.playerHands[0]) ? 'Blackjack!' : playerValue.value}
               </span>
             </div>
-            <div style={styles.handColumn}>
-              <span style={styles.handLabel}>Dealer:</span>
+            <div style={roundStyles.handColumn}>
+              <span style={roundStyles.handLabel}>Dealer:</span>
               <div>{round.dealerHand.map((c, i) => <MiniCard key={i} card={c} />)}</div>
-              <span style={{ color: '#4ade80', fontSize: '12px' }}>
+              <span style={{ color: '#22c55e', fontSize: '12px' }}>
                 {isBlackjack(round.dealerHand) ? 'Blackjack!' : dealerValue.value}
               </span>
             </div>
           </div>
-          <div style={styles.betRow}>
+          <div style={roundStyles.betRow}>
             <span>Bet: ${round.handBets[0]}</span>
             {hasInsurance && (
-              <span style={{ color: '#ffd700' }}>
+              <span style={{ color: '#fbbf24' }}>
                 Insurance: ${round.insuranceBet} → ${round.insurancePayout}
               </span>
             )}
@@ -89,25 +91,38 @@ function RoundBreakdown({ round, index }) {
   );
 }
 
-export default function VerificationPage() {
+const roundStyles = {
+  card: { backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: '6px', marginBottom: '8px', overflow: 'hidden' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', cursor: 'pointer', backgroundColor: 'rgba(0,0,0,0.2)' },
+  number: { color: '#fbbf24', fontWeight: 'bold', fontSize: '13px' },
+  details: { padding: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' },
+  handsRow: { display: 'flex', gap: '20px', marginBottom: '10px' },
+  handColumn: { flex: 1 },
+  handLabel: { color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '4px' },
+  betRow: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#94a3b8', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)' }
+};
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
+export default function BlackjackVerificationPage() {
   const { gameId } = useParams();
   const [verificationData, setVerificationData] = useState(null);
   const [isVerified, setIsVerified] = useState(false);
-  const [copied, setCopied] = useState(null);
   const [notFound, setNotFound] = useState(false);
-  const [loadingFromDb, setLoadingFromDb] = useState(false);
-  const [showFullBlockHash, setShowFullBlockHash] = useState(false);
-  const [showFullTxHash, setShowFullTxHash] = useState(false);
-  const [showSeedDetails, setShowSeedDetails] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [showReplay, setShowReplay] = useState(false);
   const [showFullShoe, setShowFullShoe] = useState(false);
   const [showRounds, setShowRounds] = useState(false);
-  const [showReplay, setShowReplay] = useState(false);
 
   const backLink = gameId ? '/leaderboard?game=blackjack' : '/blackjack';
   const backText = gameId ? '← Back to Leaderboard' : '← Back to Blackjack';
 
   useEffect(() => {
-    if (!gameId) return;
+    if (!gameId) {
+      setLoading(false);
+      return;
+    }
 
     const loadVerificationData = async () => {
       // First try localStorage
@@ -118,7 +133,6 @@ export default function VerificationPage() {
           const data = JSON.parse(storedData);
           const { blockchainData, shoe, roundHistory } = data;
 
-          // Regenerate seed using full block data
           const blockData = {
             blockHash: blockchainData.blockHash,
             txHash: blockchainData.txHash,
@@ -129,18 +143,25 @@ export default function VerificationPage() {
           const rawShoe = createSixDeckShoe();
           const regeneratedShoe = shuffleArray(rawShoe, regeneratedSeed);
 
-          // Verify shoes match
           const seedsMatch = regeneratedSeed === blockchainData.seed;
           const shoeMatches = shoe?.every((card, i) => card.id === regeneratedShoe[i]?.id);
           const verified = seedsMatch && shoeMatches;
 
           setVerificationData({
             ...data,
+            gameId,
+            blockHash: blockchainData.blockHash,
+            blockHeight: blockchainData.blockHeight,
+            timestamp: blockchainData.timestamp,
+            txHash: blockchainData.txHash,
+            txIndex: blockchainData.txIndex,
+            seed: blockchainData.seed,
             regeneratedSeed,
             regeneratedShoe,
             source: 'local'
           });
           setIsVerified(verified);
+          setLoading(false);
           return;
         } catch (err) {
           console.error('Failed to parse stored game data:', err);
@@ -148,57 +169,48 @@ export default function VerificationPage() {
       }
 
       // Fallback: fetch from database
-      setLoadingFromDb(true);
       try {
         const response = await fetch(`/api/leaderboard?game=blackjack&gameId=${gameId}`);
         if (!response.ok) {
           setNotFound(true);
+          setLoading(false);
           return;
         }
 
         const apiResult = await response.json();
-        
-        // Find the game in the entries
         const gameEntry = apiResult.entries?.find(entry => entry.game_id === gameId);
-        
+
         if (!gameEntry) {
           setNotFound(true);
+          setLoading(false);
           return;
         }
 
-        // Build blockchainData from database fields
-        const blockchainData = {
-          blockHeight: gameEntry.block_height,
-          blockHash: gameEntry.block_hash,
-          timestamp: gameEntry.block_timestamp,
-          txHash: gameEntry.tx_hash,
-          txIndex: gameEntry.tx_index || 0,
-          seed: gameEntry.seed
-        };
-
-        // Regenerate seed and shoe for verification
         const blockData = {
-          blockHash: blockchainData.blockHash,
-          txHash: blockchainData.txHash || '',
-          timestamp: blockchainData.timestamp,
-          txIndex: blockchainData.txIndex
+          blockHash: gameEntry.block_hash,
+          txHash: gameEntry.tx_hash || '',
+          timestamp: gameEntry.block_timestamp,
+          txIndex: gameEntry.tx_index || 0
         };
         const regeneratedSeed = generateSeed(blockData, gameId);
         const rawShoe = createSixDeckShoe();
         const regeneratedShoe = shuffleArray(rawShoe, regeneratedSeed);
 
-        // Verify seed matches if we have stored seed
-        const seedMatches = !blockchainData.seed || regeneratedSeed === blockchainData.seed;
+        const seedMatches = !gameEntry.seed || regeneratedSeed === gameEntry.seed;
 
         setVerificationData({
           gameId,
-          blockchainData,
-          roundHistory: gameEntry.round_history || [],
-          shoePosition: gameEntry.moves ? gameEntry.moves * 4 : 0, // Estimate cards dealt
+          blockHash: gameEntry.block_hash,
+          blockHeight: gameEntry.block_height,
+          timestamp: gameEntry.block_timestamp,
+          txHash: gameEntry.tx_hash,
+          txIndex: gameEntry.tx_index || 0,
+          seed: regeneratedSeed,
           regeneratedSeed,
           regeneratedShoe,
+          roundHistory: gameEntry.round_history || [],
+          shoePosition: gameEntry.moves ? gameEntry.moves * 4 : 0,
           finalBalance: gameEntry.score,
-          handsPlayed: gameEntry.moves,
           source: 'database',
           dbData: {
             playerName: gameEntry.player_name,
@@ -211,586 +223,209 @@ export default function VerificationPage() {
         console.error('Failed to fetch from database:', err);
         setNotFound(true);
       } finally {
-        setLoadingFromDb(false);
+        setLoading(false);
       }
     };
 
     loadVerificationData();
   }, [gameId]);
 
-  const copyToClipboard = (text, label) => {
-    navigator.clipboard.writeText(text);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 2000);
+  // Calculate statistics
+  const getStats = () => {
+    const roundHistory = verificationData?.roundHistory || [];
+    return {
+      wins: roundHistory.filter(r => {
+        const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
+        return (r.totalPayout || 0) > totalBet;
+      }).length,
+      losses: roundHistory.filter(r => {
+        const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
+        return (r.totalPayout || 0) < totalBet;
+      }).length,
+      pushes: roundHistory.filter(r => {
+        const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
+        return (r.totalPayout || 0) === totalBet;
+      }).length,
+      totalProfit: roundHistory.reduce((sum, r) => {
+        const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
+        return sum + (r.totalPayout || 0) - totalBet;
+      }, 0)
+    };
   };
 
-  const truncateHash = (hash) => {
-    if (!hash || hash.length <= 24) return hash || 'N/A';
-    return `${hash.slice(0, 10)}...${hash.slice(-10)}`;
-  };
+  // Game summary renderer
+  const renderGameSummary = () => {
+    if (!verificationData) return null;
 
-  const formatDate = (ts) => {
-    if (!ts) return 'Unknown';
-    return new Date(ts).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
-  };
-
-  // Not found state
-  if (notFound) {
     return (
-      <div style={styles.container}>
-        <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>Game Not Found</h1>
-        <p style={{ color: '#888', marginBottom: '20px' }}>
-          Could not find verification data for game: <code style={styles.mono}>{gameId}</code>
-        </p>
-        <p style={{ color: '#666', fontSize: '14px', marginBottom: '30px' }}>
-          Game data is stored locally in your browser. If you cleared your browser data or are on a different device, the verification data won't be available.
-        </p>
-        <Link to={backLink} style={styles.link}>{backText}</Link>
-      </div>
-    );
-  }
-
-  if (!verificationData) {
-    return (
-      <div style={styles.container}>
-        <p>{loadingFromDb ? 'Fetching from database...' : 'Loading verification data...'}</p>
-      </div>
-    );
-  }
-
-  const { blockchainData, roundHistory, shoe, shoePosition } = verificationData;
-  
-  // Calculate stats using totalPayout (includes insurance)
-  const stats = {
-    wins: roundHistory?.filter(r => {
-      const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
-      return (r.totalPayout || 0) > totalBet;
-    }).length || 0,
-    losses: roundHistory?.filter(r => {
-      const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
-      return (r.totalPayout || 0) < totalBet;
-    }).length || 0,
-    pushes: roundHistory?.filter(r => {
-      const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
-      return (r.totalPayout || 0) === totalBet;
-    }).length || 0,
-    totalProfit: roundHistory?.reduce((sum, r) => {
-      const totalBet = (r.results?.[0]?.bet || 0) + (r.insuranceBet || 0);
-      return sum + (r.totalPayout || 0) - totalBet;
-    }, 0) || 0
-  };
-
-  return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={{ marginBottom: '20px' }}>
-        <Link to={backLink} style={styles.link}>{backText}</Link>
-        <h1 style={{ margin: '8px 0', fontSize: '22px' }}>♠ Blackjack Verification ♥</h1>
-        <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>Independently verify this session's shuffle was fair</p>
-      </div>
-
-      {/* Database Notice */}
-      {verificationData.source === 'database' && (
-        <div style={styles.dbNotice}>
-          ℹ️ Loaded from leaderboard database (localStorage data not available)
-          {verificationData.dbData && (
-            <div style={{ marginTop: '8px', fontSize: '12px' }}>
-              Player: {verificationData.dbData.playerName} • Final Balance: ${verificationData.dbData.score} •
-              Hands: {verificationData.dbData.moves}
+      <div>
+        {verificationData.source === 'database' && verificationData.dbData && (
+          <div style={{ marginBottom: 12, padding: 12, backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: 8 }}>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>
+              Loaded from leaderboard database
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Game Summary */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Game Summary</h3>
-        <div style={styles.row}>
-          <span style={styles.label}>Game ID:</span>
-          <span style={styles.mono}>{verificationData.gameId}</span>
-          <button style={styles.copyBtn} onClick={() => copyToClipboard(verificationData.gameId, 'gameId')}>
-            {copied === 'gameId' ? '✓' : 'Copy'}
-          </button>
-        </div>
-        <div style={styles.row}>
-          <span style={styles.label}>Played:</span>
-          <span>{formatDate(blockchainData?.timestamp)}</span>
-        </div>
-        <div style={styles.row}>
-          <span style={styles.label}>Final Balance:</span>
-          <span style={{ color: verificationData.finalBalance >= 1000 ? '#4caf50' : '#f44336', fontWeight: 'bold' }}>
-            ${verificationData.finalBalance?.toLocaleString() || 'N/A'}
-          </span>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13 }}>
+              <span>Player: <strong>{verificationData.dbData.playerName}</strong></span>
+              <span>Final Balance: <strong style={{ color: verificationData.dbData.score >= 1000 ? '#22c55e' : '#ef4444' }}>${verificationData.dbData.score}</strong></span>
+              <span>Hands: <strong>{verificationData.dbData.moves}</strong></span>
+            </div>
+          </div>
+        )}
+        <div style={{ fontSize: 13, color: '#f1f5f9' }}>
+          <p style={{ margin: '0 0 8px 0' }}>
+            <strong>312 cards</strong> (6 decks) shuffled using blockchain randomness
+          </p>
+          <p style={{ margin: 0, color: '#94a3b8', fontSize: 12 }}>
+            Cards dealt: {verificationData.shoePosition || 0} / 312
+          </p>
         </div>
       </div>
+    );
+  };
 
-      {/* Game Replay */}
-      {roundHistory?.length > 0 && (
-        <div style={styles.section}>
+  // Replay renderer
+  const renderReplay = () => {
+    const roundHistory = verificationData?.roundHistory || [];
+
+    return (
+      <div>
+        {/* Watch Replay Button */}
+        {roundHistory.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <button
+              onClick={() => setShowReplay(!showReplay)}
+              style={{
+                padding: '10px 16px',
+                backgroundColor: '#3b82f6',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontSize: 13
+              }}
+            >
+              {showReplay ? 'Hide Replay' : '🎬 Watch Animated Replay'}
+            </button>
+            {showReplay && (
+              <div style={{ marginTop: 12 }}>
+                <BlackjackReplay
+                  roundHistory={roundHistory}
+                  finalBalance={verificationData.finalBalance}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Round-by-Round */}
+        <div>
           <h4
-            style={styles.collapsibleTitle}
-            onClick={() => setShowReplay(!showReplay)}
-          >
-            {showReplay ? '▼' : '▶'} 🎬 Watch Replay
-          </h4>
-
-          {showReplay && (
-            <BlackjackReplay
-              roundHistory={roundHistory}
-              finalBalance={verificationData.finalBalance}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Blockchain Proof */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Blockchain Proof</h3>
-        
-        <div style={styles.row}>
-          <span style={styles.label}>Block Height:</span>
-          <span style={styles.mono}>{blockchainData?.blockHeight?.toLocaleString()}</span>
-        </div>
-        
-        <div style={styles.row}>
-          <span style={styles.label}>Block Hash:</span>
-          <span style={styles.mono}>
-            {showFullBlockHash ? blockchainData?.blockHash : truncateHash(blockchainData?.blockHash)}
-          </span>
-          <button style={styles.copyBtn} onClick={() => setShowFullBlockHash(!showFullBlockHash)}>
-            {showFullBlockHash ? 'Hide' : 'Full'}
-          </button>
-          <button style={styles.copyBtn} onClick={() => copyToClipboard(blockchainData?.blockHash, 'blockHash')}>
-            {copied === 'blockHash' ? '✓' : 'Copy'}
-          </button>
-        </div>
-
-        <div style={styles.row}>
-          <span style={styles.label}>TX Hash:</span>
-          <span style={styles.mono}>
-            {showFullTxHash ? blockchainData?.txHash : truncateHash(blockchainData?.txHash)}
-          </span>
-          <button style={styles.copyBtn} onClick={() => setShowFullTxHash(!showFullTxHash)}>
-            {showFullTxHash ? 'Hide' : 'Full'}
-          </button>
-        </div>
-
-        <div style={styles.row}>
-          <span style={styles.label}>TX Index:</span>
-          <span style={styles.mono}>{blockchainData?.txIndex ?? 'N/A'}</span>
-        </div>
-
-        <div style={styles.linksRow}>
-          <a 
-            href={`https://explorer.ergoplatform.com/en/blocks/${blockchainData?.blockHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={styles.link}
-          >
-            View Block on Explorer ↗
-          </a>
-        </div>
-
-        {/* Anti-Spoofing Info */}
-        <div style={styles.antiSpoofBox}>
-          <div style={styles.antiSpoofHeader}>🔒 Anti-Spoofing Protection</div>
-          <p style={{ color: '#aaa', fontSize: '12px', margin: 0 }}>
-            Seed derived from 5 independent inputs: Block Hash + TX Hash + Timestamp + Game ID + TX Index
-          </p>
-          <p style={styles.antiSpoofNote}>
-            These values were locked before cards were dealt — impossible to manipulate
-          </p>
-        </div>
-      </div>
-
-      {/* Seed Verification */}
-      <div style={styles.section}>
-        <h4 
-          style={styles.collapsibleTitle}
-          onClick={() => setShowSeedDetails(!showSeedDetails)}
-        >
-          {showSeedDetails ? '▼' : '▶'} 🔐 Seed Details
-        </h4>
-        
-        {showSeedDetails && (
-          <div style={styles.seedDetails}>
-            <code style={styles.codeBlock}>
-              seed = HASH(blockHash + txHash + timestamp + gameId + txIndex)
-            </code>
-            <p style={styles.seedNote}>
-              5 independent inputs = virtually impossible to manipulate
-            </p>
-            
-            <div style={{ marginTop: '12px' }}>
-              <div style={styles.row}>
-                <span style={styles.label}>Stored Seed:</span>
-              </div>
-              <div style={{ ...styles.mono, fontSize: '10px', marginBottom: '8px', wordBreak: 'break-all' }}>
-                {blockchainData?.seed || 'N/A'}
-              </div>
-              
-              <div style={styles.row}>
-                <span style={styles.label}>Regenerated:</span>
-              </div>
-              <div style={{ 
-                ...styles.mono, 
-                fontSize: '10px',
-                color: isVerified ? '#4ade80' : '#f87171',
-                wordBreak: 'break-all'
-              }}>
-                {verificationData.regeneratedSeed}
-                {isVerified && ' ✓ Match'}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Verification Status */}
-        <div style={{
-          ...styles.resultBox,
-          backgroundColor: isVerified ? 'rgba(76,175,80,0.2)' : 'rgba(244,67,54,0.2)'
-        }}>
-          <span style={{ fontSize: '28px' }}>{isVerified ? '✓' : '✗'}</span>
-          <div>
-            <div style={{ fontWeight: 'bold', color: isVerified ? '#4caf50' : '#f44336' }}>
-              {isVerified ? 'VERIFIED' : 'FAILED'}
-            </div>
-            <div style={{ fontSize: '12px', color: '#aaa' }}>
-              {isVerified ? 'Shoe order matches blockchain proof' : 'Shoe does not match expected order'}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Shoe Information */}
-      <div style={styles.section}>
-        <h4 
-          style={styles.collapsibleTitle}
-          onClick={() => setShowFullShoe(!showFullShoe)}
-        >
-          {showFullShoe ? '▼' : '▶'} 🃏 Shoe Order (312 cards)
-        </h4>
-        
-        <div style={{ marginBottom: '12px', fontSize: '13px', color: '#aaa' }}>
-          <span>6 decks • Cards dealt: {shoePosition || 0} / 312</span>
-        </div>
-
-        {showFullShoe && (
-          <div style={styles.shoeGrid}>
-            {(verificationData.regeneratedShoe || shoe)?.map((card, i) => (
-              <div 
-                key={i} 
-                style={{
-                  ...styles.shoeCard,
-                  backgroundColor: i < (shoePosition || 0) ? '#2a3a5e' : '#16213e',
-                  opacity: i < (shoePosition || 0) ? 0.7 : 1
-                }}
-              >
-                <span style={{ color: '#666', fontSize: '9px' }}>{i + 1}</span>
-                <MiniCard card={card} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Round History */}
-      {roundHistory?.length > 0 && (
-        <div style={styles.section}>
-          <h4 
-            style={styles.collapsibleTitle}
+            style={{ color: '#3b82f6', cursor: 'pointer', margin: '12px 0', fontSize: 14 }}
             onClick={() => setShowRounds(!showRounds)}
           >
-            {showRounds ? '▼' : '▶'} 📋 Round-by-Round ({roundHistory.length} hands)
+            {showRounds ? '▼' : '▶'} Round-by-Round ({roundHistory.length} hands)
           </h4>
-          
           {showRounds && (
-            <div style={styles.roundsList}>
+            <div style={{ maxHeight: 400, overflowY: 'auto' }}>
               {roundHistory.map((round, i) => (
                 <RoundBreakdown key={i} round={round} index={i} />
               ))}
             </div>
           )}
         </div>
-      )}
 
-      {/* Session Statistics */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>Session Statistics</h3>
-        <div style={styles.statsGrid}>
-          <div style={styles.statBox}>
-            <div style={{ ...styles.statNumber, color: '#4caf50' }}>{stats.wins}</div>
-            <div style={styles.statLabel}>Wins</div>
-          </div>
-          <div style={styles.statBox}>
-            <div style={{ ...styles.statNumber, color: '#f44336' }}>{stats.losses}</div>
-            <div style={styles.statLabel}>Losses</div>
-          </div>
-          <div style={styles.statBox}>
-            <div style={{ ...styles.statNumber, color: '#888' }}>{stats.pushes}</div>
-            <div style={styles.statLabel}>Pushes</div>
-          </div>
-          <div style={styles.statBox}>
-            <div style={{ 
-              ...styles.statNumber, 
-              color: stats.totalProfit >= 0 ? '#4caf50' : '#f44336' 
+        {/* Full Shoe */}
+        <div>
+          <h4
+            style={{ color: '#3b82f6', cursor: 'pointer', margin: '12px 0', fontSize: 14 }}
+            onClick={() => setShowFullShoe(!showFullShoe)}
+          >
+            {showFullShoe ? '▼' : '▶'} Full Shoe Order (312 cards)
+          </h4>
+          {showFullShoe && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))',
+              gap: 4,
+              maxHeight: 300,
+              overflowY: 'auto',
+              padding: 8,
+              backgroundColor: 'rgba(0,0,0,0.2)',
+              borderRadius: 6
             }}>
-              {stats.totalProfit >= 0 ? '+' : ''}${stats.totalProfit}
+              {verificationData.regeneratedShoe?.map((card, i) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: 2,
+                  borderRadius: 3,
+                  backgroundColor: i < (verificationData.shoePosition || 0) ? 'rgba(59, 130, 246, 0.2)' : 'transparent',
+                  opacity: i < (verificationData.shoePosition || 0) ? 0.6 : 1
+                }}>
+                  <span style={{ color: '#64748b', fontSize: 9 }}>{i + 1}</span>
+                  <MiniCard card={card} />
+                </div>
+              ))}
             </div>
-            <div style={styles.statLabel}>Net Profit</div>
-          </div>
+          )}
         </div>
       </div>
+    );
+  };
 
-      {/* How to Verify */}
-      <div style={styles.section}>
-        <h3 style={styles.sectionTitle}>How to Verify Independently</h3>
-        <ol style={styles.stepsList}>
-          <li>Get <a href={`https://explorer.ergoplatform.com/en/blocks/${blockchainData?.blockHash}`} target="_blank" rel="noopener noreferrer" style={styles.link}>block #{blockchainData?.blockHeight}</a> from Ergo explorer</li>
-          <li>Note block hash: <code style={{ fontSize: '0.7rem' }}>{truncateHash(blockchainData?.blockHash)}</code></li>
-          <li>Note TX hash: <code style={{ fontSize: '0.7rem' }}>{truncateHash(blockchainData?.txHash)}</code></li>
-          <li>Confirm TX index: {blockchainData?.timestamp} % txCount = {blockchainData?.txIndex}</li>
-          <li>Create 6-deck shoe (312 cards), run Fisher-Yates shuffle with seed</li>
-          <li>Compare: identical inputs = identical shoe order</li>
-        </ol>
+  // Statistics renderer
+  const renderStatistics = () => {
+    const stats = getStats();
+
+    return (
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 10
+      }}>
+        <div style={statStyles.box}>
+          <div style={{ ...statStyles.number, color: '#22c55e' }}>{stats.wins}</div>
+          <div style={statStyles.label}>Wins</div>
+        </div>
+        <div style={statStyles.box}>
+          <div style={{ ...statStyles.number, color: '#ef4444' }}>{stats.losses}</div>
+          <div style={statStyles.label}>Losses</div>
+        </div>
+        <div style={statStyles.box}>
+          <div style={{ ...statStyles.number, color: '#94a3b8' }}>{stats.pushes}</div>
+          <div style={statStyles.label}>Pushes</div>
+        </div>
+        <div style={statStyles.box}>
+          <div style={{ ...statStyles.number, color: stats.totalProfit >= 0 ? '#22c55e' : '#ef4444' }}>
+            {stats.totalProfit >= 0 ? '+' : ''}${stats.totalProfit}
+          </div>
+          <div style={statStyles.label}>Net Profit</div>
+        </div>
       </div>
+    );
+  };
 
-      {/* Footer */}
-      <div style={{ textAlign: 'center', padding: '15px', color: '#666', fontSize: '12px' }}>
-        <p style={{ margin: '0 0 8px 0' }}>Provably Fair Gaming on Ergo Blockchain</p>
-        <Link to={backLink} style={styles.link}>{backText}</Link>
-      </div>
+  const statStyles = {
+    box: { backgroundColor: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 6, textAlign: 'center' },
+    number: { fontSize: 20, fontWeight: 'bold' },
+    label: { fontSize: 11, color: '#94a3b8', marginTop: 4 }
+  };
 
-      {/* Toast */}
-      {copied && <div style={styles.toast}>Copied!</div>}
-    </div>
+  return (
+    <UnifiedVerification
+      game="blackjack"
+      gameId={gameId}
+      data={verificationData}
+      verified={isVerified}
+      eventCount={1}
+      backLink={backLink}
+      backText={backText}
+      loading={loading}
+      notFound={notFound}
+      renderGameSummary={renderGameSummary}
+      renderReplay={renderReplay}
+      renderStatistics={renderStatistics}
+    />
   );
 }
-
-const styles = {
-  container: {
-    padding: '20px',
-    maxWidth: '700px',
-    margin: '0 auto',
-    color: '#fff',
-    backgroundColor: '#1a1a2e',
-    minHeight: '100vh'
-  },
-  section: {
-    backgroundColor: '#16213e',
-    borderRadius: '8px',
-    padding: '15px',
-    marginBottom: '15px',
-    border: '1px solid #2a3a5e'
-  },
-  sectionTitle: {
-    margin: '0 0 12px 0',
-    fontSize: '14px',
-    color: '#a0a0ff',
-    borderBottom: '1px solid #2a3a5e',
-    paddingBottom: '8px'
-  },
-  row: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    marginBottom: '8px',
-    flexWrap: 'wrap'
-  },
-  label: {
-    color: '#888',
-    fontSize: '12px',
-    minWidth: '80px'
-  },
-  mono: {
-    fontFamily: 'monospace',
-    backgroundColor: '#0d1a0d',
-    padding: '4px 8px',
-    borderRadius: '4px',
-    fontSize: '11px',
-    wordBreak: 'break-all'
-  },
-  copyBtn: {
-    padding: '2px 6px',
-    fontSize: '10px',
-    backgroundColor: '#2a3a5e',
-    color: '#aaa',
-    border: 'none',
-    borderRadius: '3px',
-    cursor: 'pointer'
-  },
-  link: {
-    color: '#64b5f6',
-    textDecoration: 'none',
-    fontSize: '13px'
-  },
-  linksRow: {
-    display: 'flex',
-    gap: '15px',
-    marginTop: '12px'
-  },
-  antiSpoofBox: {
-    backgroundColor: '#1a2a1a',
-    border: '1px solid #2a4a2a',
-    borderRadius: '6px',
-    padding: '12px',
-    margin: '12px 0'
-  },
-  antiSpoofHeader: {
-    color: '#4ade80',
-    fontWeight: 'bold',
-    fontSize: '13px',
-    marginBottom: '10px'
-  },
-  antiSpoofNote: {
-    color: '#666',
-    fontSize: '11px',
-    margin: '8px 0 0 0',
-    fontStyle: 'italic'
-  },
-  collapsibleTitle: {
-    margin: '8px 0',
-    fontSize: '14px',
-    color: '#a0a0ff',
-    cursor: 'pointer',
-    userSelect: 'none',
-    fontWeight: 'bold'
-  },
-  seedDetails: {
-    backgroundColor: '#0d1a0d',
-    padding: '12px',
-    borderRadius: '6px',
-    marginBottom: '12px'
-  },
-  codeBlock: {
-    fontFamily: 'monospace',
-    fontSize: '12px',
-    color: '#4ade80'
-  },
-  seedNote: {
-    color: '#888',
-    fontSize: '11px',
-    margin: '6px 0 0 0'
-  },
-  resultBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '15px',
-    padding: '15px',
-    borderRadius: '6px',
-    marginTop: '12px'
-  },
-  shoeGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))',
-    gap: '4px',
-    maxHeight: '300px',
-    overflowY: 'auto',
-    padding: '8px',
-    backgroundColor: '#0d1a0d',
-    borderRadius: '6px'
-  },
-  shoeCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: '2px',
-    borderRadius: '3px'
-  },
-  roundsList: {
-    maxHeight: '400px',
-    overflowY: 'auto'
-  },
-  roundCard: {
-    backgroundColor: '#0d1a0d',
-    borderRadius: '6px',
-    marginBottom: '8px',
-    overflow: 'hidden'
-  },
-  roundHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '10px 12px',
-    cursor: 'pointer',
-    backgroundColor: '#1a2a3a'
-  },
-  roundNumber: {
-    color: '#ffd700',
-    fontWeight: 'bold',
-    fontSize: '13px'
-  },
-  roundDetails: {
-    padding: '12px',
-    borderTop: '1px solid #2a3a5e'
-  },
-  handsRow: {
-    display: 'flex',
-    gap: '20px',
-    marginBottom: '10px'
-  },
-  handColumn: {
-    flex: 1
-  },
-  handLabel: {
-    color: '#888',
-    fontSize: '11px',
-    display: 'block',
-    marginBottom: '4px'
-  },
-  betRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '12px',
-    color: '#aaa',
-    paddingTop: '8px',
-    borderTop: '1px solid #2a3a5e'
-  },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '10px'
-  },
-  statBox: {
-    backgroundColor: '#0d1a0d',
-    padding: '12px',
-    borderRadius: '6px',
-    textAlign: 'center'
-  },
-  statNumber: {
-    fontSize: '20px',
-    fontWeight: 'bold'
-  },
-  statLabel: {
-    fontSize: '11px',
-    color: '#888',
-    marginTop: '4px'
-  },
-  stepsList: {
-    color: '#ccc',
-    fontSize: '13px',
-    margin: 0,
-    paddingLeft: '20px',
-    lineHeight: 1.8
-  },
-  toast: {
-    position: 'fixed',
-    bottom: '20px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    backgroundColor: '#333',
-    color: '#fff',
-    padding: '8px 16px',
-    borderRadius: '6px',
-    fontSize: '13px'
-  },
-  dbNotice: {
-    backgroundColor: '#1a3a5e',
-    border: '1px solid #2a5a8e',
-    borderRadius: '6px',
-    padding: '12px',
-    marginBottom: '15px',
-    color: '#8cc4ff',
-    fontSize: '13px'
-  }
-};
