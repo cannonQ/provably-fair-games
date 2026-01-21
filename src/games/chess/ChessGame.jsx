@@ -291,7 +291,7 @@ function ChessGame() {
           <button onClick={() => { handleNewGame(); setShowMenu(false); }}>
             ↻ New Game
           </button>
-          <Link to="/chess/verify" onClick={() => setShowMenu(false)}>
+          <Link to={gameId ? `/verify/chess/${gameId}` : "/chess"} onClick={() => setShowMenu(false)}>
             ✓ Verify Game
           </Link>
           <Link to="/" onClick={() => setShowMenu(false)}>

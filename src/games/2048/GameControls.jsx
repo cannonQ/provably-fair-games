@@ -91,7 +91,7 @@ const GameControls = ({
                   <span style={styles.verificationValue}>#{anchorBlock.blockHeight}</span>
                 </div>
                 <Link
-                  to={`/2048/verify/${gameId}`}
+                  to={`/verify/2048/${gameId}`}
                   state={{ gameId, score, anchorBlock }}
                   style={styles.verifyLink}
                 >
