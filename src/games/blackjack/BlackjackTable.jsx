@@ -61,10 +61,24 @@ export default function BlackjackTable({
   const activeHand = state.playerHands[state.activeHandIndex] || [];
   const insuranceCost = Math.floor(state.currentBet / 2);
   const canAffordInsurance = state.chipBalance >= insuranceCost;
-  const showInsurance = canTakeInsurance(state.dealerHand, state.phase) &&
+
+  const canTakeIns = canTakeInsurance(state.dealerHand, state.phase);
+  const showInsurance = canTakeIns &&
                         state.insuranceBet === 0 &&
                         activeHand.length === 2 &&
                         !insuranceDeclined;
+
+  // Debug logging for insurance prompt
+  if (state.phase === 'playerTurn' && activeHand.length === 2) {
+    console.log('[Insurance] Prompt visibility check:', {
+      canTakeIns,
+      insuranceBet: state.insuranceBet,
+      handLength: activeHand.length,
+      insuranceDeclined,
+      showInsurance,
+      dealerUpCard: state.dealerHand[0]?.rank
+    });
+  }
   
   // Get split Aces hands array (default to empty if not present for backwards compatibility)
   const splitAcesHands = state.splitAcesHands || [];

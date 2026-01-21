@@ -203,16 +203,28 @@ export default function BlackjackGame() {
   useEffect(() => {
     if (state.phase !== 'playerTurn') return;
     if (state.playerHands[0]?.length !== 2) return; // Only check on initial deal
-    
+
     const playerBJ = isBlackjack(state.playerHands[0]);
     const dealerShowsAce = state.dealerHand[0]?.rank === 'A';
     const dealerBJ = isBlackjack(state.dealerHand);
-    
+
+    console.log('[Insurance] Blackjack check useEffect:', {
+      playerBJ,
+      dealerShowsAce,
+      dealerBJ,
+      insuranceDeclined,
+      willWait: dealerShowsAce && !insuranceDeclined
+    });
+
     // If dealer shows Ace, wait for insurance decision
-    if (dealerShowsAce && !insuranceDeclined) return;
-    
+    if (dealerShowsAce && !insuranceDeclined) {
+      console.log('[Insurance] Waiting for insurance decision');
+      return;
+    }
+
     // Auto-resolve if either has blackjack
     if (playerBJ || dealerBJ) {
+      console.log('[Insurance] Auto-resolving blackjack in 800ms');
       // Small delay for visual feedback
       const timer = setTimeout(() => {
         dispatch({ type: 'STAND' });
@@ -227,6 +239,7 @@ export default function BlackjackGame() {
   };
 
   const handleDeal = () => {
+    console.log('[Insurance] Resetting insuranceDeclined to false on new deal');
     setInsuranceDeclined(false);
     dispatch({ type: 'DEAL_INITIAL' });
   };
@@ -255,6 +268,7 @@ export default function BlackjackGame() {
   const handleSplit = () => dispatch({ type: 'SPLIT' });
 
   const handleInsurance = (take) => {
+    console.log('[Insurance] User clicked:', take ? 'YES' : 'NO');
     if (take) {
       dispatch({ type: 'TAKE_INSURANCE' });
     }
