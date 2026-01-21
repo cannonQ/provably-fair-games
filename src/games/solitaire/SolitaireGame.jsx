@@ -601,9 +601,10 @@ const styles = {
     flexDirection: 'column',
     minHeight: 0,
     touchAction: 'none',
-    backgroundColor: '#166534',
+    backgroundColor: '#1e293b', // Cypherpunk: dark slate (was green felt #166534)
     borderRadius: '12px',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    border: '1px solid #334155' // Subtle border
   },
   loadingState: {
     flex: 1,

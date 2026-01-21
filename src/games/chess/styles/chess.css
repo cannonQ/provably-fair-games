@@ -129,58 +129,63 @@
   cursor: help;
 }
 
-/* Rating Selector */
+/* Rating Selector - Cypherpunk Compact */
 .rating-selector {
   max-width: 600px;
-  margin: 2rem auto;
-  background: #16213e;
-  padding: 2rem;
+  margin: 16px auto; /* Reduced from 2rem (32px) */
+  background: #1e293b; /* Cypherpunk: dark slate */
+  padding: 12px; /* Reduced from 2rem (32px) */
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  border: 1px solid #334155; /* Cypherpunk: subtle border */
 }
 
 .rating-selector h2 {
   margin-top: 0;
-  color: #ffd700;
+  margin-bottom: 16px; /* Reduced from default */
+  color: #fbbf24; /* Cypherpunk: amber-400 (was #ffd700) */
   text-align: center;
+  font-size: 1.5rem;
 }
 
 .rating-selector h3 {
-  margin: 1.5rem 0 1rem;
-  color: #4caf50;
-  font-size: 1.2rem;
+  margin: 16px 0 12px; /* Reduced from 1.5rem 0 1rem */
+  color: #94a3b8; /* Cypherpunk: muted slate-400 */
+  font-size: 1.1rem;
 }
 
 .quick-options {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(4, 1fr); /* Cypherpunk: horizontal row (was auto-fit) */
+  gap: 8px; /* Reduced from 1rem (16px) */
+  margin-bottom: 16px; /* Reduced from 2rem (32px) */
 }
 
 .quick-option {
-  padding: 1rem;
-  background: #1a1a2e;
-  border: 2px solid #333;
+  padding: 12px; /* Reduced from 1rem (16px) */
+  background: #0f172a; /* Cypherpunk: darker slate */
+  border: 2px solid #334155; /* Cypherpunk: slate-700 */
   border-radius: 8px;
-  color: #eee;
+  color: #f1f5f9; /* Cypherpunk: slate-100 */
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 .quick-option:hover {
-  border-color: #4caf50;
+  border-color: #f59e0b; /* Cypherpunk: amber-500 */
   transform: translateY(-2px);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3); /* Amber glow */
 }
 
 .quick-option.selected {
-  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
-  border-color: #4caf50;
+  background: #f59e0b; /* Cypherpunk: amber-500 (chess gold) */
+  border-color: #fbbf24; /* Cypherpunk: amber-400 */
+  color: #0f172a; /* Dark text for contrast */
 }
 
 .custom-elo {
-  margin-bottom: 2rem;
+  margin-bottom: 16px; /* Reduced from 2rem (32px) */
 }
 
 .elo-input-group {
@@ -191,15 +196,15 @@
 
 .elo-input-group label {
   font-size: 0.9rem;
-  color: #999;
+  color: #94a3b8; /* Cypherpunk: slate-400 */
 }
 
 .elo-input {
   padding: 0.75rem;
-  background: #1a1a2e;
-  border: 2px solid #333;
+  background: #0f172a; /* Cypherpunk: darker slate */
+  border: 2px solid #334155; /* Cypherpunk: slate-700 */
   border-radius: 8px;
-  color: #eee;
+  color: #f1f5f9; /* Cypherpunk: slate-100 */
   font-size: 1.5rem;
   text-align: center;
 }
@@ -208,7 +213,7 @@
   width: 100%;
   height: 8px;
   border-radius: 4px;
-  background: #333;
+  background: #334155; /* Cypherpunk: slate-700 */
   outline: none;
   -webkit-appearance: none;
 }
@@ -219,23 +224,25 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #4caf50;
+  background: #fbbf24; /* Cypherpunk: amber-400 (was green) */
   cursor: pointer;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.5); /* Amber glow */
 }
 
 .elo-slider::-moz-range-thumb {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #4caf50;
+  background: #fbbf24; /* Cypherpunk: amber-400 */
   cursor: pointer;
   border: none;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.5); /* Amber glow */
 }
 
 .elo-description {
   text-align: center;
-  color: #4caf50;
-  font-size: 1.2rem;
+  color: #fbbf24; /* Cypherpunk: amber-400 (was green) */
+  font-size: 1.1rem;
   font-weight: bold;
   margin-top: 0.5rem;
 }
@@ -249,34 +256,36 @@
 }
 
 .ai-modes {
-  margin-bottom: 2rem;
+  margin-bottom: 16px; /* Reduced from 2rem (32px) */
 }
 
 .mode-buttons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(2, 1fr); /* Cypherpunk: 2×2 grid (was auto-fit) */
+  gap: 8px; /* Reduced from 1rem (16px) */
 }
 
 .mode-button {
-  padding: 1rem;
-  background: #1a1a2e;
-  border: 2px solid #333;
+  padding: 12px; /* Reduced from 1rem (16px) */
+  background: #0f172a; /* Cypherpunk: darker slate */
+  border: 2px solid #334155; /* Cypherpunk: slate-700 */
   border-radius: 8px;
-  color: #eee;
+  color: #f1f5f9; /* Cypherpunk: slate-100 */
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
 }
 
 .mode-button:hover {
-  border-color: #4caf50;
+  border-color: #6366f1; /* Cypherpunk: indigo-500 */
   transform: translateY(-2px);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.3); /* Indigo glow */
 }
 
 .mode-button.selected {
-  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
-  border-color: #4caf50;
+  background: #6366f1; /* Cypherpunk: indigo-500 (secondary accent) */
+  border-color: #818cf8; /* Cypherpunk: indigo-400 */
+  color: #f1f5f9;
 }
 
 .mode-label {
@@ -286,19 +295,20 @@
 }
 
 .mode-description {
-  font-size: 0.8rem;
-  color: #999;
+  font-size: 0.75rem;
+  color: #94a3b8; /* Cypherpunk: muted slate-400 */
 }
 
 .mode-button.selected .mode-description {
-  color: #e8f5e9;
+  color: #e2e8f0; /* Cypherpunk: slate-200 */
 }
 
 .rating-summary {
-  background: #1a1a2e;
-  padding: 1rem;
+  background: #0f172a; /* Cypherpunk: darker slate */
+  padding: 12px; /* Reduced from 1rem (16px) */
   border-radius: 8px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 16px; /* Reduced from 1.5rem (24px) */
+  border: 1px solid #334155; /* Cypherpunk: subtle border */
 }
 
 .summary-item {
@@ -308,21 +318,21 @@
 }
 
 .summary-label {
-  color: #999;
+  color: #94a3b8; /* Cypherpunk: slate-400 */
 }
 
 .summary-value {
-  color: #4caf50;
+  color: #fbbf24; /* Cypherpunk: amber-400 (was green) */
   font-weight: bold;
 }
 
 .start-game-btn {
   width: 100%;
   padding: 1rem;
-  background: linear-gradient(135deg, #ffd700 0%, #ff9800 100%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); /* Cypherpunk: amber gradient */
   border: none;
   border-radius: 8px;
-  color: #1a1a2e;
+  color: #0f172a; /* Cypherpunk: dark text for contrast */
   font-size: 1.2rem;
   font-weight: bold;
   cursor: pointer;
@@ -331,7 +341,8 @@
 
 .start-game-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5); /* Amber glow */
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); /* Lighter on hover */
 }
 
 /* Loading Screen */

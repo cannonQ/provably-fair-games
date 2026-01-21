@@ -60,16 +60,16 @@ export default function StockPile({
             style={{
               width: '100%',
               height: '100%',
-              backgroundColor: '#1a5f7a',
+              backgroundColor: '#1e3a8a', // Cypherpunk: blue-900
               borderRadius: '5px',
-              border: '2px solid #fff',
-              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.1) 5px, rgba(255,255,255,0.1) 10px)',
+              border: '2px solid #3b82f6', // Cypherpunk: blue-500
+              backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(59, 130, 246, 0.15) 5px, rgba(59, 130, 246, 0.15) 10px)', // Blue pattern
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}
           >
-            <span style={{ color: '#fff', fontSize: '16px', fontWeight: 'bold', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+            <span style={{ color: '#f1f5f9', fontSize: '16px', fontWeight: 'bold', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
               {stock.length}
             </span>
           </div>
@@ -78,13 +78,14 @@ export default function StockPile({
             style={{
               width: '100%',
               height: '100%',
-              border: '2px dashed rgba(255,255,255,0.3)',
+              border: '2px dashed #334155', // Cypherpunk: slate-700
               borderRadius: '5px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '24px',
-              color: waste.length > 0 ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.2)'
+              backgroundColor: '#1e293b', // Cypherpunk: lighter slate background
+              color: waste.length > 0 ? '#94a3b8' : '#64748b' // Cypherpunk: slate-400 / slate-500
             }}
           >
             {waste.length > 0 ? '↻' : '∅'}
@@ -107,19 +108,19 @@ export default function StockPile({
                 left: `calc(${i} * ${isSmallScreen ? '0.2 * ' + cardWidth : '15px'})`,
                 width: cardWidth,
                 height: cardHeight,
-                backgroundColor: '#fff',
+                backgroundColor: '#f8fafc', // Cypherpunk: off-white slate-50
                 borderRadius: '5px',
-                border: '1px solid #ccc',
+                border: '1px solid #cbd5e1', // Cypherpunk: slate-300
                 cursor: isTopCard ? 'pointer' : 'default',
                 boxShadow: isSelected
-                  ? '0 0 12px 2px rgba(255, 215, 0, 0.7)'
+                  ? '0 0 20px rgba(139, 92, 246, 0.6)' // Cypherpunk: violet glow when selected
                   : '0 1px 3px rgba(0,0,0,0.3)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
                 padding: '3px',
                 boxSizing: 'border-box',
-                color: isRedSuit(card.suit) ? '#d32f2f' : '#1a1a1a',
+                color: isRedSuit(card.suit) ? '#dc2626' : '#0f172a', // Cypherpunk: red-600 / slate-900
                 zIndex: i,
                 transition: 'box-shadow 0.15s'
               }}
