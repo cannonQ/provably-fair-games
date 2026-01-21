@@ -1,5 +1,5 @@
 /**
- * YahtzeeGame - Main Game Component
+ * YahtzeeGame - Main Game Component (Mobile-optimized)
  * Single player Yahtzee with blockchain-based provably fair RNG
  */
 
@@ -40,7 +40,7 @@ function generateGameId() {
 
 function YahtzeeGame() {
   const navigate = useNavigate();
-  
+
   // Game state
   const [gameId, setGameId] = useState(null);
   const [currentTurn, setCurrentTurn] = useState(1);
@@ -48,18 +48,19 @@ function YahtzeeGame() {
   const [rollsRemaining, setRollsRemaining] = useState(3);
   const [scorecard, setScorecard] = useState(createEmptyScorecard());
   const [phase, setPhase] = useState('ready'); // ready, rolling, scoring, gameOver
-  
+
   // Block traversal state
   const [anchor, setAnchor] = useState(null);
   const [traceState, setTraceState] = useState(createInitialTraceState());
   const [rollHistory, setRollHistory] = useState([]);
-  
+
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [playerName, setPlayerName] = useState('');
   const [startTime, setStartTime] = useState(null);
   const [showGameOver, setShowGameOver] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   /**
    * Initialize game - fetch anchor block
@@ -109,7 +110,6 @@ function YahtzeeGame() {
       const rollNumber = 4 - rollsRemaining; // 1, 2, or 3
 
       // Get roll source via block traversal
-      // Note: getSourceForRoll mutates traceState internally
       const rollSource = await getSourceForRoll(
         anchor,
         traceState,
@@ -117,7 +117,7 @@ function YahtzeeGame() {
         rollNumber
       );
 
-      // Update React state with mutated traceState (create new object to trigger re-render)
+      // Update React state with mutated traceState
       setTraceState({ ...traceState });
 
       // Roll the dice using blockchain seed
@@ -171,20 +171,20 @@ function YahtzeeGame() {
    */
   const handleScore = useCallback((category) => {
     if (rollsRemaining === 3) return; // Must roll at least once
-    
+
     const score = calculateCategoryScore(category, dice);
-    
+
     setScorecard(prev => {
       const updated = { ...prev, [category]: score };
-      
+
       // Check for Yahtzee bonus
       if (category !== 'yahtzee' && isYahtzee(dice) && prev.yahtzee === 50) {
         updated.yahtzeeBonusCount = (prev.yahtzeeBonusCount || 0) + 1;
       }
-      
+
       return updated;
     });
-    
+
     // Check if game is complete
     const updatedScorecard = { ...scorecard, [category]: score };
     if (isGameComplete(updatedScorecard)) {
@@ -195,7 +195,7 @@ function YahtzeeGame() {
       setCurrentTurn(prev => prev + 1);
       setDice(clearAllHolds(resetDice()));
       setRollsRemaining(3);
-      // Reset trace state for new turn (will use new anchor tx)
+      // Reset trace state for new turn
       setTraceState(createInitialTraceState());
     }
   }, [rollsRemaining, dice, scorecard]);
@@ -208,10 +208,9 @@ function YahtzeeGame() {
   };
 
   /**
-   * Open verification page in new tab (preserves current game)
+   * Open verification page in new tab
    */
   const handleViewVerification = () => {
-    // Store game data for verification page
     const verificationData = {
       gameId,
       playerName,
@@ -221,10 +220,8 @@ function YahtzeeGame() {
       scorecard,
       verificationTrail: buildVerificationTrail(rollHistory)
     };
-    
+
     sessionStorage.setItem('yahtzeeVerification', JSON.stringify(verificationData));
-    
-    // Open in new tab so game isn't lost
     window.open('/yahtzee/verify', '_blank');
   };
 
@@ -243,6 +240,7 @@ function YahtzeeGame() {
     setScorecard(createEmptyScorecard());
     setCurrentTurn(1);
     setStartTime(null);
+    setShowMenu(false);
   };
 
   // Calculate elapsed time
@@ -251,156 +249,62 @@ function YahtzeeGame() {
     return Math.floor((Date.now() - startTime) / 1000);
   };
 
-  // Styles
-  const containerStyle = {
-    maxWidth: '900px',
-    margin: '0 auto',
-    padding: '20px',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-  };
-
-  const headerStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '20px',
-    flexWrap: 'wrap',
-    gap: '10px'
-  };
-
-  const titleStyle = {
-    fontSize: '28px',
-    fontWeight: 'bold',
-    color: '#333',
-    margin: 0
-  };
-
-  const infoStyle = {
-    display: 'flex',
-    gap: '20px',
-    fontSize: '16px',
-    color: '#666'
-  };
-
-  const navStyle = {
-    display: 'flex',
-    gap: '15px',
-    marginBottom: '20px'
-  };
-
-  const linkStyle = {
-    color: '#1976d2',
-    textDecoration: 'none',
-    fontSize: '14px'
-  };
-
-  const startScreenStyle = {
-    textAlign: 'center',
-    padding: '40px 20px',
-    backgroundColor: '#f5f5f5',
-    borderRadius: '12px',
-    maxWidth: '400px',
-    margin: '40px auto'
-  };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '12px 15px',
-    fontSize: '16px',
-    border: '2px solid #ddd',
-    borderRadius: '8px',
-    marginBottom: '15px',
-    boxSizing: 'border-box'
-  };
-
-  const startButtonStyle = {
-    backgroundColor: '#4caf50',
-    color: '#fff',
-    border: 'none',
-    padding: '14px 32px',
-    fontSize: '18px',
-    fontWeight: 'bold',
-    borderRadius: '8px',
-    cursor: isLoading ? 'wait' : 'pointer',
-    opacity: isLoading ? 0.7 : 1
-  };
-
-  const errorStyle = {
-    color: '#d32f2f',
-    backgroundColor: '#ffebee',
-    padding: '10px 15px',
-    borderRadius: '6px',
-    marginBottom: '15px',
-    fontSize: '14px'
-  };
-
-  const gameAreaStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '25px'
-  };
-
-  const blockInfoStyle = {
-    fontSize: '12px',
-    color: '#999',
-    textAlign: 'center',
-    marginTop: '10px'
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
   // Render start screen
   if (phase === 'ready') {
     return (
-      <div style={containerStyle}>
-        <div style={navStyle}>
-          <Link to="/" style={linkStyle}>← Back to Games</Link>
-        </div>
-        
-        <div style={startScreenStyle}>
-          <h1 style={{ ...titleStyle, marginBottom: '10px' }}>🎲 Yahtzee</h1>
-          <p style={{ color: '#666', marginBottom: '25px' }}>
-            Provably fair dice game powered by Ergo blockchain
-          </p>
-
-          {/* Quick Tips */}
-          <div style={{
-            backgroundColor: '#f5f5f5',
-            padding: '15px',
-            borderRadius: '8px',
-            maxWidth: '350px',
-            margin: '0 auto 25px',
-            fontSize: '13px',
-            textAlign: 'left',
-            border: '1px solid #ddd'
-          }}>
-            <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#333' }}>🎯 Quick Tips:</div>
-            <div style={{ color: '#555' }}>• 13 rounds, 3 rolls per turn</div>
-            <div style={{ color: '#555' }}>• Click dice to hold between rolls</div>
-            <div style={{ color: '#555' }}>• Upper bonus: 63+ points = +35</div>
-            <div style={{ color: '#555' }}>• Yahtzee (5 of a kind) = 50 pts</div>
-
-            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #ddd' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '6px', color: '#333' }}>🏆 Leaderboard:</div>
-              <div style={{ color: '#666', fontSize: '12px' }}>
-                Score → Time<br/>
-                250+ excellent, 300+ amazing!
-              </div>
+      <div style={styles.container}>
+        <div style={styles.gameWrapper}>
+          {/* Header */}
+          <div style={styles.header}>
+            <div style={styles.titleSection}>
+              <button style={styles.menuBtn} onClick={() => setShowMenu(!showMenu)}>☰</button>
+              <h1 style={styles.title}>Yahtzee</h1>
+              <span style={styles.badge}>provably fair</span>
             </div>
           </div>
 
-          {error && <div style={errorStyle}>{error}</div>}
+          {showMenu && (
+            <div style={styles.menu}>
+              <Link to="/" style={styles.menuItem} onClick={() => setShowMenu(false)}>
+                🏠 Home
+              </Link>
+            </div>
+          )}
 
-          <button
-            onClick={startGame}
-            style={startButtonStyle}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Connecting to Blockchain...' : 'Start Game'}
-          </button>
+          <div style={styles.startScreen}>
+            <div style={styles.startContent}>
+              <h2 style={styles.startTitle}>🎲 Yahtzee</h2>
+              <p style={styles.startSubtitle}>Blockchain-Verified Dice</p>
 
-          <p style={{ fontSize: '13px', color: '#999', marginTop: '20px' }}>
-            Each dice roll is verified using blockchain data.<br />
-            No manipulation possible!
-          </p>
+              <div style={styles.rulesBox}>
+                <div style={styles.rulesTitle}>Quick Tips:</div>
+                <div>• 13 rounds, 3 rolls per turn</div>
+                <div>• Tap dice to hold between rolls</div>
+                <div>• Upper bonus: 63+ points = +35</div>
+                <div>• Yahtzee (5 of a kind) = 50 pts</div>
+              </div>
+
+              {error && <div style={styles.errorBox}>{error}</div>}
+
+              <button
+                onClick={startGame}
+                style={{ ...styles.startBtn, opacity: isLoading ? 0.7 : 1 }}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Connecting...' : 'Start Game'}
+              </button>
+            </div>
+          </div>
+
+          <div style={styles.footer}>
+            <span>Ergo Blockchain Verified</span>
+          </div>
         </div>
       </div>
     );
@@ -408,65 +312,92 @@ function YahtzeeGame() {
 
   // Render game screen
   return (
-    <div style={containerStyle}>
-      {/* Navigation */}
-      <div style={navStyle}>
-        <Link to="/" style={linkStyle}>← Home</Link>
-        <a href="/yahtzee/rules" target="_blank" rel="noopener noreferrer" style={linkStyle}>Rules</a>
-        {rollHistory.length > 0 && (
-          <button
-            onClick={handleViewVerification}
-            style={{ ...linkStyle, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-          >
-            Verify Rolls
-          </button>
-        )}
-      </div>
-
-      {/* Header */}
-      <div style={headerStyle}>
-        <h1 style={titleStyle}>🎲 Yahtzee</h1>
-        <div style={infoStyle}>
-          <span><strong>Turn:</strong> {currentTurn}/13</span>
-          <span><strong>Player:</strong> {playerName}</span>
-          {startTime && (
-            <span><strong>Time:</strong> {Math.floor(getElapsedSeconds() / 60)}:{String(getElapsedSeconds() % 60).padStart(2, '0')}</span>
-          )}
+    <div style={styles.container}>
+      <div style={styles.gameWrapper}>
+        {/* Compact Header */}
+        <div style={styles.header}>
+          <div style={styles.titleSection}>
+            <button style={styles.menuBtn} onClick={() => setShowMenu(!showMenu)}>☰</button>
+            <h1 style={styles.title}>Yahtzee</h1>
+            <span style={styles.badge}>provably fair</span>
+          </div>
+          <button style={styles.refreshBtn} onClick={handleNewGame} title="New Game">↻</button>
         </div>
-      </div>
 
-      {/* Error display */}
-      {error && <div style={errorStyle}>{error}</div>}
-
-      {/* Game area */}
-      <div style={gameAreaStyle}>
-        {/* Dice Area */}
-        <DiceArea
-          dice={dice}
-          rollsRemaining={rollsRemaining}
-          onRoll={handleRoll}
-          onToggleHold={handleToggleHold}
-          disabled={phase === 'gameOver'}
-          isLoading={isLoading}
-        />
-
-        {/* Scorecard */}
-        <Scorecard
-          scorecard={scorecard}
-          dice={dice}
-          onScore={handleScore}
-          canScore={rollsRemaining < 3 && phase !== 'gameOver'}
-          rollsRemaining={rollsRemaining}
-          activePlayer={playerName || 'Player'}
-        />
-
-        {/* Block info */}
-        {anchor && (
-          <div style={blockInfoStyle}>
-            Anchor Block: #{anchor.blockHeight} | 
-            Game ID: {gameId}
+        {/* Dropdown Menu */}
+        {showMenu && (
+          <div style={styles.menu}>
+            {rollHistory.length > 0 && (
+              <button style={styles.menuItem} onClick={() => { handleViewVerification(); setShowMenu(false); }}>
+                ✓ Verify Rolls
+              </button>
+            )}
+            <Link to="/" style={styles.menuItem} onClick={() => setShowMenu(false)}>
+              🏠 Home
+            </Link>
           </div>
         )}
+
+        {/* Stats Bar */}
+        <div style={styles.statsBar}>
+          <div style={styles.stat}>
+            <span style={styles.statValue}>{currentTurn}/13</span>
+            <span style={styles.statLabel}>turn</span>
+          </div>
+          <div style={styles.stat}>
+            <span style={styles.statValue}>{rollsRemaining}</span>
+            <span style={styles.statLabel}>rolls</span>
+          </div>
+          <div style={styles.stat}>
+            <span style={styles.statValue}>{calculateGrandTotal(scorecard)}</span>
+            <span style={styles.statLabel}>score</span>
+          </div>
+          {startTime && (
+            <div style={styles.stat}>
+              <span style={styles.statValue}>{formatTime(getElapsedSeconds())}</span>
+              <span style={styles.statLabel}>time</span>
+            </div>
+          )}
+        </div>
+
+        {/* Error display */}
+        {error && (
+          <div style={styles.errorBox}>
+            <span>{error}</span>
+            <button style={styles.errorClose} onClick={() => setError(null)}>×</button>
+          </div>
+        )}
+
+        {/* Game Area */}
+        <div style={styles.gameArea}>
+          {/* Dice Area */}
+          <DiceArea
+            dice={dice}
+            rollsRemaining={rollsRemaining}
+            onRoll={handleRoll}
+            onToggleHold={handleToggleHold}
+            disabled={phase === 'gameOver'}
+            isLoading={isLoading}
+          />
+
+          {/* Scorecard */}
+          <Scorecard
+            scorecard={scorecard}
+            dice={dice}
+            onScore={handleScore}
+            canScore={rollsRemaining < 3 && phase !== 'gameOver'}
+            rollsRemaining={rollsRemaining}
+            activePlayer={playerName || 'Player'}
+          />
+        </div>
+
+        {/* Footer */}
+        <div style={styles.footer}>
+          <span>Ergo Blockchain Verified</span>
+          {anchor?.blockHeight > 0 && (
+            <span style={styles.blockInfo}>Block #{anchor.blockHeight}</span>
+          )}
+        </div>
       </div>
 
       {/* Game Over Modal */}
@@ -487,5 +418,217 @@ function YahtzeeGame() {
     </div>
   );
 }
+
+// Mobile-optimized styles with dark theme
+const styles = {
+  container: {
+    minHeight: '100vh',
+    minHeight: '100dvh',
+    backgroundColor: '#0f172a',
+    color: '#f1f5f9',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    touchAction: 'pan-y',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none'
+  },
+  gameWrapper: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    maxWidth: '600px',
+    width: '100%',
+    margin: '0 auto',
+    padding: '12px',
+    boxSizing: 'border-box'
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '8px',
+    padding: '0 4px'
+  },
+  titleSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  },
+  menuBtn: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#94a3b8',
+    fontSize: '1.25rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  title: {
+    fontSize: 'clamp(1.25rem, 5vw, 1.5rem)',
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    fontFamily: 'system-ui, sans-serif',
+    margin: 0
+  },
+  badge: {
+    fontSize: '0.55rem',
+    padding: '3px 6px',
+    backgroundColor: '#22c55e',
+    color: '#fff',
+    borderRadius: '4px',
+    fontWeight: 'bold',
+    textTransform: 'uppercase'
+  },
+  refreshBtn: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#94a3b8',
+    fontSize: '1.5rem',
+    cursor: 'pointer'
+  },
+  menu: {
+    backgroundColor: '#1e293b',
+    borderRadius: '8px',
+    marginBottom: '8px',
+    padding: '4px',
+    border: '1px solid #334155'
+  },
+  menuItem: {
+    display: 'block',
+    width: '100%',
+    padding: '10px 12px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '6px',
+    color: '#f1f5f9',
+    fontSize: '0.9rem',
+    textDecoration: 'none',
+    textAlign: 'left',
+    cursor: 'pointer',
+    fontFamily: 'system-ui, sans-serif'
+  },
+  statsBar: {
+    display: 'flex',
+    justifyContent: 'space-around',
+    backgroundColor: '#1e293b',
+    borderRadius: '8px',
+    padding: '8px',
+    marginBottom: '8px'
+  },
+  stat: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
+  statValue: {
+    fontSize: '1rem',
+    fontWeight: 'bold',
+    color: '#f1f5f9'
+  },
+  statLabel: {
+    fontSize: '0.65rem',
+    color: '#64748b',
+    textTransform: 'uppercase'
+  },
+  startScreen: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px'
+  },
+  startContent: {
+    backgroundColor: '#1e293b',
+    borderRadius: '12px',
+    padding: '24px',
+    textAlign: 'center',
+    maxWidth: '320px',
+    width: '100%'
+  },
+  startTitle: {
+    fontSize: '2rem',
+    margin: '0 0 4px 0',
+    color: '#fff'
+  },
+  startSubtitle: {
+    fontSize: '0.875rem',
+    color: '#94a3b8',
+    margin: '0 0 20px 0'
+  },
+  rulesBox: {
+    backgroundColor: '#0f172a',
+    borderRadius: '8px',
+    padding: '12px',
+    fontSize: '0.8rem',
+    color: '#94a3b8',
+    marginBottom: '20px',
+    textAlign: 'left'
+  },
+  rulesTitle: {
+    fontWeight: 'bold',
+    marginBottom: '6px',
+    color: '#f1f5f9'
+  },
+  startBtn: {
+    width: '100%',
+    padding: '14px 24px',
+    fontSize: '1rem',
+    fontWeight: '600',
+    backgroundColor: '#22c55e',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer'
+  },
+  gameArea: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    minHeight: 0,
+    overflowY: 'auto'
+  },
+  errorBox: {
+    backgroundColor: '#ef4444',
+    color: '#fff',
+    padding: '10px 12px',
+    borderRadius: '8px',
+    marginBottom: '8px',
+    fontFamily: 'system-ui, sans-serif',
+    fontSize: '0.85rem',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  errorClose: {
+    background: 'none',
+    border: 'none',
+    color: '#fff',
+    fontSize: '1.2rem',
+    cursor: 'pointer',
+    padding: '0 4px'
+  },
+  footer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '8px 4px',
+    color: '#64748b',
+    fontSize: '0.7rem',
+    fontFamily: 'system-ui, sans-serif'
+  },
+  blockInfo: {
+    color: '#475569'
+  }
+};
 
 export default YahtzeeGame;

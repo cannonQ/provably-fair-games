@@ -22,6 +22,7 @@ export default function BlackjackGame() {
   const [error, setError] = useState(null);
   const [showGameOver, setShowGameOver] = useState(false);
   const [insuranceDeclined, setInsuranceDeclined] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   
   // Use ref to avoid stale closure in dealer auto-play
   const stateRef = useRef(state);
@@ -335,25 +336,38 @@ export default function BlackjackGame() {
 
   return (
     <div className="blackjack-game">
-      {/* Header */}
+      {/* Compact Header */}
       <header className="game-header">
-        <h1>♠ Blackjack ♥</h1>
+        <div className="header-left">
+          <button className="menu-btn" onClick={() => setShowMenu(!showMenu)}>☰</button>
+          <h1>Blackjack</h1>
+          <span className="header-badge">provably fair</span>
+        </div>
         <div className="header-stats">
           <span className={`session-timer ${timerClass}`}>{formatTime(state.timeRemaining)}</span>
           <span className="balance-display">${state.chipBalance.toLocaleString()}</span>
         </div>
-        <nav className="header-nav">
-          <Link to="/">Home</Link>
-          {state.gameId && <Link to={`/verify/blackjack/${state.gameId}`}>Verify</Link>}
+      </header>
+
+      {/* Dropdown Menu */}
+      {showMenu && (
+        <div className="dropdown-menu">
           <button
-            onClick={handleCashOut}
-            className="header-cash-out"
+            onClick={() => { handleCashOut(); setShowMenu(false); }}
             disabled={state.phase !== 'betting'}
           >
-            Cash Out
+            💰 Cash Out
           </button>
-        </nav>
-      </header>
+          {state.gameId && (
+            <Link to={`/verify/blackjack/${state.gameId}`} onClick={() => setShowMenu(false)}>
+              ✓ Verify Game
+            </Link>
+          )}
+          <Link to="/" onClick={() => setShowMenu(false)}>
+            🏠 Home
+          </Link>
+        </div>
+      )}
 
       {/* Main Game Area */}
       <div className="game-container">
