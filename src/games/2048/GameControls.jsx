@@ -22,7 +22,13 @@ const GameControls = ({
   onContinue,
   onMove,
   gameId = '',
-  anchorBlock = null
+  anchorBlock = null,
+  onSubmitScore,
+  scoreSubmitted = false,
+  submittedRank = null,
+  playerName = '',
+  onPlayerNameChange,
+  isSubmitting = false
 }) => {
   const [modalDismissed, setModalDismissed] = useState(false);
   const showStatus = ((gameStatus === 'won' && !canContinue) || gameStatus === 'lost') && !modalDismissed;
@@ -94,10 +100,39 @@ const GameControls = ({
               </div>
             )}
 
+            {/* Score Submission */}
+            {!scoreSubmitted && onSubmitScore && (
+              <div style={styles.submitSection}>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={playerName}
+                  onChange={(e) => onPlayerNameChange && onPlayerNameChange(e.target.value)}
+                  style={styles.nameInput}
+                  maxLength={20}
+                />
+              </div>
+            )}
+
+            {scoreSubmitted && (
+              <div style={styles.submittedText}>
+                ✓ Submitted! {submittedRank ? `Rank #${submittedRank}` : ''}
+              </div>
+            )}
+
             <div style={styles.buttonRow}>
               {gameStatus === 'won' && (
                 <button style={{ ...styles.button, ...styles.continueButton }} onClick={onContinue}>
                   Continue
+                </button>
+              )}
+              {!scoreSubmitted && onSubmitScore && (
+                <button
+                  style={{ ...styles.button, ...styles.submitButton }}
+                  onClick={onSubmitScore}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit'}
                 </button>
               )}
               <button style={{ ...styles.button, ...styles.newGameButton }} onClick={onNewGame}>
@@ -232,6 +267,27 @@ const styles = {
     fontSize: '0.8rem',
     textDecoration: 'none'
   },
+  submitSection: {
+    marginBottom: '12px'
+  },
+  nameInput: {
+    padding: '10px 12px',
+    fontSize: '0.9rem',
+    border: '2px solid #334155',
+    borderRadius: '8px',
+    width: '100%',
+    maxWidth: '200px',
+    textAlign: 'center',
+    outline: 'none',
+    backgroundColor: '#0f172a',
+    color: '#f1f5f9'
+  },
+  submittedText: {
+    color: '#22c55e',
+    fontWeight: '600',
+    marginBottom: '12px',
+    fontSize: '0.9rem'
+  },
   buttonRow: {
     display: 'flex',
     gap: '8px',
@@ -253,6 +309,10 @@ const styles = {
   },
   continueButton: {
     backgroundColor: '#22c55e',
+    color: '#fff'
+  },
+  submitButton: {
+    backgroundColor: '#3b82f6',
     color: '#fff'
   }
 };
