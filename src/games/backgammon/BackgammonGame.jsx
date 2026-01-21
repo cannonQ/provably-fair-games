@@ -29,7 +29,6 @@ import Dice from './Dice';
 import DoublingCube from './DoublingCube';
 import GameOverModal from './GameOverModal';
 import RotatePrompt from './RotatePrompt';
-import GnubgLoadingModal from './components/GnubgLoadingModal';
 
 // Blockchain API
 import { getLatestBlock } from '../../blockchain/ergo-api';
@@ -37,8 +36,6 @@ import { getLatestBlock } from '../../blockchain/ergo-api';
 // Storage (localStorage persistence)
 import { saveGameState, loadGameState, clearGameState } from './storage';
 
-// GNU Backgammon integration
-import { loadGnubg, isGnubgLoaded, unloadGnubg } from './gnubg/gnubg-loader';
 
 const BackgammonGame = () => {
   const navigate = useNavigate();
@@ -57,11 +54,6 @@ const BackgammonGame = () => {
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [validMoves, setValidMoves] = useState([]);
 
-  // GNU Backgammon loading state
-  const [gnubgLoading, setGnubgLoading] = useState(false);
-  const [gnubgProgress, setGnubgProgress] = useState(null);
-  const [gnubgLoadCancelled, setGnubgLoadCancelled] = useState(false);
-  
   // Refs for cleanup
   const aiTimeoutRef = useRef(null);
   const aiCooldownRef = useRef(null);  // Separate ref for aiThinking cooldown to avoid cleanup conflicts
@@ -114,10 +106,6 @@ const BackgammonGame = () => {
       }
       if (aiCooldownRef.current) {
         clearTimeout(aiCooldownRef.current);
-      }
-      // Cleanup gnubg if loaded
-      if (isGnubgLoaded()) {
-        unloadGnubg();
       }
     };
   }, []);
@@ -250,49 +238,8 @@ const BackgammonGame = () => {
   const handleStartGame = async () => {
     setErrorMessage(null);
     setIsProcessing(true);
-    setGnubgLoadCancelled(false);
 
     try {
-      // If Hardest difficulty, load gnubg first
-      if (difficulty === 'hardest' && !isGnubgLoaded() && !gnubgLoadCancelled) {
-        setGnubgLoading(true);
-        setGnubgProgress({ percentage: 0, filename: '', loaded: 0, total: 0 });
-
-        const loadStartTime = Date.now();
-        const MIN_DISPLAY_TIME = 1500; // Show modal for at least 1.5 seconds
-
-        try {
-          await loadGnubg(
-            (progress) => {
-              setGnubgProgress(progress);
-            },
-            60000 // 60 second timeout
-          );
-
-          console.log('[Backgammon] GNU Backgammon loaded successfully');
-        } catch (error) {
-          console.error('[Backgammon] Failed to load gnubg:', error);
-
-          // Ensure modal is visible for minimum time
-          const elapsed = Date.now() - loadStartTime;
-          if (elapsed < MIN_DISPLAY_TIME) {
-            await new Promise(resolve => setTimeout(resolve, MIN_DISPLAY_TIME - elapsed));
-          }
-
-          // Fallback to Hard difficulty
-          setDifficulty('hard');
-          setErrorMessage('Failed to load World-Class AI. Using Hard difficulty instead.');
-
-          // Show error for 3 seconds
-          setTimeout(() => {
-            setErrorMessage(null);
-          }, 3000);
-        } finally {
-          setGnubgLoading(false);
-          setGnubgProgress(null);
-        }
-      }
-
       // Get blockchain data and start game
       const block = await getLatestBlock();
       const blockchainData = {
@@ -301,9 +248,7 @@ const BackgammonGame = () => {
         timestamp: block.timestamp
       };
 
-      // Use actual difficulty (may have been downgraded to 'hard' if gnubg failed)
-      const actualDifficulty = difficulty;
-      dispatch(actions.initGame(actualDifficulty, blockchainData));
+      dispatch(actions.initGame(difficulty, blockchainData));
       setGameStarted(true);
       turnNumberRef.current = 0;
     } catch (error) {
@@ -312,20 +257,6 @@ const BackgammonGame = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  // Handle gnubg loading cancellation
-  const handleCancelGnubgLoad = () => {
-    setGnubgLoadCancelled(true);
-    setGnubgLoading(false);
-    setGnubgProgress(null);
-    setDifficulty('hard');
-    setErrorMessage('Switched to Hard difficulty');
-
-    // Clear error after 2 seconds
-    setTimeout(() => {
-      setErrorMessage(null);
-    }, 2000);
   };
 
   // Roll dice using blockchain
@@ -626,26 +557,20 @@ const BackgammonGame = () => {
 
           <div style={{ marginBottom: '20px' }}>
             <h3 style={{ marginBottom: '15px' }}>Select Difficulty</h3>
-            {['easy', 'normal', 'hard', 'hardest'].map(d => (
-              <div key={d} style={{ marginBottom: d === 'hardest' ? '10px' : '5px' }}>
+            {['easy', 'normal', 'hard'].map(d => (
+              <div key={d} style={{ marginBottom: '5px' }}>
                 <button
                   style={difficultyButtonStyle(difficulty === d)}
                   onClick={() => setDifficulty(d)}
                 >
                   {d.charAt(0).toUpperCase() + d.slice(1)}
-                  {d === 'hardest' && ' 🏆'}
                 </button>
-                {d === 'hardest' && (
-                  <div style={{ fontSize: '11px', color: '#FFB74D', marginTop: '4px' }}>
-                    World Class (~2000 rating)
-                  </div>
-                )}
               </div>
             ))}
           </div>
 
           <div style={{ fontSize: '14px', color: '#888', marginBottom: '20px' }}>
-            <p>Score multiplier: {{ easy: '1x', normal: '2x', hard: '3x', hardest: '4x' }[difficulty]}</p>
+            <p>Score multiplier: {{ easy: '1x', normal: '2x', hard: '3x' }[difficulty]}</p>
           </div>
 
           <button
@@ -828,13 +753,6 @@ const BackgammonGame = () => {
         />
       )}
 
-      {/* GNU Backgammon Loading Modal */}
-      {gnubgLoading && (
-        <GnubgLoadingModal
-          progress={gnubgProgress}
-          onCancel={handleCancelGnubgLoad}
-        />
-      )}
     </div>
   );
 };
