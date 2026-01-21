@@ -439,11 +439,11 @@ const BackgammonGame = () => {
 
   // View verification
   const handleViewVerification = () => {
-    navigate(`/backgammon/verify/${state.gameId}`, { 
-      state: { 
+    navigate(`/verify/backgammon/${state.gameId}`, {
+      state: {
         gameState: state,
-        rollHistory: state.rollHistory 
-      } 
+        rollHistory: state.rollHistory
+      }
     });
   };
 
