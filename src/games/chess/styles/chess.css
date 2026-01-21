@@ -381,10 +381,11 @@
 /* Chess Board */
 .chess-board {
   display: inline-block;
-  background: #333;
+  background: #0d0d1a;
   padding: 0.5rem;
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 20px rgba(0, 255, 136, 0.2), 0 0 40px rgba(0, 0, 0, 0.8);
+  border: 2px solid #00ff88;
   position: relative;
 }
 
@@ -408,31 +409,31 @@
 }
 
 .chess-square.light {
-  background: #eeeed2;
+  background: #2d2d3d;
 }
 
 .chess-square.dark {
-  background: #769656;
+  background: #1a1a2e;
 }
 
 .chess-square.selected {
-  background: #f6f669 !important;
+  background: #4caf50 !important;
 }
 
 .chess-square.legal-move {
-  background-color: rgba(76, 175, 80, 0.4);
+  background-color: rgba(0, 255, 136, 0.3);
 }
 
 .chess-square.last-move {
-  background-color: rgba(255, 255, 0, 0.5) !important;
+  background-color: rgba(255, 215, 0, 0.4) !important;
 }
 
 .chess-square.last-move.light {
-  background-color: #f7f783 !important;
+  background-color: #4a4a3d !important;
 }
 
 .chess-square.last-move.dark {
-  background-color: #bbcc44 !important;
+  background-color: #3a3a2e !important;
 }
 
 .chess-square.in-check {
@@ -471,13 +472,13 @@
 }
 
 .chess-piece.white {
-  color: #fff;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+  color: #00ff88;
+  filter: drop-shadow(0 2px 4px rgba(0, 255, 136, 0.5)) drop-shadow(0 0 8px rgba(0, 255, 136, 0.3));
 }
 
 .chess-piece.black {
-  color: #000;
-  filter: drop-shadow(0 2px 3px rgba(255, 255, 255, 0.3));
+  color: #ff6b6b;
+  filter: drop-shadow(0 2px 4px rgba(255, 107, 107, 0.5)) drop-shadow(0 0 8px rgba(255, 107, 107, 0.3));
 }
 
 .move-indicator {
