@@ -438,7 +438,7 @@ const styles = {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    maxWidth: '600px',
+    maxWidth: '900px', // Wider: increased from 600px for side-by-side scorecard
     width: '100%',
     margin: '0 auto',
     padding: '12px',

@@ -41,7 +41,7 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
     display: 'flex',
     flexDirection: 'row',
     gap: '20px',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap', // Changed from 'wrap' to keep sections side-by-side
     justifyContent: 'center'
   };
 
@@ -50,9 +50,9 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
     borderRadius: '8px',
     border: '2px solid #334155', // Cypherpunk: slate-700
     overflow: 'hidden',
-    minWidth: '280px',
-    flex: '1 1 280px',
-    maxWidth: '350px'
+    minWidth: '300px',
+    flex: '1 1 300px',
+    maxWidth: '420px' // Wider: increased from 350px for better side-by-side layout
   };
 
   const headerStyle = {
@@ -114,7 +114,7 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
     fontWeight: 'bold',
     marginTop: '15px',
     width: '100%',
-    maxWidth: '720px',
+    maxWidth: '860px', // Wider: increased from 720px to match wider scorecard
     boxSizing: 'border-box',
     border: '2px solid #a78bfa', // Cypherpunk: violet-400 border
     boxShadow: '0 0 20px rgba(139, 92, 246, 0.3)' // Cypherpunk: violet glow
@@ -219,7 +219,7 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
           borderRadius: '8px',
           padding: '12px 20px',
           marginBottom: '15px',
-          maxWidth: '720px',
+          maxWidth: '860px', // Wider: matches scorecard width
           width: '100%',
           boxSizing: 'border-box',
           textAlign: 'center'
@@ -241,7 +241,7 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
           borderRadius: '8px',
           padding: '10px 20px',
           marginBottom: '15px',
-          maxWidth: '720px',
+          maxWidth: '860px', // Wider: matches scorecard width
           width: '100%',
           boxSizing: 'border-box',
           textAlign: 'center',

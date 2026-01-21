@@ -136,6 +136,15 @@ const generatePythonScript = (game, data) => {
 # Solitaire-specific: shuffle 52 cards
 import random
 
+RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+SUITS = ['♥', '♦', '♣', '♠']  # hearts, diamonds, clubs, spades
+
+def decode_card(index):
+    """Convert card index (0-51) to human-readable card"""
+    suit_idx = index // 13  # Which suit (0-3)
+    rank_idx = index % 13   # Which rank (0-12)
+    return f"{RANKS[rank_idx]}{SUITS[suit_idx]}"
+
 def shuffle_deck(seed_int):
     deck = list(range(52))
     random.seed(seed_int)
@@ -143,11 +152,23 @@ def shuffle_deck(seed_int):
     return deck
 
 shuffled = shuffle_deck(seed_int)
-print(f"Shuffled deck order: {shuffled[:10]}... (first 10 cards)")
+print(f"Shuffled deck (indices): {shuffled[:10]}... (first 10)")
+print(f"Shuffled deck (cards):   {[decode_card(i) for i in shuffled[:10]]}... (first 10)")
 `,
     blackjack: `
 # Blackjack-specific: shuffle 312 cards (6 decks)
 import random
+
+RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+SUITS = ['♥', '♦', '♣', '♠']  # hearts, diamonds, clubs, spades
+
+def decode_card(index):
+    """Convert card index (0-311) to human-readable card"""
+    deck = (index // 52) + 1  # Which deck (1-6)
+    pos_in_deck = index % 52  # Position within deck (0-51)
+    suit_idx = pos_in_deck // 13  # Which suit (0-3)
+    rank_idx = pos_in_deck % 13   # Which rank (0-12)
+    return f"{RANKS[rank_idx]}{SUITS[suit_idx]}"
 
 def shuffle_shoe(seed_int):
     shoe = list(range(312))  # 6 decks * 52 cards
@@ -156,7 +177,8 @@ def shuffle_shoe(seed_int):
     return shoe
 
 shuffled = shuffle_shoe(seed_int)
-print(f"Shoe order: {shuffled[:10]}... (first 10 cards)")
+print(f"Shoe order (indices): {shuffled[:10]}... (first 10)")
+print(f"Shoe order (cards):   {[decode_card(i) for i in shuffled[:10]]}... (first 10)")
 `,
     yahtzee: `
 # Yahtzee-specific: generate dice rolls

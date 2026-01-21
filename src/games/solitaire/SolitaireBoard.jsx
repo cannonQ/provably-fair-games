@@ -142,7 +142,7 @@ export default function SolitaireBoard({ state, dispatch }) {
   }, [tableau, dispatch]);
 
   return (
-    <div style={{ padding: 'clamp(6px, 2vw, 12px)', maxWidth: '650px', margin: '0 auto', flex: 1 }}>
+    <div style={{ padding: 'clamp(6px, 2vw, 12px)', maxWidth: '1000px', margin: '0 auto', flex: 1 }}>  {/* Wider: increased from 650px */}
       {/* Top Row: Stock/Waste and Foundations */}
       <div style={{
         display: 'flex',

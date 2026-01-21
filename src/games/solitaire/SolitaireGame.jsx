@@ -491,7 +491,7 @@ const styles = {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    maxWidth: '700px',
+    maxWidth: '1050px', // Wider: increased from 700px to spread out
     width: '100%',
     margin: '0 auto',
     padding: '12px',
