@@ -41,34 +41,37 @@ export async function loadStockfish() {
           }
         };
 
-        // Load Stockfish from CDN
+        function setupEngine(sf) {
+          engine = sf;
+          engine.onmessage = function(event) {
+            const msg = typeof event === 'string' ? event : (event.data || event);
+            postMessage({ type: 'stockfish', data: msg });
+          };
+          postMessage({ type: 'ready' });
+        }
+
+        // Load Stockfish from CDN - try multiple approaches
         try {
-          importScripts('https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js');
+          // Try stockfish.wasm which is more modern
+          importScripts('https://cdn.jsdelivr.net/npm/stockfish.wasm@0.10.0/stockfish.js');
 
-          // STOCKFISH is a factory function in this version
-          if (typeof STOCKFISH === 'function') {
-            engine = STOCKFISH();
-
-            // Set up output handler
-            engine.onmessage = function(event) {
-              const msg = typeof event === 'string' ? event : (event.data || event);
-              postMessage({ type: 'stockfish', data: msg });
-            };
-
-            // Engine is ready
-            postMessage({ type: 'ready' });
+          // stockfish.wasm exports Stockfish as a promise-based factory
+          if (typeof Stockfish === 'function') {
+            Stockfish().then(function(sf) {
+              setupEngine(sf);
+            }).catch(function(err) {
+              postMessage({ type: 'error', error: 'Stockfish init failed: ' + err.message });
+            });
+          } else if (typeof STOCKFISH === 'function') {
+            setupEngine(STOCKFISH());
           } else if (typeof STOCKFISH === 'object' && STOCKFISH.postMessage) {
-            // Alternative: STOCKFISH is already an engine instance
-            engine = STOCKFISH;
-
-            engine.onmessage = function(event) {
-              const msg = typeof event === 'string' ? event : (event.data || event);
-              postMessage({ type: 'stockfish', data: msg });
-            };
-
-            postMessage({ type: 'ready' });
+            setupEngine(STOCKFISH);
           } else {
-            throw new Error('STOCKFISH not available after import');
+            // Log what's available for debugging
+            const globals = Object.keys(self).filter(k =>
+              k.toLowerCase().includes('stock') || k.toLowerCase().includes('fish')
+            );
+            postMessage({ type: 'error', error: 'Stockfish not found. Available: ' + globals.join(', ') });
           }
         } catch (err) {
           postMessage({ type: 'error', error: err.message });
