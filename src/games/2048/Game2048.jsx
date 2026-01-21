@@ -282,11 +282,8 @@ const Game2048 = () => {
           onNewGame={handleNewGame}
           onContinue={continueAfterWin}
           onMove={handleMove}
-          onSubmitScore={handleSubmitScore}
-          scoreSubmitted={scoreSubmitted}
-          submittedRank={submittedRank}
-          playerName={playerName}
-          onPlayerNameChange={setPlayerName}
+          gameId={state.gameId}
+          anchorBlock={state.anchorBlock}
         />
 
         {/* Grid Section - Touch enabled */}

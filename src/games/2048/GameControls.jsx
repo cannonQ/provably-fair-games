@@ -5,8 +5,9 @@
  * Mobile-optimized with compact layout
  */
 
-import React from 'react';
-import { formatScore, getScoreRank } from './scoreLogic';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { formatScore } from './scoreLogic';
 
 /**
  * GameControls component - Compact mobile-first design
@@ -20,13 +21,22 @@ const GameControls = ({
   onNewGame,
   onContinue,
   onMove,
-  onSubmitScore,
-  scoreSubmitted = false,
-  submittedRank = null,
-  playerName = '',
-  onPlayerNameChange
+  gameId = '',
+  anchorBlock = null
 }) => {
-  const showStatus = (gameStatus === 'won' && !canContinue) || gameStatus === 'lost';
+  const [modalDismissed, setModalDismissed] = useState(false);
+  const showStatus = ((gameStatus === 'won' && !canContinue) || gameStatus === 'lost') && !modalDismissed;
+
+  const handleClose = () => {
+    setModalDismissed(true);
+  };
+
+  // Reset dismissed state when game status changes (new game)
+  React.useEffect(() => {
+    if (gameStatus === 'playing') {
+      setModalDismissed(false);
+    }
+  }, [gameStatus]);
 
   return (
     <div style={styles.container}>
@@ -49,6 +59,9 @@ const GameControls = ({
             ...styles.statusMessage,
             ...(gameStatus === 'won' ? styles.wonMessage : styles.lostMessage)
           }}>
+            {/* Close Button */}
+            <button style={styles.closeButton} onClick={handleClose}>×</button>
+
             <div style={styles.statusTitle}>
               {gameStatus === 'won' ? '🎉 You Won!' : 'Game Over'}
             </div>
@@ -58,6 +71,29 @@ const GameControls = ({
                 : `Score: ${formatScore(score)}`
               }
             </div>
+
+            {/* Verification Info */}
+            {gameId && anchorBlock && (
+              <div style={styles.verificationSection}>
+                <div style={styles.verificationTitle}>🔗 Provably Fair</div>
+                <div style={styles.verificationRow}>
+                  <span style={styles.verificationLabel}>Game ID:</span>
+                  <span style={styles.verificationValue}>{gameId.slice(0, 12)}...</span>
+                </div>
+                <div style={styles.verificationRow}>
+                  <span style={styles.verificationLabel}>Block:</span>
+                  <span style={styles.verificationValue}>#{anchorBlock.blockHeight}</span>
+                </div>
+                <Link
+                  to={`/2048/verify/${gameId}`}
+                  state={{ gameId, score, anchorBlock }}
+                  style={styles.verifyLink}
+                >
+                  View Full Verification →
+                </Link>
+              </div>
+            )}
+
             <div style={styles.buttonRow}>
               {gameStatus === 'won' && (
                 <button style={{ ...styles.button, ...styles.continueButton }} onClick={onContinue}>
@@ -131,7 +167,20 @@ const styles = {
     textAlign: 'center',
     border: '2px solid #334155',
     maxWidth: '320px',
-    width: '100%'
+    width: '100%',
+    position: 'relative'
+  },
+  closeButton: {
+    position: 'absolute',
+    top: '8px',
+    right: '12px',
+    background: 'none',
+    border: 'none',
+    color: '#64748b',
+    fontSize: '1.5rem',
+    cursor: 'pointer',
+    padding: '4px 8px',
+    lineHeight: 1
   },
   wonMessage: {
     borderColor: '#22c55e'
@@ -149,6 +198,39 @@ const styles = {
     fontSize: '1rem',
     color: '#94a3b8',
     marginBottom: '16px'
+  },
+  verificationSection: {
+    backgroundColor: '#0f172a',
+    borderRadius: '8px',
+    padding: '12px',
+    marginBottom: '16px',
+    textAlign: 'left'
+  },
+  verificationTitle: {
+    fontSize: '0.85rem',
+    fontWeight: 'bold',
+    color: '#22c55e',
+    marginBottom: '8px'
+  },
+  verificationRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '0.8rem',
+    marginBottom: '4px'
+  },
+  verificationLabel: {
+    color: '#64748b'
+  },
+  verificationValue: {
+    color: '#94a3b8',
+    fontFamily: 'monospace'
+  },
+  verifyLink: {
+    display: 'block',
+    marginTop: '8px',
+    color: '#3b82f6',
+    fontSize: '0.8rem',
+    textDecoration: 'none'
   },
   buttonRow: {
     display: 'flex',
@@ -172,34 +254,6 @@ const styles = {
   continueButton: {
     backgroundColor: '#22c55e',
     color: '#fff'
-  },
-  submitButton: {
-    backgroundColor: '#3b82f6',
-    color: '#fff'
-  },
-  submittedText: {
-    color: '#22c55e',
-    fontWeight: '600',
-    marginTop: '12px',
-    fontSize: '0.9rem'
-  },
-  nameInput: {
-    padding: '10px 12px',
-    fontSize: '0.9rem',
-    border: '2px solid #334155',
-    borderRadius: '8px',
-    width: '100%',
-    maxWidth: '200px',
-    textAlign: 'center',
-    outline: 'none',
-    backgroundColor: '#0f172a',
-    color: '#f1f5f9'
-  },
-  nameInputRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: '12px'
   }
 };
 
