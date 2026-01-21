@@ -10,7 +10,7 @@
 .blackjack-game {
   min-height: 100vh;
   min-height: 100dvh;
-  background: linear-gradient(135deg, #1a472a 0%, #0d2818 100%);
+  background: #0f172a; /* Cypherpunk: dark slate (was green gradient) */
   padding: 12px;
   box-sizing: border-box;
   overflow: hidden;
@@ -64,12 +64,12 @@
 }
 
 .header-nav a {
-  color: #a5d6a7;
+  color: #94a3b8; /* Cypherpunk: slate-400 */
   text-decoration: none;
 }
 
 .header-nav a:hover {
-  color: #fff;
+  color: #f1f5f9; /* Cypherpunk: slate-100 */
 }
 
 .menu-btn {
@@ -160,14 +160,14 @@
    ============================================================================= */
 
 .blackjack-table {
-  background: linear-gradient(180deg, #1b5e20 0%, #2e7d32 50%, #1b5e20 100%);
+  background: #1e293b; /* Cypherpunk: lighter slate background */
   border-radius: 200px 200px 20px 20px;
-  border: 12px solid #5d4037;
-  box-shadow: 
-    inset 0 0 60px rgba(0, 0, 0, 0.4),
-    0 10px 40px rgba(0, 0, 0, 0.5);
-  padding: 2rem;
-  min-height: 450px;
+  border: 8px solid #334155; /* Cypherpunk: slate-700 border */
+  box-shadow:
+    inset 0 0 40px rgba(0, 0, 0, 0.3),
+    0 8px 30px rgba(0, 0, 0, 0.4);
+  padding: 1rem; /* Compact: reduced from 2rem */
+  min-height: 380px; /* Compact: reduced from 450px */
   position: relative;
 }
 
@@ -194,11 +194,11 @@
 .hand-bet-display {
   margin-top: 0.5rem;
   padding: 0.25rem 0.75rem;
-  background: #ff8f00;
+  background: #f59e0b; /* Cypherpunk: amber-500 */
   border-radius: 20px;
   font-size: 0.875rem;
   font-weight: bold;
-  color: #000;
+  color: #0f172a; /* Cypherpunk: dark text */
 }
 
 /* =============================================================================
@@ -222,7 +222,7 @@
 
 .hand-label {
   font-size: 0.875rem;
-  color: #a5d6a7;
+  color: #94a3b8; /* Cypherpunk: slate-400 muted text */
   margin-bottom: 0.5rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -363,12 +363,12 @@
 
 .message-area {
   text-align: center;
-  padding: 1.5rem;
+  padding: 0.75rem; /* Compact: reduced from 1.5rem */
 }
 
 .game-message {
   font-size: 1.25rem;
-  color: #ffd54f;
+  color: #fbbf24; /* Cypherpunk: amber-400 highlight */
   font-weight: 600;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
   margin: 0;
@@ -387,7 +387,7 @@
 }
 
 .insurance-prompt span {
-  color: #ffd54f;
+  color: #fbbf24; /* Cypherpunk: amber-400 */
   font-weight: 600;
 }
 
@@ -430,7 +430,7 @@
   justify-content: center;
   gap: 0.75rem;
   flex-wrap: wrap;
-  margin-top: 1.5rem;
+  margin-top: 0.75rem; /* Compact: reduced from 1.5rem */
 }
 
 .action-btn {
@@ -482,11 +482,11 @@
    ============================================================================= */
 
 .betting-controls {
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  background: #0f172a; /* Cypherpunk: dark slate */
   border-radius: 16px;
-  padding: 1.5rem;
-  border: 1px solid #2a3a5e;
-  margin-top: 1.5rem;
+  padding: 1rem; /* Compact: reduced from 1.5rem */
+  border: 1px solid #334155; /* Cypherpunk: slate-700 */
+  margin-top: 1rem; /* Compact: reduced from 1.5rem */
 }
 
 .betting-header {
@@ -517,13 +517,13 @@
 }
 
 .balance-display {
-  color: #a5d6a7;
+  color: #22c55e; /* Cypherpunk: green-500 for balance */
   font-size: 1.25rem;
   font-weight: bold;
 }
 
 .bet-display {
-  color: #ffd54f;
+  color: #fbbf24; /* Cypherpunk: amber-400 for bet */
   font-size: 1.25rem;
   font-weight: bold;
 }
@@ -570,20 +570,24 @@
   cursor: not-allowed;
 }
 
-.chip-5 { 
-  background: linear-gradient(145deg, #e53935 0%, #b71c1c 100%);
+.chip-5 {
+  background: linear-gradient(145deg, #ef4444 0%, #dc2626 100%); /* Cypherpunk: red-500/red-600 */
+  border: 2px solid #f87171; /* Cypherpunk: red-400 */
 }
 
-.chip-25 { 
-  background: linear-gradient(145deg, #43a047 0%, #1b5e20 100%);
+.chip-25 {
+  background: linear-gradient(145deg, #3b82f6 0%, #2563eb 100%); /* Cypherpunk: blue-500/blue-600 */
+  border: 2px solid #60a5fa; /* Cypherpunk: blue-400 */
 }
 
-.chip-100 { 
-  background: linear-gradient(145deg, #424242 0%, #212121 100%);
+.chip-100 {
+  background: linear-gradient(145deg, #22c55e 0%, #16a34a 100%); /* Cypherpunk: green-500/green-600 */
+  border: 2px solid #4ade80; /* Cypherpunk: green-400 */
 }
 
-.chip-500 { 
-  background: linear-gradient(145deg, #7b1fa2 0%, #4a148c 100%);
+.chip-500 {
+  background: linear-gradient(145deg, #a78bfa 0%, #8b5cf6 100%); /* Cypherpunk: violet-400/violet-500 */
+  border: 2px solid #c4b5fd; /* Cypherpunk: violet-300 */
 }
 
 /* Quick Bet Buttons */
@@ -597,17 +601,18 @@
 
 .quick-bet-btn {
   padding: 0.5rem 1rem;
-  background: #2e7d32;
-  color: #fff;
-  border: none;
+  background: #334155; /* Cypherpunk: slate-700 */
+  color: #f1f5f9; /* Cypherpunk: slate-100 */
+  border: 1px solid #475569; /* Cypherpunk: slate-600 */
   border-radius: 6px;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
 .quick-bet-btn:hover:not(:disabled) {
-  background: #43a047;
+  background: #475569; /* Cypherpunk: slate-600 hover */
+  border-color: #64748b;
 }
 
 .quick-bet-btn:disabled {
@@ -616,13 +621,15 @@
 }
 
 .quick-bet-btn.max {
-  background: #ff8f00;
-  color: #000;
+  background: #f59e0b; /* Cypherpunk: amber-500 */
+  color: #0f172a; /* Cypherpunk: dark text */
   font-weight: bold;
+  border-color: #fbbf24;
 }
 
 .quick-bet-btn.clear {
-  background: #616161;
+  background: #475569; /* Cypherpunk: slate-600 */
+  border-color: #64748b;
 }
 
 /* Deal Button */
@@ -866,13 +873,13 @@
 }
 
 .modal-links a {
-  color: #a5d6a7;
+  color: #94a3b8; /* Cypherpunk: slate-400 */
   text-decoration: none;
   font-size: 0.9rem;
 }
 
 .modal-links a:hover {
-  color: #fff;
+  color: #f1f5f9; /* Cypherpunk: slate-100 */
 }
 
 .close-btn {
