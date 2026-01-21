@@ -981,6 +981,10 @@
     font-size: 2.2rem;
   }
 
+  .chess-board {
+    padding: 0.4rem;
+  }
+
   .game-stats {
     grid-template-columns: 1fr 1fr;
   }
@@ -999,17 +1003,25 @@
 }
 
 @media (max-width: 480px) {
+  .chess-game-container {
+    padding: 0.5rem;
+  }
+
   .chess-square {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
   }
 
   .chess-piece {
-    font-size: 1.8rem;
+    font-size: 2rem;
+  }
+
+  .chess-board {
+    padding: 0.25rem;
   }
 
   .square-label {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
   }
 
   .quick-options {
@@ -1030,5 +1042,44 @@
 
   .control-btn {
     width: 100%;
+  }
+}
+
+@media (max-width: 390px) {
+  .chess-square {
+    width: 38px;
+    height: 38px;
+  }
+
+  .chess-piece {
+    font-size: 1.8rem;
+  }
+
+  .chess-board {
+    padding: 0.2rem;
+  }
+
+  .square-label {
+    font-size: 0.5rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .chess-square {
+    width: 36px;
+    height: 36px;
+  }
+
+  .chess-piece {
+    font-size: 1.7rem;
+  }
+
+  .chess-board {
+    padding: 0.15rem;
+  }
+
+  .move-indicator {
+    width: 10px;
+    height: 10px;
   }
 }
