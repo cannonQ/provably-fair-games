@@ -707,7 +707,7 @@ const styles = {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    maxWidth: '600px',
+    maxWidth: '1100px', // Wider: increased from 600px to spread side to side
     width: '100%',
     margin: '0 auto',
     padding: '12px',

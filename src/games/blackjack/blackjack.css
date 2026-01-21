@@ -137,7 +137,7 @@
 }
 
 .game-container {
-  max-width: 900px;
+  max-width: 1200px; /* Wider: increased from 900px */
   margin: 0 auto;
 }
 
@@ -161,7 +161,7 @@
 
 .blackjack-table {
   background: #1e293b; /* Cypherpunk: lighter slate background */
-  border-radius: 200px 200px 20px 20px;
+  border-radius: 20px 20px 200px 200px; /* Inverted: curve towards player (was top-rounded) */
   border: 8px solid #334155; /* Cypherpunk: slate-700 border */
   box-shadow:
     inset 0 0 40px rgba(0, 0, 0, 0.3),
@@ -486,7 +486,7 @@
   border-radius: 16px;
   padding: 1rem; /* Compact: reduced from 1.5rem */
   border: 1px solid #334155; /* Cypherpunk: slate-700 */
-  margin-top: 1rem; /* Compact: reduced from 1.5rem */
+  margin-top: 0.5rem; /* Moved up: reduced from 1rem to be closer to table */
 }
 
 .betting-header {
@@ -904,7 +904,7 @@
 
 @media (max-width: 768px) {
   .blackjack-table {
-    border-radius: 100px 100px 20px 20px;
+    border-radius: 20px 20px 100px 100px; /* Inverted: curve towards player */
     padding: 1rem;
     border-width: 8px;
   }
@@ -942,7 +942,7 @@
   }
 
   .blackjack-table {
-    border-radius: 60px 60px 15px 15px;
+    border-radius: 15px 15px 60px 60px; /* Inverted: curve towards player */
     padding: 0.75rem;
     border-width: 6px;
     min-height: 350px;
