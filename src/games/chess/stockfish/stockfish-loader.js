@@ -50,31 +50,24 @@ export async function loadStockfish() {
           postMessage({ type: 'ready' });
         }
 
-        // Load Stockfish from CDN - try multiple approaches
+        // Load Stockfish from CDN - use single-threaded version (no SharedArrayBuffer needed)
         try {
-          // Try stockfish.wasm which is more modern
-          importScripts('https://cdn.jsdelivr.net/npm/stockfish.wasm@0.10.0/stockfish.js');
+          // nmrugg/stockfish.js single-threaded build
+          importScripts('https://cdn.jsdelivr.net/npm/stockfish@16.0.0/src/stockfish-16.1-lite-single.js');
 
-          // stockfish.wasm exports Stockfish as a promise-based factory
+          // Stockfish 16 creates a Stockfish factory function
           if (typeof Stockfish === 'function') {
-            Stockfish().then(function(sf) {
-              setupEngine(sf);
-            }).catch(function(err) {
-              postMessage({ type: 'error', error: 'Stockfish init failed: ' + err.message });
-            });
-          } else if (typeof STOCKFISH === 'function') {
-            setupEngine(STOCKFISH());
-          } else if (typeof STOCKFISH === 'object' && STOCKFISH.postMessage) {
-            setupEngine(STOCKFISH);
+            const sf = Stockfish();
+            setupEngine(sf);
           } else {
-            // Log what's available for debugging
+            // Try alternative global names
             const globals = Object.keys(self).filter(k =>
-              k.toLowerCase().includes('stock') || k.toLowerCase().includes('fish')
+              k.toLowerCase().includes('stock') || k === 'Module'
             );
-            postMessage({ type: 'error', error: 'Stockfish not found. Available: ' + globals.join(', ') });
+            postMessage({ type: 'error', error: 'Stockfish not found after import. Globals: ' + globals.join(', ') });
           }
         } catch (err) {
-          postMessage({ type: 'error', error: err.message });
+          postMessage({ type: 'error', error: 'Import failed: ' + err.message });
         }
       `;
 
