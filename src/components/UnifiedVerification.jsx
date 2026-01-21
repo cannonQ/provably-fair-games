@@ -134,51 +134,100 @@ const generatePythonScript = (game, data) => {
   const gameSpecificCode = {
     solitaire: `
 # Solitaire-specific: shuffle 52 cards
-import random
+# Uses EXACT same algorithm as JavaScript
 
 RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-SUITS = ['♥', '♦', '♣', '♠']  # hearts, diamonds, clubs, spades
+SUITS_NAMES = ['hearts', 'diamonds', 'clubs', 'spades']
+SUITS_SYMBOLS = ['♥', '♦', '♣', '♠']
 
-def decode_card(index):
-    """Convert card index (0-51) to human-readable card"""
-    suit_idx = index // 13  # Which suit (0-3)
-    rank_idx = index % 13   # Which rank (0-12)
-    return f"{RANKS[rank_idx]}{SUITS[suit_idx]}"
+# Linear Congruential Generator (matches JavaScript seedRandom)
+class SeededRandom:
+    def __init__(self, seed_hex):
+        self.state = int(seed_hex[:8], 16)
+        self.a = 1103515245  # glibc constants
+        self.c = 12345
+        self.m = 2**31
 
-def shuffle_deck(seed_int):
-    deck = list(range(52))
-    random.seed(seed_int)
-    random.shuffle(deck)
+    def random(self):
+        self.state = (self.a * self.state + self.c) % self.m
+        return self.state / self.m
+
+def create_deck():
+    """Create deck in same order as JavaScript"""
+    deck = []
+    for suit in SUITS_NAMES:
+        for rank in RANKS:
+            deck.append({'rank': rank, 'suit': suit})
     return deck
 
-shuffled = shuffle_deck(seed_int)
-print(f"Shuffled deck (indices): {shuffled[:10]}... (first 10)")
-print(f"Shuffled deck (cards):   {[decode_card(i) for i in shuffled[:10]]}... (first 10)")
+def shuffle_array(array, seed_hex):
+    """Fisher-Yates shuffle matching JavaScript"""
+    result = array.copy()
+    rng = SeededRandom(seed_hex)
+    for i in range(len(result) - 1, 0, -1):
+        j = int(rng.random() * (i + 1))
+        result[i], result[j] = result[j], result[i]
+    return result
+
+def format_card(card_obj):
+    suit_idx = SUITS_NAMES.index(card_obj['suit'])
+    return f"{card_obj['rank']}{SUITS_SYMBOLS[suit_idx]}"
+
+deck = create_deck()
+shuffled_deck = shuffle_array(deck, seed)
+
+print(f"\\nShuffled deck (first 10 cards):")
+for i in range(10):
+    print(f"  {i+1}. {format_card(shuffled_deck[i])}")
 `,
     blackjack: `
 # Blackjack-specific: shuffle 312 cards (6 decks)
-import random
+# Uses EXACT same algorithm as JavaScript
 
 RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-SUITS = ['♥', '♦', '♣', '♠']  # hearts, diamonds, clubs, spades
+SUITS_NAMES = ['hearts', 'diamonds', 'clubs', 'spades']
+SUITS_SYMBOLS = ['♥', '♦', '♣', '♠']
 
-def decode_card(index):
-    """Convert card index (0-311) to human-readable card"""
-    deck = (index // 52) + 1  # Which deck (1-6)
-    pos_in_deck = index % 52  # Position within deck (0-51)
-    suit_idx = pos_in_deck // 13  # Which suit (0-3)
-    rank_idx = pos_in_deck % 13   # Which rank (0-12)
-    return f"{RANKS[rank_idx]}{SUITS[suit_idx]}"
+# Linear Congruential Generator (matches JavaScript seedRandom)
+class SeededRandom:
+    def __init__(self, seed_hex):
+        self.state = int(seed_hex[:8], 16)
+        self.a = 1103515245  # glibc constants
+        self.c = 12345
+        self.m = 2**31
 
-def shuffle_shoe(seed_int):
-    shoe = list(range(312))  # 6 decks * 52 cards
-    random.seed(seed_int)
-    random.shuffle(shoe)
+    def random(self):
+        self.state = (self.a * self.state + self.c) % self.m
+        return self.state / self.m
+
+def create_shoe():
+    """Create 6-deck shoe in same order as JavaScript"""
+    shoe = []
+    for deck in range(1, 7):  # decks 1-6
+        for suit in SUITS_NAMES:
+            for rank in RANKS:
+                shoe.append({'rank': rank, 'suit': suit, 'deck': deck})
     return shoe
 
-shuffled = shuffle_shoe(seed_int)
-print(f"Shoe order (indices): {shuffled[:10]}... (first 10)")
-print(f"Shoe order (cards):   {[decode_card(i) for i in shuffled[:10]]}... (first 10)")
+def shuffle_array(array, seed_hex):
+    """Fisher-Yates shuffle matching JavaScript"""
+    result = array.copy()
+    rng = SeededRandom(seed_hex)
+    for i in range(len(result) - 1, 0, -1):
+        j = int(rng.random() * (i + 1))
+        result[i], result[j] = result[j], result[i]
+    return result
+
+def format_card(card_obj):
+    suit_idx = SUITS_NAMES.index(card_obj['suit'])
+    return f"{card_obj['rank']}{SUITS_SYMBOLS[suit_idx]}"
+
+shoe = create_shoe()
+shuffled_shoe = shuffle_array(shoe, seed)
+
+print(f"\\nShuffled shoe (first 10 cards):")
+for i in range(10):
+    print(f"  {i+1}. {format_card(shuffled_shoe[i])}")
 `,
     yahtzee: `
 # Yahtzee-specific: generate dice rolls
@@ -270,20 +319,36 @@ game_id = "${data.gameId}"
 # ============================================
 # SEED GENERATION (matches client-side)
 # ============================================
-def simple_hash(s):
-    """Simple hash function matching client-side implementation"""
+def simple_hash(input_str):
+    """Simple hash function matching JavaScript simpleHash"""
     h = 0
-    for c in s:
+    for c in input_str:
         h = ((h << 5) - h) + ord(c)
         h = h & 0xFFFFFFFF  # Convert to 32-bit
-    return format(h, 'x')
+    # Return absolute value to match JavaScript Math.abs
+    if h >= 0x80000000:
+        h = -(0x100000000 - h)
+    return abs(h)
 
 def generate_seed(block_hash, tx_hash, timestamp, game_id, tx_index):
-    combined = f"{block_hash}{tx_hash}{timestamp}{game_id}{tx_index}"
-    seed = ""
-    for i in range(4):
-        seed += simple_hash(combined + str(i))
-    return seed
+    """Generate seed matching JavaScript generateSeed exactly"""
+    # Use colons to separate inputs (matches JavaScript)
+    input_str = f"{block_hash}:{tx_hash}:{timestamp}:{game_id}:{tx_index}"
+
+    # Generate 4 hash rounds (matches JavaScript)
+    hash1 = simple_hash(input_str)
+    hash2 = simple_hash(input_str + str(hash1))
+    hash3 = simple_hash(str(hash1) + str(hash2))
+    hash4 = simple_hash(str(hash2) + str(hash3))
+
+    # Convert to 8-char hex strings (padded with zeros)
+    hex1 = format(hash1, '08x')
+    hex2 = format(hash2, '08x')
+    hex3 = format(hash3, '08x')
+    hex4 = format(hash4, '08x')
+
+    # Concatenate twice and slice to 64 chars (matches JavaScript)
+    return (hex1 + hex2 + hex3 + hex4 + hex1 + hex2 + hex3 + hex4)[:64]
 
 # Generate the seed
 seed = generate_seed(block_hash, tx_hash, timestamp, game_id, tx_index)

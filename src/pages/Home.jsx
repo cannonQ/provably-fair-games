@@ -13,10 +13,9 @@ function Home() {
       {/* Hero Section */}
       <header style={styles.hero}>
         <h1 style={styles.title}>🃏 Provably Fair Games</h1>
-        <p style={styles.subtitle}>Blockchain-verified randomness you can trust</p>
-        <p style={styles.description}>
-          Every shuffle uses public Ergo blockchain data. 
-          No trust required – verify the math yourself.
+        <p style={styles.tagline}>Pick your card. Prove your luck.</p>
+        <p style={styles.subtitle}>
+          7 classic games. Zero trust required. Every random outcome anchored to the Ergo blockchain.
         </p>
       </header>
 
@@ -27,133 +26,107 @@ function Home() {
         <div style={styles.gamesGrid}>
           {/* Solitaire Card */}
           <Link to="/solitaire" style={styles.gameCard}>
-            <div style={styles.gameIcon}>♠️</div>
+            <div style={styles.gameIcon}>♥</div>
             <h3 style={styles.gameTitle}>Solitaire</h3>
+            <p style={styles.gameTagline}>Blockchain-shuffled Klondike</p>
             <p style={styles.gameDesc}>
-              Classic Klondike solitaire. Build foundations from Ace to King by suit.
+              Classic Klondike solitaire with a 52-card deck shuffled using Ergo blockchain randomness.
+              Every card placement is provably fair—verify the shuffle yourself.
             </p>
             <div style={styles.gameStats}>
               <span>👤 Solo</span>
               <span>~10 min</span>
             </div>
-            <ul style={styles.gameFeatures}>
-              <li>Provably fair shuffle</li>
-              <li>Undo moves available</li>
-              <li>Track completion time</li>
-            </ul>
             <div style={styles.playBadge}>Play Now →</div>
           </Link>
 
           {/* Blackjack Card */}
           <Link to="/blackjack" style={styles.gameCard}>
-            <div style={styles.gameIcon}>🃏</div>
+            <div style={styles.gameIcon}>♥</div>
             <h3 style={styles.gameTitle}>Blackjack</h3>
+            <p style={styles.gameTagline}>Beat the house. Verify every card.</p>
             <p style={styles.gameDesc}>
-              Classic casino blackjack with blockchain-verified 6-deck shoe. Hit, Stand, Double, Split – every card is verifiable!
+              Six-deck shoe, real casino rules. The entire shoe order is determined by blockchain data before you place your first bet. Check every card dealt.
             </p>
             <div style={styles.gameStats}>
               <span>👤 vs Dealer</span>
               <span>5 min session</span>
             </div>
-            <ul style={styles.gameFeatures}>
-              <li>Blackjack pays 3:2</li>
-              <li>Split up to 4 hands</li>
-              <li>Provably fair shoe</li>
-            </ul>
             <div style={styles.playBadge}>Play Blackjack →</div>
           </Link>
 
           {/* Yahtzee Card */}
           <Link to="/yahtzee" style={styles.gameCard}>
-            <div style={styles.gameIcon}>🎲</div>
+            <div style={styles.gameIcon}>♦</div>
             <h3 style={styles.gameTitle}>Yahtzee</h3>
+            <p style={styles.gameTagline}>Roll the dice. Prove the rolls.</p>
             <p style={styles.gameDesc}>
-              Classic dice game with 13 scoring categories. Roll for straights, full houses, and Yahtzee!
+              Classic five-dice scoring. Every roll is derived from Ergo block data—no hidden RNG. Chase that Yahtzee with full transparency.
             </p>
             <div style={styles.gameStats}>
               <span>👤 Solo</span>
               <span>~10 min</span>
             </div>
-            <ul style={styles.gameFeatures}>
-              <li>Blockchain-verified dice</li>
-              <li>All 13 categories</li>
-              <li>Upper section bonus</li>
-            </ul>
             <div style={styles.playBadge}>Play Now →</div>
           </Link>
 
           {/* Garbage Card */}
           <Link to="/garbage" style={styles.gameCard}>
-            <div style={styles.gameIcon}>🗑️</div>
+            <div style={styles.gameIcon}>♥</div>
             <h3 style={styles.gameTitle}>Garbage</h3>
+            <p style={styles.gameTagline}>Race to clear your hand</p>
             <p style={styles.gameDesc}>
-              Race against AI to fill positions 1-10. Jacks are wild, Queens & Kings are garbage!
+              Fast-paced card game against AI. Fill your tableau from Ace to 10 before your opponent. Wild cards and blockchain-verified deals.
             </p>
             <div style={styles.gameStats}>
               <span>👤 vs 🤖</span>
               <span>~5 min</span>
             </div>
-            <ul style={styles.gameFeatures}>
-              <li>3 difficulty levels</li>
-              <li>Jacks are wild cards</li>
-              <li>Provably fair shuffle</li>
-            </ul>
             <div style={styles.playBadge}>Play Now →</div>
           </Link>
 
           {/* 2048 Card */}
           <Link to="/2048" style={styles.gameCard}>
-            <div style={styles.gameIcon}>🔢</div>
+            <div style={styles.gameIcon}>♣</div>
             <h3 style={styles.gameTitle}>2048</h3>
+            <p style={styles.gameTagline}>Slide. Merge. Verify.</p>
             <p style={styles.gameDesc}>
-              Slide tiles to combine matching numbers. Reach 2048 with blockchain-verified tile spawns!
+              The addictive tile-merger with a twist: every new tile spawn (position and value) comes from blockchain randomness. Same challenge, provable fairness.
             </p>
             <div style={styles.gameStats}>
               <span>👤 Solo</span>
               <span>~5 min</span>
             </div>
-            <ul style={styles.gameFeatures}>
-              <li>Blockchain-verified spawns</li>
-              <li>Each tile position verifiable</li>
-            </ul>
             <div style={styles.playBadge}>Play 2048 →</div>
           </Link>
 
           {/* Backgammon Card */}
           <Link to="/backgammon" style={styles.gameCard}>
-            <div style={styles.gameIcon}>🎲</div>
+            <div style={styles.gameIcon}>♠</div>
             <h3 style={styles.gameTitle}>Backgammon</h3>
+            <p style={styles.gameTagline}>Ancient game. Modern proof.</p>
             <p style={styles.gameDesc}>
-              Classic backgammon against AI with blockchain-verified dice rolls. Features doubling cube!
+              5,000 years of strategy meets blockchain verification. Play against AI with dice rolls you can independently verify. Doubling cube included.
             </p>
             <div style={styles.gameStats}>
               <span>👤 vs 🤖</span>
               <span>~15 min</span>
             </div>
-            <ul style={styles.gameFeatures}>
-              <li>Provably fair dice</li>
-              <li>3 difficulty levels</li>
-              <li>Doubling cube</li>
-            </ul>
             <div style={styles.playBadge}>Play Backgammon →</div>
           </Link>
 
           {/* Chess Card */}
           <Link to="/chess" style={styles.gameCard}>
-            <div style={styles.gameIcon}>♟️</div>
+            <div style={styles.gameIcon}>♠</div>
             <h3 style={styles.gameTitle}>Chess</h3>
+            <p style={styles.gameTagline}>Challenge Stockfish. Fair colors.</p>
             <p style={styles.gameDesc}>
-              Challenge Stockfish AI at your skill level. Blockchain-proven color assignment and locked AI difficulty!
+              Face the legendary chess engine at your chosen ELO. Your color (white/black) is determined by blockchain—no rigged starting advantages.
             </p>
             <div style={styles.gameStats}>
               <span>👤 vs 🤖</span>
               <span>~20 min</span>
             </div>
-            <ul style={styles.gameFeatures}>
-              <li>Adjustable AI (400-2800 ELO)</li>
-              <li>Blockchain color assignment</li>
-              <li>AI commitment proof</li>
-            </ul>
             <div style={styles.playBadge}>Play Chess →</div>
           </Link>
 
@@ -169,24 +142,10 @@ function Home() {
         </div>
       </section>
 
-      {/* Features Strip */}
-      <section style={styles.features}>
-        <div style={styles.feature}>
-          <span style={styles.featureIcon}>🔒</span>
-          <span style={styles.featureText}>Provably Fair</span>
-        </div>
-        <div style={styles.feature}>
-          <span style={styles.featureIcon}>🆓</span>
-          <span style={styles.featureText}>Free to Play</span>
-        </div>
-        <div style={styles.feature}>
-          <span style={styles.featureIcon}>🔍</span>
-          <span style={styles.featureText}>Verifiable</span>
-        </div>
-        <div style={styles.feature}>
-          <span style={styles.featureIcon}>🏆</span>
-          <span style={styles.featureText}>Leaderboards</span>
-        </div>
+      {/* Footer Copy */}
+      <section style={styles.footerCopy}>
+        <p style={styles.footerPrimary}>House edge: 0%. Trust required: 0%.</p>
+        <p style={styles.footerSecondary}>Verify any game yourself on Ergo Explorer</p>
       </section>
 
       {/* How It Works Brief */}
@@ -236,16 +195,16 @@ const styles = {
     margin: '0 0 0.5rem 0',
     color: '#fff'
   },
-  subtitle: {
-    fontSize: '1.2rem',
+  tagline: {
+    fontSize: '1.5rem',
     color: '#4ade80',
-    margin: '0 0 1rem 0',
-    fontWeight: '500'
+    margin: '0 0 0.75rem 0',
+    fontWeight: '600'
   },
-  description: {
+  subtitle: {
     fontSize: '1rem',
     color: '#aaa',
-    maxWidth: '500px',
+    maxWidth: '600px',
     margin: '0 auto',
     lineHeight: 1.6
   },
@@ -290,11 +249,18 @@ const styles = {
   },
   gameIcon: {
     fontSize: '3rem',
-    marginBottom: '0.75rem'
+    marginBottom: '0.75rem',
+    color: '#4ade80' // Green to match theme and be visible
   },
   gameTitle: {
     color: '#fff',
     fontSize: '1.25rem',
+    margin: '0 0 0.25rem 0'
+  },
+  gameTagline: {
+    color: '#4ade80',
+    fontSize: '0.85rem',
+    fontWeight: '500',
     margin: '0 0 0.5rem 0'
   },
   gameDesc: {
@@ -336,30 +302,25 @@ const styles = {
     textAlign: 'center'
   },
 
-  // Features
-  features: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '2rem',
-    flexWrap: 'wrap',
+  // Footer Copy
+  footerCopy: {
+    textAlign: 'center',
     marginTop: '3rem',
-    padding: '1.5rem',
-    backgroundColor: '#0d1a0d',
+    padding: '2rem 1rem',
+    backgroundColor: '#0f172a',
     borderRadius: '12px',
-    border: '1px solid #1a3a1a'
+    border: '1px solid #334155'
   },
-  feature: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem'
-  },
-  featureIcon: {
-    fontSize: '1.25rem'
-  },
-  featureText: {
+  footerPrimary: {
+    fontSize: '1.25rem',
     color: '#4ade80',
+    fontWeight: 'bold',
+    margin: '0 0 0.5rem 0'
+  },
+  footerSecondary: {
     fontSize: '0.9rem',
-    fontWeight: '500'
+    color: '#94a3b8',
+    margin: 0
   },
 
   // How It Works
