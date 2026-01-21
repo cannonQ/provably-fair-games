@@ -13,21 +13,22 @@
 
 /**
  * Creates a seeded pseudo-random number generator (LCG algorithm)
+ * Uses BigInt for exact integer arithmetic to match Python implementation
  * @param {string} seed - Hex string seed
  * @returns {function(): number} Function returning random numbers 0-1
  */
 function seedRandom(seed) {
   // Convert hex seed to numeric value (use first 8 chars for 32-bit int)
-  let state = parseInt(seed.slice(0, 8), 16);
+  let state = BigInt(parseInt(seed.slice(0, 8), 16));
 
   // Linear Congruential Generator constants (same as glibc)
-  const a = 1103515245;
-  const c = 12345;
-  const m = Math.pow(2, 31);
+  const a = BigInt(1103515245);
+  const c = BigInt(12345);
+  const m = BigInt(Math.pow(2, 31));
 
   return function() {
     state = (a * state + c) % m;
-    return state / m;
+    return Number(state) / Number(m);
   };
 }
 
