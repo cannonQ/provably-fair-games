@@ -58,39 +58,16 @@ const GameControls = ({
                 : `Score: ${formatScore(score)}`
               }
             </div>
-            {/* Name input for score submission */}
-            {!scoreSubmitted && onSubmitScore && (
-              <div style={styles.nameInputRow}>
-                <input
-                  type="text"
-                  placeholder="Your name"
-                  value={playerName}
-                  onChange={(e) => onPlayerNameChange && onPlayerNameChange(e.target.value)}
-                  style={styles.nameInput}
-                  maxLength={20}
-                />
-              </div>
-            )}
             <div style={styles.buttonRow}>
               {gameStatus === 'won' && (
                 <button style={{ ...styles.button, ...styles.continueButton }} onClick={onContinue}>
                   Continue
                 </button>
               )}
-              {!scoreSubmitted && onSubmitScore && (
-                <button style={{ ...styles.button, ...styles.submitButton }} onClick={onSubmitScore}>
-                  Submit
-                </button>
-              )}
               <button style={{ ...styles.button, ...styles.newGameButton }} onClick={onNewGame}>
                 New Game
               </button>
             </div>
-            {scoreSubmitted && (
-              <div style={styles.submittedText}>
-                ✓ Submitted! {submittedRank ? `Rank #${submittedRank}` : ''}
-              </div>
-            )}
           </div>
         </div>
       )}
