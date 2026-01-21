@@ -199,19 +199,17 @@ export default function BlackjackGame() {
   }, [state.phase, resolveRound]);
 
   // Check for immediate blackjack resolution after deal
-  // This runs after deal when insurance isn't offered (dealer doesn't show Ace)
+  // Only auto-resolve if PLAYER has blackjack (dealer's hole card is hidden until dealer's turn)
   useEffect(() => {
     if (state.phase !== 'playerTurn') return;
     if (state.playerHands[0]?.length !== 2) return; // Only check on initial deal
 
     const playerBJ = isBlackjack(state.playerHands[0]);
     const dealerShowsAce = state.dealerHand[0]?.rank === 'A';
-    const dealerBJ = isBlackjack(state.dealerHand);
 
     console.log('[Insurance] Blackjack check useEffect:', {
       playerBJ,
       dealerShowsAce,
-      dealerBJ,
       insuranceDeclined,
       willWait: dealerShowsAce && !insuranceDeclined
     });
@@ -222,9 +220,10 @@ export default function BlackjackGame() {
       return;
     }
 
-    // Auto-resolve if either has blackjack
-    if (playerBJ || dealerBJ) {
-      console.log('[Insurance] Auto-resolving blackjack in 800ms');
+    // Auto-resolve ONLY if player has blackjack
+    // Don't check dealer's hole card - that's revealed during dealer's turn
+    if (playerBJ) {
+      console.log('[Insurance] Player has blackjack, auto-standing in 800ms');
       // Small delay for visual feedback
       const timer = setTimeout(() => {
         dispatch({ type: 'STAND' });
