@@ -1,6 +1,11 @@
 /**
  * 2048 Grid Component - 4x4 game grid with tiles
  * @module Grid
+ *
+ * Mobile-optimized with:
+ * - Rounded corners matching reference design
+ * - Responsive sizing
+ * - Dark theme colors
  */
 
 import React from 'react';
@@ -8,25 +13,21 @@ import Tile from './Tile';
 
 /**
  * Grid component for 2048 game
- * @param {Object} props - Component props
- * @param {Array<Array<Object>>} props.grid - 4x4 grid of cells
- * @param {Set<number>} props.newTiles - Set of tile IDs to animate as new
- * @param {Set<number>} props.mergedTiles - Set of tile IDs to animate as merged
  */
 const Grid = ({ grid, newTiles = new Set(), mergedTiles = new Set() }) => {
-  // Container style - responsive square (dark theme)
+  // Container style - responsive square with rounded corners
   const containerStyle = {
     width: '100%',
-    maxWidth: '500px',
+    maxWidth: '400px',
     aspectRatio: '1 / 1',
     margin: '0 auto',
-    padding: '10px',
-    backgroundColor: '#2a3a5e',
-    borderRadius: '8px',
+    padding: 'clamp(8px, 2vw, 12px)',
+    backgroundColor: '#1e293b',
+    borderRadius: '12px',
     boxSizing: 'border-box'
   };
 
-  // Grid wrapper style - holds background cells and tile layer
+  // Grid wrapper style
   const gridWrapperStyle = {
     position: 'relative',
     width: '100%',
@@ -38,7 +39,7 @@ const Grid = ({ grid, newTiles = new Set(), mergedTiles = new Set() }) => {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
     gridTemplateRows: 'repeat(4, 1fr)',
-    gap: '10px',
+    gap: 'clamp(6px, 1.5vw, 10px)',
     width: '100%',
     height: '100%',
     position: 'absolute',
@@ -46,19 +47,19 @@ const Grid = ({ grid, newTiles = new Set(), mergedTiles = new Set() }) => {
     left: 0
   };
 
-  // Empty cell style (dark theme)
+  // Empty cell style
   const emptyCellStyle = {
-    backgroundColor: '#16213e',
-    borderRadius: '6px'
+    backgroundColor: '#334155',
+    borderRadius: '8px'
   };
 
   // Tile layer style - absolute positioning for tiles
   const tileLayerStyle = {
     position: 'absolute',
-    top: '5px',
-    left: '5px',
-    right: '5px',
-    bottom: '5px'
+    top: '3px',
+    left: '3px',
+    right: '3px',
+    bottom: '3px'
   };
 
   // Collect all non-zero tiles for rendering

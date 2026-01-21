@@ -2,17 +2,129 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1a1a2e" />
-    <meta
-      name="description"
-      content="Play card games with blockchain-verified randomness"
-    />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <title>Provably Fair Card Games</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="background-color" content="#0f172a" />
+    <meta name="description" content="Play 7 games with blockchain-verified randomness. Provably fair Solitaire, Blackjack, Chess, Yahtzee, Backgammon, 2048, and Garbage." />
+
+    <!-- iOS PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Fair Games" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/icons/icon-192.png" />
+
+    <!-- Windows/Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#0f172a" />
+    <meta name="msapplication-TileImage" content="%PUBLIC_URL%/icons/icon-144.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="%PUBLIC_URL%/icons/icon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%PUBLIC_URL%/icons/icon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/icons/icon-16.png" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- Preconnect to Ergo API for faster blockchain calls -->
+    <link rel="preconnect" href="https://api.ergoplatform.com" crossorigin />
+
+    <title>Provably Fair Games - Blockchain-Verified Gaming</title>
+
+    <!-- Splash screens for iOS -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)" href="%PUBLIC_URL%/splash/iphone-pro-max.png" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)" href="%PUBLIC_URL%/splash/iphone-pro.png" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" href="%PUBLIC_URL%/splash/iphone-14.png" />
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" href="%PUBLIC_URL%/splash/iphone-x.png" />
+
+    <!-- Inline critical CSS for PWA loading state -->
+    <style>
+      html, body, #root {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background-color: #0f172a;
+      }
+
+      /* PWA loading spinner */
+      .pwa-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #0f172a;
+        color: #f1f5f9;
+        font-family: system-ui, sans-serif;
+      }
+
+      .pwa-loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 4px solid #334155;
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      .pwa-loading-text {
+        margin-top: 16px;
+        font-size: 14px;
+        color: #94a3b8;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
+    <noscript>
+      <div style="padding: 2rem; text-align: center; color: #f1f5f9; background: #0f172a; min-height: 100vh; font-family: system-ui;">
+        <h1>JavaScript Required</h1>
+        <p>Please enable JavaScript to play Provably Fair Games.</p>
+      </div>
+    </noscript>
+
+    <!-- Loading state shown before React hydrates -->
+    <div id="root">
+      <div class="pwa-loading">
+        <div class="pwa-loading-spinner"></div>
+        <div class="pwa-loading-text">Loading games...</div>
+      </div>
+    </div>
+
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(function(registration) {
+              console.log('SW registered:', registration.scope);
+
+              // Check for updates
+              registration.addEventListener('updatefound', function() {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', function() {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // New version available
+                    if (window.dispatchEvent) {
+                      window.dispatchEvent(new CustomEvent('swUpdate', { detail: registration }));
+                    }
+                  }
+                });
+              });
+            })
+            .catch(function(error) {
+              console.log('SW registration failed:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

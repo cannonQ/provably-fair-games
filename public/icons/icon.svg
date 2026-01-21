@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="64" fill="#0f172a"/>
+
+  <!-- Card shape -->
+  <rect x="120" y="80" width="272" height="352" rx="16" fill="#1e293b" stroke="#334155" stroke-width="4"/>
+
+  <!-- Playing card pattern - diamond suit -->
+  <polygon points="256,140 306,220 256,300 206,220" fill="#ef4444"/>
+
+  <!-- Checkmark overlay (verified) -->
+  <circle cx="350" cy="380" r="60" fill="#22c55e"/>
+  <path d="M320,380 L340,400 L380,350" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Blockchain chain links at bottom -->
+  <g fill="none" stroke="#3b82f6" stroke-width="6">
+    <ellipse cx="170" cy="400" rx="25" ry="15"/>
+    <ellipse cx="210" cy="400" rx="25" ry="15"/>
+  </g>
+</svg>

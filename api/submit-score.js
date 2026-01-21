@@ -90,12 +90,18 @@ async function handler(req, res) {
       rollHistory,      // Yahtzee
       scorecard,        // Yahtzee
       roundHistory,     // Blackjack
-      moveHistory,      // 2048, Backgammon
+      moveHistory,      // 2048, Backgammon, Chess (SAN notation)
       highestTile,      // 2048
       winType,          // Backgammon
       difficulty,       // Backgammon, Garbage
       cubeValue,        // Backgammon
-      rounds            // Garbage
+      rounds,           // Garbage
+      // Chess-specific fields
+      playerColor,      // Chess
+      result,           // Chess
+      aiSettings,       // Chess
+      colorAssignment,  // Chess
+      aiCommitment      // Chess
     } = req.body;
 
     // Validate required fields
@@ -142,7 +148,14 @@ async function handler(req, res) {
       winType,
       difficulty,
       cubeValue,
-      rounds
+      rounds,
+      // Chess-specific fields
+      playerColor,
+      result,
+      aiSettings,
+      colorAssignment,
+      aiCommitment,
+      moves: moveHistory // Chess uses moveHistory as moves array
     };
 
     // Fetch player history for fraud detection
@@ -244,6 +257,25 @@ async function handler(req, res) {
       }
     }
 
+    // Chess-specific fields
+    if (game === 'chess') {
+      if (moveHistory && Array.isArray(moveHistory)) {
+        insertData.move_history = moveHistory;
+      }
+      if (playerColor) {
+        insertData.player_color = playerColor;
+      }
+      if (result) {
+        insertData.game_result = result.result;
+        insertData.winner = result.winner;
+        insertData.result_reason = result.reason;
+      }
+      if (aiSettings) {
+        insertData.opponent_elo = aiSettings.targetElo || aiSettings.originalElo;
+        insertData.ai_skill_level = aiSettings.skillLevel;
+      }
+    }
+
     // Insert to database
     const { data, error } = await supabase
       .from('LeaderBoard')
@@ -271,7 +303,7 @@ async function handler(req, res) {
       .eq('game', game);
 
     // Game-specific ranking logic
-    if (['blackjack', 'yahtzee', '2048', 'backgammon', 'garbage'].includes(game)) {
+    if (['blackjack', 'yahtzee', '2048', 'backgammon', 'garbage', 'chess'].includes(game)) {
       // Higher score = better rank
       rankQuery = rankQuery.gt('score', score);
     } else {
