@@ -142,14 +142,14 @@ export default function SolitaireBoard({ state, dispatch }) {
   }, [tableau, dispatch]);
 
   return (
-    <div style={{ padding: '10px', maxWidth: '650px', margin: '0 auto' }}>
+    <div style={{ padding: 'clamp(6px, 2vw, 12px)', maxWidth: '650px', margin: '0 auto', flex: 1 }}>
       {/* Top Row: Stock/Waste and Foundations */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
-        marginBottom: '25px',
-        gap: '10px'
+        marginBottom: 'clamp(12px, 3vw, 25px)',
+        gap: 'clamp(4px, 1.5vw, 10px)'
       }}>
         {/* Stock and Waste */}
         <StockPile
@@ -162,7 +162,7 @@ export default function SolitaireBoard({ state, dispatch }) {
         />
 
         {/* Foundations */}
-        <div style={{ display: 'flex', gap: '4px' }}>
+        <div style={{ display: 'flex', gap: 'clamp(2px, 1vw, 4px)' }}>
           {['hearts', 'diamonds', 'clubs', 'spades'].map(suit => (
             <FoundationPile
               key={suit}
@@ -179,7 +179,7 @@ export default function SolitaireBoard({ state, dispatch }) {
       <div style={{
         display: 'flex',
         justifyContent: 'center',
-        gap: '4px'
+        gap: 'clamp(2px, 1vw, 4px)'
       }}>
         {tableau.map((column, index) => (
           <TableauColumn

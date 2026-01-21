@@ -1,11 +1,12 @@
 /**
- * GarbageGame.jsx - Main Garbage Card Game Component
+ * GarbageGame.jsx - Main Garbage Card Game Component (Mobile-optimized)
  *
  * Complete game with blockchain-verified shuffling and leaderboard.
  * Player vs AI with provably fair deck ordering.
  */
 
 import React, { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { getLatestBlock } from '../../blockchain/ergo-api';
 import { generateSeed, shuffleDeckStrings } from '../../blockchain/shuffle';
 import {
@@ -51,6 +52,7 @@ function GarbageGame() {
   const [showVerification, setShowVerification] = useState(false);
   const [difficulty, setDifficulty] = useState('normal');
   const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   // Game stats
   const [moves, setMoves] = useState(0);
@@ -69,22 +71,18 @@ function GarbageGame() {
     if (!startTime || !endTime) return 0;
     const timeSeconds = Math.floor((endTime - startTime) / 1000);
     const filledPositions = countFilledPositions(playerCards);
-    
-    // Base score: 100 points per position filled
+
     let score = filledPositions * 100;
-    
-    // Time bonus: faster = more points (max 500 bonus)
+
     if (timeSeconds < 60) score += 500;
     else if (timeSeconds < 120) score += 300;
     else if (timeSeconds < 180) score += 100;
-    
-    // Move efficiency bonus
+
     if (moves < 20) score += 200;
     else if (moves < 30) score += 100;
-    
-    // Win bonus
+
     if (winner === 'player') score += 500;
-    
+
     return score;
   }, [startTime, endTime, playerCards, moves, winner]);
 
@@ -94,8 +92,14 @@ function GarbageGame() {
     return Math.floor((end - startTime) / 1000);
   }, [startTime, endTime]);
 
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   /**
-   * Start a new game - fetch block, shuffle, deal
+   * Start a new game
    */
   const startNewGame = useCallback(async () => {
     setGameState('shuffling');
@@ -106,25 +110,20 @@ function GarbageGame() {
     setSubmitRank(null);
     setMoves(0);
     setEndTime(null);
+    setShowMenu(false);
 
     try {
-      // 1. Get latest Ergo block (includes TX data)
       const block = await getLatestBlock();
       setBlockData(block);
-      setMessage(`Block #${block.blockHeight} + TX loaded. Shuffling...`);
+      setMessage(`Block #${block.blockHeight} loaded. Shuffling...`);
 
-      // 2. Generate game ID
       const newGameId = generateGameId();
       setGameId(newGameId);
 
-      // 3. Generate seed using FULL block data (enhanced anti-spoofing)
       const seed = generateSeed(block, newGameId);
-
-      // 4. Shuffle deck (string format for Garbage)
       const shuffledDeck = shuffleDeckStrings(seed);
       setDeck(shuffledDeck);
 
-      // 5. Deal cards
       const dealt = dealInitialCards(shuffledDeck);
       setPlayerCards(dealt.playerCards);
       setPlayerHidden(dealt.playerHidden);
@@ -133,7 +132,6 @@ function GarbageGame() {
       setDrawPile(dealt.drawPile);
       setDiscardPile([]);
 
-      // 6. Reset game state
       setCurrentTurn('player');
       setHeldCard(null);
       setWinner(null);
@@ -164,9 +162,9 @@ function GarbageGame() {
     } else {
       const positions = getValidPositions(card, playerCards);
       if (positions.length > 0) {
-        setMessage(`Drew ${card} - Click position ${positions.join(' or ')} to place it.`);
+        setMessage(`Drew ${card} - Tap position ${positions.join(' or ')}.`);
       } else {
-        setMessage(`Drew ${card} - No valid position. Discarding.`);
+        setMessage(`Drew ${card} - No valid position.`);
       }
     }
   }, [currentTurn, heldCard, drawPile, playerCards]);
@@ -180,7 +178,7 @@ function GarbageGame() {
     const card = discardPile[discardPile.length - 1];
 
     if (isGarbage(card)) {
-      setMessage("Can't take garbage cards from discard.");
+      setMessage("Can't take garbage from discard.");
       return;
     }
 
@@ -193,7 +191,7 @@ function GarbageGame() {
     setDiscardPile(prev => prev.slice(0, -1));
     setHeldCard(card);
     setMoves(m => m + 1);
-    setMessage(`Took ${card} - Click position ${positions.join(' or ')} to place it.`);
+    setMessage(`Took ${card} - Tap position ${positions.join(' or ')}.`);
   }, [currentTurn, heldCard, discardPile, playerCards]);
 
   /**
@@ -233,7 +231,7 @@ function GarbageGame() {
       setWinner('player');
       setGameState('finished');
       setEndTime(Date.now());
-      setMessage('🎉 You win! All positions filled!');
+      setMessage('You win!');
       setHeldCard(null);
       return;
     }
@@ -245,7 +243,7 @@ function GarbageGame() {
       } else {
         const nextPositions = getValidPositions(hiddenCard, newPlayerCards);
         if (nextPositions.length > 0) {
-          setMessage(`Flipped ${hiddenCard} - Place in position ${nextPositions.join(' or ')}!`);
+          setMessage(`Flipped ${hiddenCard} - Place in ${nextPositions.join(' or ')}!`);
           return;
         } else {
           setMessage(`Flipped ${hiddenCard} - No valid position.`);
@@ -289,26 +287,21 @@ function GarbageGame() {
     setDrawPile(result.newDrawPile);
     setDiscardPile(result.newDiscardPile);
 
-    let aiMessage = result.action === 'take_discard' ? 'AI took from discard. ' : 'AI drew a card. ';
+    let aiMessage = result.action === 'take_discard' ? 'AI took discard. ' : 'AI drew. ';
 
     if (result.placements.length > 0) {
-      const placementStr = result.placements.map(p => `${p.card} → ${p.position}`).join(', ');
-      aiMessage += `Placed: ${placementStr}. `;
-    }
-
-    if (result.discarded) {
-      aiMessage += `Discarded ${result.discarded}.`;
+      aiMessage += `Placed ${result.placements.length} cards. `;
     }
 
     if (result.endedWith === 'complete') {
       setWinner('ai');
       setGameState('finished');
       setEndTime(Date.now());
-      setMessage('AI wins! Better luck next time.');
+      setMessage('AI wins!');
       return;
     }
 
-    setMessage(aiMessage + " Your turn!");
+    setMessage(aiMessage + "Your turn!");
     setCurrentTurn('player');
   }, [aiCards, aiHidden, drawPile, discardPile, difficulty]);
 
@@ -363,7 +356,7 @@ function GarbageGame() {
         style={{
           ...styles.slot,
           cursor: isClickable ? 'pointer' : 'default',
-          border: isClickable ? '2px dashed #4ade80' : '2px solid #333'
+          border: isClickable ? '2px dashed #4ade80' : '2px solid #334155'
         }}
       >
         <span style={styles.slotNumber}>{position}</span>
@@ -395,54 +388,73 @@ function GarbageGame() {
     );
   };
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  // ===== RENDER =====
-
   // Menu state
   if (gameState === 'menu') {
     return (
       <div style={styles.container}>
-        <h1 style={styles.title}>🃏 Garbage</h1>
-        <p style={styles.subtitle}>Blockchain-Verified Card Game</p>
+        <div style={styles.gameWrapper}>
+          {/* Header */}
+          <div style={styles.header}>
+            <div style={styles.titleSection}>
+              <button style={styles.menuBtn} onClick={() => setShowMenu(!showMenu)}>☰</button>
+              <h1 style={styles.title}>Garbage</h1>
+              <span style={styles.badge}>provably fair</span>
+            </div>
+          </div>
 
-        <div style={styles.difficultySelect}>
-          <label>Difficulty: </label>
-          <select
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
-            style={styles.select}
-          >
-            <option value="easy">Easy</option>
-            <option value="normal">Normal</option>
-            <option value="hard">Hard</option>
-          </select>
-        </div>
+          {showMenu && (
+            <div style={styles.menu}>
+              <Link to="/" style={styles.menuItem} onClick={() => setShowMenu(false)}>
+                🏠 Home
+              </Link>
+            </div>
+          )}
 
-        <button onClick={startNewGame} style={styles.button}>
-          New Game
-        </button>
+          <div style={styles.startScreen}>
+            <div style={styles.startContent}>
+              <h2 style={styles.startTitle}>🃏 Garbage</h2>
+              <p style={styles.startSubtitle}>Blockchain Card Game</p>
 
-        <button 
-          onClick={() => setShowLeaderboard(!showLeaderboard)} 
-          style={{ ...styles.buttonSecondary, marginLeft: '10px' }}
-        >
-          🏆 {showLeaderboard ? 'Hide' : 'Leaderboard'}
-        </button>
+              <div style={styles.difficultyBox}>
+                <label style={styles.diffLabel}>Difficulty:</label>
+                <select
+                  value={difficulty}
+                  onChange={(e) => setDifficulty(e.target.value)}
+                  style={styles.diffSelect}
+                >
+                  <option value="easy">Easy</option>
+                  <option value="normal">Normal</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
 
-        {showLeaderboard && <Leaderboard game="garbage" />}
+              <div style={styles.rulesBox}>
+                <div style={styles.rulesTitle}>How to Play:</div>
+                <div>• Fill positions 1-10 with matching cards</div>
+                <div>• A=1, 2=2, ... J=Wild, Q/K=Garbage</div>
+                <div>• First to fill all 10 wins!</div>
+              </div>
 
-        {error && <p style={styles.error}>{error}</p>}
+              {error && <div style={styles.errorBox}>{error}</div>}
 
-        <div style={styles.rules}>
-          <h3>How to Play</h3>
-          <p>Fill positions 1-10 with matching cards (A=1, 2=2, etc.)</p>
-          <p>Jacks are wild. Queens & Kings are garbage.</p>
-          <p>First to fill all 10 wins!</p>
+              <button onClick={startNewGame} style={styles.startBtn}>
+                Start Game
+              </button>
+
+              <button
+                onClick={() => setShowLeaderboard(!showLeaderboard)}
+                style={styles.leaderboardBtn}
+              >
+                🏆 {showLeaderboard ? 'Hide' : 'Leaderboard'}
+              </button>
+
+              {showLeaderboard && <Leaderboard game="garbage" />}
+            </div>
+          </div>
+
+          <div style={styles.footer}>
+            <span>Ergo Blockchain Verified</span>
+          </div>
         </div>
       </div>
     );
@@ -452,9 +464,18 @@ function GarbageGame() {
   if (gameState === 'shuffling') {
     return (
       <div style={styles.container}>
-        <h1 style={styles.title}>🔀 Shuffling...</h1>
-        <p style={styles.message}>{message}</p>
-        <div style={styles.spinner}>⏳</div>
+        <div style={styles.gameWrapper}>
+          <div style={styles.header}>
+            <div style={styles.titleSection}>
+              <h1 style={styles.title}>Garbage</h1>
+              <span style={styles.badge}>provably fair</span>
+            </div>
+          </div>
+          <div style={styles.loadingScreen}>
+            <div style={styles.spinner}>🔀</div>
+            <p style={styles.loadingText}>{message}</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -462,170 +483,188 @@ function GarbageGame() {
   // Playing or Finished state
   return (
     <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <h2 style={styles.title}>
-          {gameState === 'finished' ? (winner === 'player' ? '🎉 You Win!' : '😔 AI Wins') : '🃏 Garbage'}
-        </h2>
-        <div style={styles.stats}>
-          <span>⏱ {formatTime(getElapsedSeconds())}</span>
-          <span>Moves: {moves}</span>
+      <div style={styles.gameWrapper}>
+        {/* Compact Header */}
+        <div style={styles.header}>
+          <div style={styles.titleSection}>
+            <button style={styles.menuBtn} onClick={() => setShowMenu(!showMenu)}>☰</button>
+            <h1 style={styles.title}>
+              {gameState === 'finished' ? (winner === 'player' ? 'You Win!' : 'AI Wins') : 'Garbage'}
+            </h1>
+            <span style={styles.badge}>provably fair</span>
+          </div>
+          <button style={styles.refreshBtn} onClick={startNewGame} title="New Game">↻</button>
+        </div>
+
+        {/* Dropdown Menu */}
+        {showMenu && (
+          <div style={styles.menu}>
+            {gameState === 'finished' && (
+              <button style={styles.menuItem} onClick={() => { setShowVerification(!showVerification); setShowMenu(false); }}>
+                ✓ Verify Shuffle
+              </button>
+            )}
+            <button style={styles.menuItem} onClick={() => { setShowLeaderboard(!showLeaderboard); setShowMenu(false); }}>
+              🏆 Leaderboard
+            </button>
+            <Link to="/" style={styles.menuItem} onClick={() => setShowMenu(false)}>
+              🏠 Home
+            </Link>
+          </div>
+        )}
+
+        {/* Stats Bar */}
+        <div style={styles.statsBar}>
+          <div style={styles.stat}>
+            <span style={styles.statValue}>{formatTime(getElapsedSeconds())}</span>
+            <span style={styles.statLabel}>time</span>
+          </div>
+          <div style={styles.stat}>
+            <span style={styles.statValue}>{moves}</span>
+            <span style={styles.statLabel}>moves</span>
+          </div>
+          <div style={styles.stat}>
+            <span style={styles.statValue}>{currentTurn === 'player' ? 'YOU' : 'AI'}</span>
+            <span style={styles.statLabel}>turn</span>
+          </div>
           {gameState === 'finished' && winner === 'player' && (
-            <span style={{ color: '#4ade80', fontWeight: 'bold' }}>🏆 {calculateScore()}</span>
+            <div style={styles.stat}>
+              <span style={{ ...styles.statValue, color: '#4ade80' }}>{calculateScore()}</span>
+              <span style={styles.statLabel}>score</span>
+            </div>
           )}
         </div>
-        <button 
-          onClick={() => setShowLeaderboard(!showLeaderboard)} 
-          style={{ ...styles.smallButton, backgroundColor: showLeaderboard ? '#ff9800' : '#9c27b0' }}
-        >
-          🏆 {showLeaderboard ? 'Hide' : 'Ranks'}
-        </button>
-      </div>
 
-      {/* Leaderboard Panel */}
-      {showLeaderboard && <Leaderboard game="garbage" currentGameId={gameId} />}
+        {/* Leaderboard Panel */}
+        {showLeaderboard && <Leaderboard game="garbage" currentGameId={gameId} />}
 
-      {/* Block info */}
-      {blockData && (
-        <p style={styles.blockInfo}>
-          Block #{blockData.blockHeight} | TX #{blockData.txIndex + 1} of {blockData.txCount} | Game: {gameId}
-        </p>
-      )}
-
-      {/* AI Area */}
-      <div style={styles.playerArea}>
-        <h3 style={styles.areaLabel}>AI {currentTurn === 'ai' && '(thinking...)'}</h3>
-        <div style={styles.cardGrid}>
-          {[0,1,2,3,4,5,6,7,8,9].map(renderAISlot)}
-        </div>
-      </div>
-
-      {/* Center - Draw & Discard */}
-      <div style={styles.centerArea}>
-        <div style={styles.pileContainer}>
-          <div
-            onClick={drawFromPile}
-            style={{
-              ...styles.pile,
-              cursor: currentTurn === 'player' && !heldCard ? 'pointer' : 'default'
-            }}
-          >
-            <Card card="DECK" faceUp={false} />
-            <span style={styles.pileLabel}>Draw ({drawPile.length})</span>
+        {/* Game Area */}
+        <div style={styles.gameArea}>
+          {/* AI Area */}
+          <div style={styles.playerArea}>
+            <div style={styles.areaLabel}>AI {currentTurn === 'ai' && '(thinking...)'}</div>
+            <div style={styles.cardGrid}>
+              {[0,1,2,3,4,5,6,7,8,9].map(renderAISlot)}
+            </div>
           </div>
 
-          <div
-            onClick={takeFromDiscard}
-            style={{
-              ...styles.pile,
-              cursor: currentTurn === 'player' && !heldCard && discardPile.length > 0 ? 'pointer' : 'default'
-            }}
-          >
-            {discardPile.length > 0 ? (
-              <Card card={discardPile[discardPile.length - 1]} faceUp={true} />
-            ) : (
-              <div style={styles.emptyPile}>Empty</div>
+          {/* Center - Draw & Discard */}
+          <div style={styles.centerArea}>
+            <div style={styles.pileContainer}>
+              <div
+                onClick={drawFromPile}
+                style={{
+                  ...styles.pile,
+                  cursor: currentTurn === 'player' && !heldCard ? 'pointer' : 'default',
+                  opacity: currentTurn === 'player' && !heldCard ? 1 : 0.6
+                }}
+              >
+                <Card card="DECK" faceUp={false} />
+                <span style={styles.pileLabel}>Draw ({drawPile.length})</span>
+              </div>
+
+              <div
+                onClick={takeFromDiscard}
+                style={{
+                  ...styles.pile,
+                  cursor: currentTurn === 'player' && !heldCard && discardPile.length > 0 ? 'pointer' : 'default'
+                }}
+              >
+                {discardPile.length > 0 ? (
+                  <Card card={discardPile[discardPile.length - 1]} faceUp={true} />
+                ) : (
+                  <div style={styles.emptyPile}>Empty</div>
+                )}
+                <span style={styles.pileLabel}>Discard ({discardPile.length})</span>
+              </div>
+            </div>
+
+            {/* Held card display */}
+            {heldCard && (
+              <div style={styles.heldCard}>
+                <span style={{ color: '#94a3b8' }}>Holding: </span>
+                <Card card={heldCard} faceUp={true} small />
+                <button onClick={discardHeldCard} style={styles.discardBtn}>
+                  Discard
+                </button>
+              </div>
             )}
-            <span style={styles.pileLabel}>Discard ({discardPile.length})</span>
+          </div>
+
+          {/* Player Area */}
+          <div style={styles.playerArea}>
+            <div style={styles.areaLabel}>You {currentTurn === 'player' && '(your turn)'}</div>
+            <div style={styles.cardGrid}>
+              {[0,1,2,3,4,5,6,7,8,9].map(renderPlayerSlot)}
+            </div>
           </div>
         </div>
 
-        {/* Held card display */}
-        {heldCard && (
-          <div style={styles.heldCard}>
-            <span>Holding: </span>
-            <Card card={heldCard} faceUp={true} small />
-            <button onClick={discardHeldCard} style={styles.smallButton}>
-              Discard
-            </button>
-          </div>
-        )}
-      </div>
+        {/* Message */}
+        <div style={styles.messageBox}>{message}</div>
 
-      {/* Player Area */}
-      <div style={styles.playerArea}>
-        <h3 style={styles.areaLabel}>You {currentTurn === 'player' && '(your turn)'}</h3>
-        <div style={styles.cardGrid}>
-          {[0,1,2,3,4,5,6,7,8,9].map(renderPlayerSlot)}
+        {/* Footer */}
+        <div style={styles.footer}>
+          <span>Ergo Blockchain Verified</span>
+          {blockData?.blockHeight > 0 && (
+            <span style={styles.blockInfo}>Block #{blockData.blockHeight}</span>
+          )}
         </div>
       </div>
 
-      {/* Message */}
-      <p style={styles.message}>{message}</p>
-
-      {/* Controls */}
-      <div style={styles.controls}>
-        {gameState === 'finished' && (
-          <>
-            <button onClick={startNewGame} style={styles.button}>
-              Play Again
-            </button>
-            <button
-              onClick={() => setShowVerification(!showVerification)}
-              style={styles.buttonSecondary}
-            >
-              {showVerification ? 'Hide' : 'Verify'} Shuffle
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Win Modal with Score Submission */}
+      {/* Win Modal */}
       {gameState === 'finished' && winner === 'player' && !showVerification && (
-        <div style={styles.modal}>
-          <div style={styles.modalContent}>
-            <h2 style={{ fontSize: '28px', marginBottom: '15px' }}>🎉 You Won!</h2>
-            
-            <div style={{ marginBottom: '20px' }}>
-              <p style={{ fontSize: '16px', margin: '8px 0' }}>Time: {formatTime(getElapsedSeconds())}</p>
-              <p style={{ fontSize: '16px', margin: '8px 0' }}>Moves: {moves}</p>
-              <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#4ade80', margin: '12px 0' }}>
-                🏆 {calculateScore()} points
-              </p>
+        <div style={styles.modalOverlay}>
+          <div style={styles.modal}>
+            <h2 style={styles.modalTitle}>🎉 You Won!</h2>
+
+            <div style={styles.modalScore}>
+              <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#4ade80' }}>
+                {calculateScore()}
+              </span>
+              <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>points</span>
+            </div>
+
+            <div style={styles.modalStats}>
+              <div style={styles.modalStat}>
+                <span style={styles.modalStatValue}>{formatTime(getElapsedSeconds())}</span>
+                <span style={styles.modalStatLabel}>Time</span>
+              </div>
+              <div style={styles.modalStat}>
+                <span style={styles.modalStatValue}>{moves}</span>
+                <span style={styles.modalStatLabel}>Moves</span>
+              </div>
             </div>
 
             {/* Submission Form */}
             {!submitted ? (
-              <div style={styles.submitBox}>
-                <p style={{ fontSize: '14px', marginBottom: '10px', color: '#aaa' }}>
-                  Submit to Leaderboard:
-                </p>
+              <div style={styles.submitSection}>
                 <input
                   type="text"
                   placeholder="Your name (optional)"
                   value={playerName}
                   onChange={(e) => setPlayerName(e.target.value)}
                   maxLength={20}
-                  style={styles.input}
+                  style={styles.nameInput}
                 />
                 <button
                   onClick={handleSubmitScore}
                   disabled={submitting}
-                  style={{
-                    ...styles.button,
-                    width: '100%',
-                    backgroundColor: submitting ? '#555' : '#4ade80'
-                  }}
+                  style={{ ...styles.submitBtn, opacity: submitting ? 0.5 : 1 }}
                 >
-                  {submitting ? 'Submitting...' : '📤 Submit Score'}
+                  {submitting ? 'Submitting...' : 'Submit Score'}
                 </button>
-                {submitError && (
-                  <p style={{ color: '#f87171', fontSize: '13px', marginTop: '8px' }}>{submitError}</p>
-                )}
+                {submitError && <p style={styles.submitError}>{submitError}</p>}
               </div>
             ) : (
-              <div style={styles.submittedBox}>
-                <p style={{ fontSize: '16px', color: '#4ade80', fontWeight: 'bold' }}>
-                  ✓ Submitted! You're ranked #{submitRank}
-                </p>
+              <div style={styles.submitSuccess}>
+                ✓ Submitted! Ranked #{submitRank}
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '15px' }}>
-              <button onClick={startNewGame} style={styles.button}>Play Again</button>
-              <button onClick={() => setShowLeaderboard(true)} style={{ ...styles.button, backgroundColor: '#9c27b0' }}>
-                Leaderboard
-              </button>
+            <div style={styles.modalActions}>
+              <button onClick={startNewGame} style={styles.playAgainBtn}>Play Again</button>
+              <button onClick={() => setShowVerification(true)} style={styles.verifyBtn}>Verify</button>
             </div>
           </div>
         </div>
@@ -633,51 +672,479 @@ function GarbageGame() {
 
       {/* Verification panel */}
       {showVerification && blockData && (
-        <Verification
-          blockData={blockData}
-          gameId={gameId}
-          deck={deck}
-          winner={winner}
-        />
+        <div style={styles.modalOverlay}>
+          <div style={{ ...styles.modal, maxWidth: '600px' }}>
+            <button onClick={() => setShowVerification(false)} style={styles.modalClose}>×</button>
+            <Verification
+              blockData={blockData}
+              gameId={gameId}
+              deck={deck}
+              winner={winner}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-// Styles
+// Mobile-optimized styles with dark theme
 const styles = {
-  container: { maxWidth: '800px', margin: '0 auto', padding: '1rem', textAlign: 'center' },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '10px' },
-  stats: { display: 'flex', gap: '15px', fontSize: '14px', color: '#aaa' },
-  title: { fontSize: '1.5rem', margin: 0 },
-  subtitle: { color: '#888', marginBottom: '2rem' },
-  blockInfo: { fontSize: '0.75rem', color: '#666', marginBottom: '1rem' },
-  playerArea: { marginBottom: '1.5rem' },
-  areaLabel: { marginBottom: '0.5rem', color: '#aaa' },
-  cardGrid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem', maxWidth: '500px', margin: '0 auto' },
-  slot: { position: 'relative', aspectRatio: '2.5/3.5', backgroundColor: '#222', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  slotNumber: { position: 'absolute', top: '2px', left: '6px', fontSize: '0.7rem', color: '#555' },
-  centerArea: { display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#1a2a1a', borderRadius: '12px' },
-  pileContainer: { display: 'flex', gap: '2rem', marginBottom: '1rem' },
-  pile: { display: 'flex', flexDirection: 'column', alignItems: 'center' },
-  pileLabel: { fontSize: '0.75rem', color: '#888', marginTop: '0.25rem' },
-  emptyPile: { width: '60px', height: '84px', border: '2px dashed #444', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#444', fontSize: '0.75rem' },
-  heldCard: { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', backgroundColor: '#2a3a2a', borderRadius: '8px' },
-  message: { minHeight: '1.5rem', color: '#4ade80', marginBottom: '1rem' },
-  controls: { display: 'flex', gap: '1rem', justifyContent: 'center' },
-  button: { padding: '0.75rem 2rem', fontSize: '1rem', backgroundColor: '#4ade80', color: '#000', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' },
-  buttonSecondary: { padding: '0.75rem 2rem', fontSize: '1rem', backgroundColor: 'transparent', color: '#4ade80', border: '2px solid #4ade80', borderRadius: '8px', cursor: 'pointer' },
-  smallButton: { padding: '0.25rem 0.5rem', fontSize: '0.75rem', backgroundColor: '#666', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' },
-  difficultySelect: { marginBottom: '1rem' },
-  select: { padding: '0.5rem', fontSize: '1rem', backgroundColor: '#333', color: '#fff', border: '1px solid #555', borderRadius: '4px' },
-  error: { color: '#f87171', marginTop: '1rem' },
-  spinner: { fontSize: '3rem' },
-  rules: { marginTop: '2rem', padding: '1rem', backgroundColor: '#222', borderRadius: '8px', textAlign: 'left', maxWidth: '400px', margin: '2rem auto 0' },
-  modal: { position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
-  modalContent: { backgroundColor: '#1a1a2e', color: '#fff', padding: '30px', borderRadius: '12px', textAlign: 'center', maxWidth: '400px', width: '90%' },
-  submitBox: { padding: '15px', backgroundColor: '#16213e', borderRadius: '8px', marginBottom: '15px' },
-  submittedBox: { padding: '15px', backgroundColor: '#1a3a1a', borderRadius: '8px', marginBottom: '15px' },
-  input: { width: '100%', padding: '10px', fontSize: '14px', borderRadius: '4px', border: '1px solid #333', backgroundColor: '#0d1117', color: '#fff', marginBottom: '10px', boxSizing: 'border-box' }
+  container: {
+    minHeight: '100vh',
+    minHeight: '100dvh',
+    backgroundColor: '#0f172a',
+    color: '#f1f5f9',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    touchAction: 'pan-y',
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none'
+  },
+  gameWrapper: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    maxWidth: '600px',
+    width: '100%',
+    margin: '0 auto',
+    padding: '12px',
+    boxSizing: 'border-box'
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '8px',
+    padding: '0 4px'
+  },
+  titleSection: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  },
+  menuBtn: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#94a3b8',
+    fontSize: '1.25rem',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  title: {
+    fontSize: 'clamp(1rem, 4vw, 1.25rem)',
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    fontFamily: 'system-ui, sans-serif',
+    margin: 0
+  },
+  badge: {
+    fontSize: '0.5rem',
+    padding: '2px 5px',
+    backgroundColor: '#22c55e',
+    color: '#fff',
+    borderRadius: '4px',
+    fontWeight: 'bold',
+    textTransform: 'uppercase'
+  },
+  refreshBtn: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '8px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#94a3b8',
+    fontSize: '1.5rem',
+    cursor: 'pointer'
+  },
+  menu: {
+    backgroundColor: '#1e293b',
+    borderRadius: '8px',
+    marginBottom: '8px',
+    padding: '4px',
+    border: '1px solid #334155'
+  },
+  menuItem: {
+    display: 'block',
+    width: '100%',
+    padding: '10px 12px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '6px',
+    color: '#f1f5f9',
+    fontSize: '0.9rem',
+    textDecoration: 'none',
+    textAlign: 'left',
+    cursor: 'pointer',
+    fontFamily: 'system-ui, sans-serif'
+  },
+  statsBar: {
+    display: 'flex',
+    justifyContent: 'space-around',
+    backgroundColor: '#1e293b',
+    borderRadius: '8px',
+    padding: '8px',
+    marginBottom: '8px'
+  },
+  stat: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
+  statValue: {
+    fontSize: '0.9rem',
+    fontWeight: 'bold',
+    color: '#f1f5f9'
+  },
+  statLabel: {
+    fontSize: '0.6rem',
+    color: '#64748b',
+    textTransform: 'uppercase'
+  },
+  startScreen: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '20px'
+  },
+  startContent: {
+    backgroundColor: '#1e293b',
+    borderRadius: '12px',
+    padding: '24px',
+    textAlign: 'center',
+    maxWidth: '320px',
+    width: '100%'
+  },
+  startTitle: {
+    fontSize: '1.75rem',
+    margin: '0 0 4px 0',
+    color: '#fff'
+  },
+  startSubtitle: {
+    fontSize: '0.875rem',
+    color: '#94a3b8',
+    margin: '0 0 20px 0'
+  },
+  difficultyBox: {
+    marginBottom: '16px'
+  },
+  diffLabel: {
+    color: '#94a3b8',
+    fontSize: '0.8rem',
+    marginRight: '8px'
+  },
+  diffSelect: {
+    padding: '8px',
+    fontSize: '0.9rem',
+    borderRadius: '6px',
+    border: '1px solid #334155',
+    backgroundColor: '#0f172a',
+    color: '#f1f5f9'
+  },
+  rulesBox: {
+    backgroundColor: '#0f172a',
+    borderRadius: '8px',
+    padding: '12px',
+    fontSize: '0.75rem',
+    color: '#94a3b8',
+    marginBottom: '20px',
+    textAlign: 'left'
+  },
+  rulesTitle: {
+    fontWeight: 'bold',
+    marginBottom: '6px',
+    color: '#f1f5f9'
+  },
+  startBtn: {
+    width: '100%',
+    padding: '14px 24px',
+    fontSize: '1rem',
+    fontWeight: '600',
+    backgroundColor: '#22c55e',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    marginBottom: '10px'
+  },
+  leaderboardBtn: {
+    width: '100%',
+    padding: '10px',
+    fontSize: '0.9rem',
+    backgroundColor: 'transparent',
+    color: '#94a3b8',
+    border: '1px solid #334155',
+    borderRadius: '6px',
+    cursor: 'pointer'
+  },
+  loadingScreen: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '12px'
+  },
+  spinner: {
+    fontSize: '3rem'
+  },
+  loadingText: {
+    color: '#94a3b8'
+  },
+  gameArea: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    minHeight: 0,
+    overflowY: 'auto'
+  },
+  playerArea: {
+    marginBottom: '4px'
+  },
+  areaLabel: {
+    fontSize: '0.75rem',
+    color: '#64748b',
+    marginBottom: '4px',
+    textAlign: 'center'
+  },
+  cardGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(5, 1fr)',
+    gap: 'clamp(2px, 1vw, 6px)',
+    maxWidth: '100%'
+  },
+  slot: {
+    position: 'relative',
+    aspectRatio: '2.5/3.5',
+    backgroundColor: '#1e293b',
+    borderRadius: '6px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  slotNumber: {
+    position: 'absolute',
+    top: '2px',
+    left: '4px',
+    fontSize: '0.6rem',
+    color: '#475569'
+  },
+  centerArea: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: '12px',
+    backgroundColor: '#166534',
+    borderRadius: '8px',
+    marginBottom: '4px'
+  },
+  pileContainer: {
+    display: 'flex',
+    gap: '24px',
+    marginBottom: '8px'
+  },
+  pile: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
+  pileLabel: {
+    fontSize: '0.65rem',
+    color: '#86efac',
+    marginTop: '2px'
+  },
+  emptyPile: {
+    width: '50px',
+    height: '70px',
+    border: '2px dashed #22c55e',
+    borderRadius: '6px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#22c55e',
+    fontSize: '0.65rem'
+  },
+  heldCard: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '6px 10px',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: '6px'
+  },
+  discardBtn: {
+    padding: '4px 10px',
+    fontSize: '0.7rem',
+    backgroundColor: '#ef4444',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  },
+  messageBox: {
+    padding: '8px',
+    textAlign: 'center',
+    color: '#4ade80',
+    fontSize: '0.85rem',
+    minHeight: '2rem'
+  },
+  errorBox: {
+    backgroundColor: '#ef4444',
+    color: '#fff',
+    padding: '10px',
+    borderRadius: '8px',
+    marginBottom: '12px',
+    fontSize: '0.85rem'
+  },
+  footer: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '8px 4px',
+    color: '#64748b',
+    fontSize: '0.65rem',
+    fontFamily: 'system-ui, sans-serif'
+  },
+  blockInfo: {
+    color: '#475569'
+  },
+  modalOverlay: {
+    position: 'fixed',
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '16px'
+  },
+  modal: {
+    backgroundColor: '#1e293b',
+    borderRadius: '16px',
+    padding: '24px',
+    maxWidth: '400px',
+    width: '100%',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    position: 'relative',
+    textAlign: 'center'
+  },
+  modalClose: {
+    position: 'absolute',
+    top: '12px',
+    right: '12px',
+    background: 'none',
+    border: 'none',
+    color: '#64748b',
+    fontSize: '1.5rem',
+    cursor: 'pointer'
+  },
+  modalTitle: {
+    fontSize: '1.5rem',
+    margin: '0 0 16px 0',
+    color: '#f1f5f9'
+  },
+  modalScore: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginBottom: '16px'
+  },
+  modalStats: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '32px',
+    marginBottom: '20px'
+  },
+  modalStat: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
+  modalStatValue: {
+    fontSize: '1.25rem',
+    fontWeight: 'bold',
+    color: '#f1f5f9'
+  },
+  modalStatLabel: {
+    fontSize: '0.75rem',
+    color: '#64748b'
+  },
+  submitSection: {
+    backgroundColor: '#0f172a',
+    borderRadius: '8px',
+    padding: '16px',
+    marginBottom: '16px'
+  },
+  nameInput: {
+    width: '100%',
+    padding: '12px',
+    fontSize: '0.9rem',
+    borderRadius: '6px',
+    border: '1px solid #334155',
+    backgroundColor: '#1e293b',
+    color: '#f1f5f9',
+    marginBottom: '10px',
+    boxSizing: 'border-box'
+  },
+  submitBtn: {
+    width: '100%',
+    padding: '12px',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    backgroundColor: '#22c55e',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer'
+  },
+  submitError: {
+    color: '#f87171',
+    fontSize: '0.8rem',
+    marginTop: '8px'
+  },
+  submitSuccess: {
+    backgroundColor: '#166534',
+    borderRadius: '8px',
+    padding: '16px',
+    marginBottom: '16px',
+    color: '#4ade80',
+    fontWeight: '600'
+  },
+  modalActions: {
+    display: 'flex',
+    gap: '10px',
+    justifyContent: 'center'
+  },
+  playAgainBtn: {
+    padding: '12px 24px',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    backgroundColor: '#3b82f6',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer'
+  },
+  verifyBtn: {
+    padding: '12px 24px',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    backgroundColor: '#f59e0b',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer'
+  }
 };
 
 export default GarbageGame;

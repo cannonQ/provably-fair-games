@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import ChessBoard from './components/ChessBoard';
 import RatingSelector from './components/RatingSelector';
 import MoveHistory from './components/MoveHistory';
@@ -26,6 +27,7 @@ function ChessGame() {
   const [lastMove, setLastMove] = useState(null);
   const [gameResult, setGameResult] = useState(null);
   const [showGameOver, setShowGameOver] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   // UI state
   const [promotionData, setPromotionData] = useState(null);
@@ -216,9 +218,17 @@ function ChessGame() {
     return (
       <div className="chess-game-container">
         <div className="chess-header">
-          <h1>Chess</h1>
-          <div className="provably-fair-badge">Provably Fair ✓</div>
+          <div className="chess-header-left">
+            <button className="chess-menu-btn" onClick={() => setShowMenu(!showMenu)}>☰</button>
+            <h1>Chess</h1>
+            <div className="provably-fair-badge">provably fair</div>
+          </div>
         </div>
+        {showMenu && (
+          <div className="chess-dropdown-menu">
+            <Link to="/" onClick={() => setShowMenu(false)}>🏠 Home</Link>
+          </div>
+        )}
         <RatingSelector onStart={handleStartGame} />
       </div>
     );
@@ -228,7 +238,10 @@ function ChessGame() {
     return (
       <div className="chess-game-container">
         <div className="chess-header">
-          <h1>Chess</h1>
+          <div className="chess-header-left">
+            <h1>Chess</h1>
+            <div className="provably-fair-badge">provably fair</div>
+          </div>
         </div>
         <div className="loading-screen">
           <div className="loading-spinner" />
@@ -241,26 +254,39 @@ function ChessGame() {
   return (
     <div className="chess-game-container">
       <div className="chess-header">
-        <h1>Chess</h1>
+        <div className="chess-header-left">
+          <button className="chess-menu-btn" onClick={() => setShowMenu(!showMenu)}>☰</button>
+          <h1>Chess</h1>
+          <div className="provably-fair-badge">provably fair</div>
+        </div>
         <div className="game-info">
           <div className="info-item">
-            <span className="info-label">You are:</span>
+            <span className="info-label">You:</span>
             <span className={`info-value ${playerColor}`}>{playerColor}</span>
           </div>
           <div className="info-item">
-            <span className="info-label">AI Rating:</span>
+            <span className="info-label">AI:</span>
             <span className="info-value">{aiSettings?.targetElo || 'N/A'}</span>
           </div>
-          {aiCommitment && (
-            <div className="info-item">
-              <span className="info-label">Settings Locked:</span>
-              <span className="info-value commitment-hash" title={aiCommitment.commitment}>
-                🔒 {aiCommitment.commitment.substring(0, 8)}...
-              </span>
-            </div>
-          )}
         </div>
       </div>
+
+      {showMenu && (
+        <div className="chess-dropdown-menu">
+          <button onClick={() => { setFlipBoard(!flipBoard); setShowMenu(false); }}>
+            🔄 Flip Board
+          </button>
+          <button onClick={() => { handleNewGame(); setShowMenu(false); }}>
+            ↻ New Game
+          </button>
+          <Link to="/chess/verify" onClick={() => setShowMenu(false)}>
+            ✓ Verify Game
+          </Link>
+          <Link to="/" onClick={() => setShowMenu(false)}>
+            🏠 Home
+          </Link>
+        </div>
+      )}
 
       <div className="chess-main">
         <div className="chess-board-container">
