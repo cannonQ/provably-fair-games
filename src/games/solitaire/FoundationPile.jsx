@@ -25,7 +25,7 @@ export default function FoundationPile({
   const isEmpty = cards.length === 0;
   const isComplete = cards.length === 13;
   const topCard = cards[cards.length - 1];
-  const suitColor = isRedSuit(suit) ? '#d32f2f' : '#1a1a1a';
+  const suitColor = isRedSuit(suit) ? '#dc2626' : '#0f172a'; // Cypherpunk: red-600 / slate-900
 
   // Responsive sizing - larger for desktop, smaller for mobile
   const isSmallScreen = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -49,9 +49,9 @@ export default function FoundationPile({
         cursor: isValidDropTarget ? 'pointer' : 'default',
         position: 'relative',
         boxShadow: isValidDropTarget
-          ? '0 0 12px 2px rgba(255, 215, 0, 0.7)'
+          ? '0 0 12px rgba(34, 197, 94, 0.4)' // Cypherpunk: green glow for valid drop
           : isComplete
-          ? '0 0 10px 2px rgba(76, 175, 80, 0.6)'
+          ? '0 0 10px rgba(34, 197, 94, 0.6)' // Cypherpunk: green glow when complete
           : 'none',
         transition: 'box-shadow 0.2s'
       }}
@@ -61,15 +61,15 @@ export default function FoundationPile({
           style={{
             width: '100%',
             height: '100%',
-            border: '2px dashed rgba(255,255,255,0.3)',
+            border: '2px dashed #334155', // Cypherpunk: slate-700 dashed
             borderRadius: '5px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: 'rgba(255,255,255,0.05)'
+            backgroundColor: '#1e293b' // Cypherpunk: lighter slate background
           }}
         >
-          <span style={{ fontSize: '28px', color: isRedSuit(suit) ? 'rgba(211,47,47,0.4)' : 'rgba(255,255,255,0.3)' }}>
+          <span style={{ fontSize: '28px', color: isRedSuit(suit) ? 'rgba(220, 38, 38, 0.4)' : '#94a3b8' }}>
             {SUIT_SYMBOLS[suit]}
           </span>
         </div>
@@ -78,9 +78,9 @@ export default function FoundationPile({
           style={{
             width: '100%',
             height: '100%',
-            backgroundColor: isComplete ? '#e8f5e9' : '#fff',
+            backgroundColor: isComplete ? '#f0fdf4' : '#f8fafc', // Cypherpunk: green-50 / slate-50
             borderRadius: '5px',
-            border: isComplete ? '2px solid #4caf50' : '1px solid #ccc',
+            border: isComplete ? '2px solid #22c55e' : '1px solid #cbd5e1', // Cypherpunk: green-500 / slate-300
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -109,7 +109,7 @@ export default function FoundationPile({
             left: '50%',
             transform: 'translateX(-50%)',
             fontSize: '9px',
-            color: isComplete ? '#4caf50' : 'rgba(255,255,255,0.6)',
+            color: isComplete ? '#22c55e' : '#94a3b8', // Cypherpunk: green-500 / slate-400
             fontWeight: isComplete ? 'bold' : 'normal'
           }}
         >
