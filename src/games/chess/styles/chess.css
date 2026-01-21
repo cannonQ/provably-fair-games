@@ -1114,6 +1114,10 @@
 }
 
 @media (max-width: 390px) {
+  .chess-game-container {
+    padding: 0.25rem;
+  }
+
   .chess-square {
     width: 38px;
     height: 38px;
@@ -1124,7 +1128,7 @@
   }
 
   .chess-board {
-    padding: 0.2rem;
+    padding: 0.1rem;
   }
 
   .square-label {
@@ -1133,21 +1137,29 @@
 }
 
 @media (max-width: 360px) {
+  .chess-game-container {
+    padding: 0.1rem;
+  }
+
   .chess-square {
-    width: 36px;
-    height: 36px;
+    width: 35px;
+    height: 35px;
   }
 
   .chess-piece {
-    font-size: 1.7rem;
+    font-size: 1.6rem;
   }
 
   .chess-board {
-    padding: 0.15rem;
+    padding: 0.05rem;
+  }
+
+  .square-label {
+    font-size: 0.45rem;
   }
 
   .move-indicator {
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
   }
 }
