@@ -55,13 +55,36 @@ export async function loadStockfish() {
           // Use cdnjs which serves with correct MIME type and CORS headers
           importScripts('https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js');
 
-          // stockfish.js 10.0.2 creates STOCKFISH as a factory or object
+          // stockfish.js 10.0.2 may create STOCKFISH, Stockfish, or Module
           if (typeof STOCKFISH === 'function') {
             setupEngine(STOCKFISH());
           } else if (typeof STOCKFISH === 'object' && STOCKFISH.postMessage) {
             setupEngine(STOCKFISH);
           } else if (typeof Stockfish === 'function') {
             setupEngine(Stockfish());
+          } else if (typeof Module === 'object' && Module.postMessage) {
+            // cdnjs version creates Module object directly
+            setupEngine(Module);
+          } else if (typeof Module === 'object') {
+            // Module exists but may need onmessage setup
+            // stockfish.js uses Module.print for output
+            const sfEngine = {
+              postMessage: function(cmd) {
+                if (Module.ccall) {
+                  Module.ccall('uci_command', 'number', ['string'], [cmd]);
+                } else if (Module.postMessage) {
+                  Module.postMessage(cmd);
+                }
+              },
+              onmessage: null
+            };
+            // Capture output via Module.print
+            Module.print = function(line) {
+              if (sfEngine.onmessage) {
+                sfEngine.onmessage(line);
+              }
+            };
+            setupEngine(sfEngine);
           } else {
             const globals = Object.keys(self).filter(k =>
               k.toLowerCase().includes('stock') || k === 'Module'
