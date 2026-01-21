@@ -20,6 +20,8 @@ function ChessGame() {
   // Game state
   const [gamePhase, setGamePhase] = useState('setup'); // setup, initializing, playing, gameover
   const [game, setGame] = useState(null);
+  const [gameId, setGameId] = useState(null);
+  const [startTime, setStartTime] = useState(null);
   const [playerColor, setPlayerColor] = useState(null);
   const [aiSettings, setAISettings] = useState(null);
   const [colorAssignment, setColorAssignment] = useState(null);
@@ -54,6 +56,13 @@ function ChessGame() {
     try {
       setGamePhase('initializing');
       setStatusMessage('Initializing game...');
+
+      // Generate unique game ID
+      const timestamp = Date.now();
+      const randomHash = Math.random().toString(36).substring(2, 15);
+      const newGameId = `chess_${timestamp}_${randomHash}`;
+      setGameId(newGameId);
+      setStartTime(timestamp);
 
       // Create new game
       const newGame = createGame();
@@ -182,6 +191,8 @@ function ChessGame() {
     unloadStockfish();
 
     setGame(null);
+    setGameId(null);
+    setStartTime(null);
     setPlayerColor(null);
     setAISettings(null);
     setColorAssignment(null);
@@ -350,6 +361,8 @@ function ChessGame() {
         <GameOverModal
           result={gameResult}
           gameData={getGameData()}
+          gameId={gameId}
+          gameDuration={startTime ? Date.now() - startTime : 0}
           onNewGame={handleNewGame}
           onClose={() => setShowGameOver(false)}
         />
