@@ -34,6 +34,7 @@ function ChessGame() {
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [flipBoard, setFlipBoard] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
+  const [moveCount, setMoveCount] = useState(0); // Used to trigger re-renders after moves
 
   // Stockfish
   const stockfishRef = useRef(null);
@@ -104,7 +105,7 @@ function ChessGame() {
     if (!move) return;
 
     setLastMove({ from, to });
-    setGame({ ...game });
+    setMoveCount(c => c + 1); // Trigger re-render
 
     // Check if game is over
     const result = getGameResult(game);
@@ -135,7 +136,7 @@ function ChessGame() {
       const move = uciToMove(gameInstance, bestMove);
       if (move) {
         setLastMove({ from: move.from, to: move.to });
-        setGame({ ...gameInstance });
+        setMoveCount(c => c + 1); // Trigger re-render
 
         // Check if game is over
         const result = getGameResult(gameInstance);
