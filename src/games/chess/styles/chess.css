@@ -672,7 +672,7 @@
 
 .game-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-bottom: 2rem;
 }
@@ -697,6 +697,107 @@
   font-size: 1.5rem;
   font-weight: bold;
   color: #4caf50;
+}
+
+.stat-value.score-highlight {
+  color: #ffd700;
+}
+
+/* Leaderboard Submission */
+.leaderboard-submit {
+  background: #1a1a2e;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.leaderboard-submit h3 {
+  margin: 0 0 1rem 0;
+  color: #4caf50;
+  font-size: 1.1rem;
+}
+
+.submit-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.name-input {
+  flex: 1;
+  padding: 0.75rem;
+  background: #0d1117;
+  border: 2px solid #333;
+  border-radius: 8px;
+  color: #eee;
+  font-size: 1rem;
+}
+
+.name-input:focus {
+  outline: none;
+  border-color: #4caf50;
+}
+
+.submit-btn {
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submit-error {
+  margin: 0.5rem 0 0;
+  color: #f44336;
+  font-size: 0.9rem;
+}
+
+.submit-success {
+  background: #1a3a1a;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 2px solid #4caf50;
+  color: #4caf50;
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+/* Verification Link */
+.verify-link {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.verify-link-btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: #16213e;
+  border: 2px solid #64b5f6;
+  border-radius: 8px;
+  color: #64b5f6;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.verify-link-btn:hover {
+  background: #64b5f6;
+  color: #1a1a2e;
+  transform: translateY(-2px);
 }
 
 .modal-actions {
@@ -881,7 +982,11 @@
   }
 
   .game-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .submit-row {
+    flex-direction: column;
   }
 
   .modal-actions {
@@ -912,6 +1017,10 @@
   }
 
   .mode-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .game-stats {
     grid-template-columns: 1fr;
   }
 

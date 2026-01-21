@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import VerificationPanel from './VerificationPanel';
 
 /**
- * Game over modal with results and verification
+ * Game over modal with results, leaderboard submission, and verification
  */
-function GameOverModal({ result, gameData, onNewGame, onClose }) {
+function GameOverModal({ result, gameData, gameId, gameDuration, onNewGame, onClose }) {
+  const [playerName, setPlayerName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitRank, setSubmitRank] = useState(null);
+
   if (!result || !result.gameOver) {
     return null;
   }
@@ -46,6 +52,69 @@ function GameOverModal({ result, gameData, onNewGame, onClose }) {
     }
   };
 
+  // Calculate score
+  const calculateScore = () => {
+    const aiElo = gameData.aiSettings?.targetElo || 1000;
+    if (result.winner === gameData.playerColor) {
+      // Win: 100 points per 100 ELO
+      return Math.floor(100 * (aiElo / 100));
+    } else if (result.winner === null) {
+      // Draw: 25 points per 100 ELO
+      return Math.floor(25 * (aiElo / 100));
+    } else {
+      // Loss: 10 points per 100 ELO
+      return Math.floor(10 * (aiElo / 100));
+    }
+  };
+
+  const score = calculateScore();
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const response = await fetch('/api/submit-score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          game: 'chess',
+          gameId,
+          playerName: playerName.trim() || 'Anonymous',
+          score,
+          timeSeconds: Math.floor(gameDuration / 1000),
+          moves: gameData.moves?.length || 0,
+          // Blockchain verification data
+          blockHeight: gameData.colorAssignment?.blockHeight,
+          blockHash: gameData.colorAssignment?.blockHash,
+          // Metadata
+          metadata: {
+            result: result.result,
+            reason: result.reason,
+            playerColor: gameData.playerColor,
+            aiElo: gameData.aiSettings?.targetElo,
+            aiSkillLevel: gameData.aiSettings?.skillLevel,
+            colorCommitment: gameData.aiCommitment?.commitment,
+            aiCommitment: gameData.aiCommitment?.commitment
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Submission failed');
+      }
+
+      const responseData = await response.json();
+      setSubmitted(true);
+      setSubmitRank(responseData.rank);
+    } catch (err) {
+      setSubmitError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="modal-overlay">
       <div className="game-over-modal">
@@ -68,9 +137,56 @@ function GameOverModal({ result, gameData, onNewGame, onClose }) {
             <span className="stat-label">Total Moves</span>
             <span className="stat-value">{gameData.moves?.length || 0}</span>
           </div>
+          <div className="stat-item">
+            <span className="stat-label">Score</span>
+            <span className="stat-value score-highlight">{score} pts</span>
+          </div>
         </div>
 
         <VerificationPanel gameData={gameData} />
+
+        {/* Leaderboard Submission */}
+        {!submitted ? (
+          <div className="leaderboard-submit">
+            <h3>Submit to Leaderboard?</h3>
+            <div className="submit-row">
+              <input
+                type="text"
+                className="name-input"
+                placeholder="Your name (optional)"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                maxLength={20}
+              />
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className="submit-btn"
+              >
+                {submitting ? 'Submitting...' : 'Submit Score'}
+              </button>
+            </div>
+            {submitError && <p className="submit-error">{submitError}</p>}
+          </div>
+        ) : (
+          <div className="submit-success">
+            ✓ Submitted! You ranked #{submitRank}
+          </div>
+        )}
+
+        {/* Verification Link - Opens in new tab */}
+        {gameId && (
+          <div className="verify-link">
+            <a
+              href={`/verify/chess/${gameId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="verify-link-btn"
+            >
+              🔗 Verify this game on blockchain
+            </a>
+          </div>
+        )}
 
         <div className="modal-actions">
           <button className="action-btn primary" onClick={onNewGame}>
