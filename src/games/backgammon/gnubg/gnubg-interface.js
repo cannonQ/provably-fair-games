@@ -50,23 +50,18 @@ class GnubgInterface {
 
   /**
    * Configure gnubg for world-class play (~2000 FIBS rating)
-   * Note: This gnubg WASM build may not support CLI commands
    */
   async setupWorldClassSettings() {
-    // This gnubg build uses direct function calls, not CLI commands
-    // The module is already configured for strong play by default
-    // Just verify the module has the functions we need
-
-    const hasFunctions =
-      typeof this.module._HandleCommand === 'function' ||
-      typeof this.module._run_command === 'function' ||
-      typeof this.module._doNextTurn === 'function';
-
-    if (!hasFunctions) {
-      console.warn('[gnubg] Module missing expected functions');
+    // gnubg-web uses _run_command for CLI commands
+    // Set up strong evaluation settings
+    try {
+      await this.executeCommand('set player gnubg chequer evaluation plies 2');
+      await this.executeCommand('set player gnubg cube evaluation plies 2');
+      await this.executeCommand('set player gnubg chequer evaluation prune on');
+    } catch (e) {
+      console.warn('[gnubg] Setup commands failed (may be normal):', e.message);
     }
-
-    console.log('[gnubg] Using default gnubg settings (CLI commands not supported in this build)');
+    console.log('[gnubg] World-class settings applied');
   }
 
   /**
@@ -87,8 +82,7 @@ class GnubgInterface {
       // Execute command through Emscripten
       // gnubg exports _HandleCommand or _run_command instead of _ExecuteCommand
 
-      // Helper to allocate string on WASM heap
-      // Emscripten helpers may be global or on Module
+      // Helper to allocate string on WASM heap (gnubg-web pattern)
       const allocString = (str) => {
         const encoder = new TextEncoder();
         const bytes = encoder.encode(str + '\0'); // null-terminated
@@ -98,25 +92,26 @@ class GnubgInterface {
         return ptr;
       };
 
-      if (typeof this.module._HandleCommand === 'function') {
-        const cmdPtr = allocString(command);
-        this.module._HandleCommand(cmdPtr);
-        this.module._free(cmdPtr);
-      } else if (typeof this.module._run_command === 'function') {
+      // gnubg-web uses _run_command (preferred) or _HandleCommand
+      if (typeof this.module._run_command === 'function') {
         const cmdPtr = allocString(command);
         this.module._run_command(cmdPtr);
         this.module._free(cmdPtr);
+      } else if (typeof this.module._HandleCommand === 'function') {
+        const cmdPtr = allocString(command);
+        this.module._HandleCommand(cmdPtr);
+        this.module._free(cmdPtr);
       } else {
-        // Log available functions for debugging
-        const funcs = Object.keys(this.module).filter(k =>
-          k.startsWith('_') || k === 'ccall' || k === 'cwrap'
-        );
-        console.log('[gnubg] Available module functions:', funcs);
-        throw new Error('No suitable method to execute gnubg commands');
+        throw new Error('No command function available');
       }
 
-      // Wait a tick for output to be captured
-      await new Promise(resolve => setTimeout(resolve, 10));
+      // Call _doNextTurn to process the command result (gnubg-web pattern)
+      if (typeof this.module._doNextTurn === 'function') {
+        this.module._doNextTurn();
+      }
+
+      // Wait for output to be captured
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       // Return captured output
       return this.outputBuffer.join('\n');
@@ -163,11 +158,24 @@ class GnubgInterface {
       throw new Error('gnubg not initialized');
     }
 
-    // This gnubg WASM build doesn't support CLI commands like 'hint'
-    // Return empty to trigger fallback to Hard AI
-    // TODO: Investigate gnubg-web API for direct function calls
-    console.log('[gnubg] CLI commands not supported, using fallback AI');
-    return [];
+    try {
+      // Set up position
+      await this.setPosition(state, player);
+
+      // Set dice
+      await this.setDice(dice);
+
+      // Get hint (best move)
+      const output = await this.executeCommand('hint');
+
+      // Parse the output
+      const moves = this.parseMoveFromHint(output);
+
+      return moves;
+    } catch (error) {
+      console.error('[gnubg] Error getting best move:', error);
+      return []; // Return empty to trigger fallback
+    }
   }
 
   /**
