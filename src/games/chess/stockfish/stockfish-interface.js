@@ -78,9 +78,9 @@ export class StockfishInterface {
    */
   async init() {
     this.send('uci');
-    await this.waitFor('uciok');
+    await this.waitFor('uciok', 10000); // 10 seconds for initial handshake
     this.send('isready');
-    await this.waitFor('readyok');
+    await this.waitFor('readyok', 10000);
     this.isReady = true;
   }
 

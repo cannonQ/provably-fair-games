@@ -141,11 +141,20 @@ async function loadGnubgInternal() {
   const basePath = '/assets/gnubg/';
 
   try {
-    // Step 1: Load main JavaScript (Emscripten glue code)
-    console.log('[gnubg] Loading gnubg.js...');
+    // Step 1: Check if gnubg files exist first
+    console.log('[gnubg] Checking for gnubg files...');
     const jsUrl = basePath + 'gnubg.js';
 
+    // Quick HEAD request to check if files exist
+    const checkResponse = await fetch(jsUrl, { method: 'HEAD' });
+    if (!checkResponse.ok) {
+      throw new Error(
+        'GNU Backgammon AI files not found. The "Hardest" difficulty requires additional files (~15MB) that are not currently installed. Please use Hard difficulty instead.'
+      );
+    }
+
     // Load JS file as text
+    console.log('[gnubg] Loading gnubg.js...');
     const jsResponse = await fetch(jsUrl);
     if (!jsResponse.ok) {
       throw new Error(`Failed to load gnubg.js: ${jsResponse.statusText} (${jsResponse.status})`);
@@ -160,6 +169,10 @@ async function loadGnubgInternal() {
     updateProgress(FILE_SIZES['gnubg.js'], 'gnubg.js');
 
     // Step 2: Setup Emscripten module configuration
+    // Store data buffers in closure for preRun access
+    let wdBuffer = null;
+    let bdBuffer = null;
+
     const Module = {
       // Configure file system paths
       locateFile: (path) => {
@@ -194,6 +207,9 @@ async function loadGnubgInternal() {
       monitorRunDependencies: (left) => {
         console.log('[gnubg] Dependencies remaining:', left);
       },
+
+      // PreRun will be set up after we load the data files
+      preRun: [],
     };
 
     // Step 3: Load WASM file with progress
@@ -208,23 +224,30 @@ async function loadGnubgInternal() {
     console.log('[gnubg] Loading databases...');
 
     // Load bearoff database
-    const wdBuffer = await loadFileWithProgress(
+    wdBuffer = await loadFileWithProgress(
       basePath + 'gnubg.wd',
       'gnubg.wd'
     );
 
     // Load opening book
-    const bdBuffer = await loadFileWithProgress(
+    bdBuffer = await loadFileWithProgress(
       basePath + 'gnubg_os0.bd',
       'gnubg_os0.bd'
     );
 
     // Setup preloaded files in Emscripten virtual filesystem
-    Module.preRun = [
-      () => {
-        console.log('[gnubg] Setting up virtual filesystem...');
-        const FS = Module.FS;
+    // The preRun function receives the Module as 'this' context with FS attached
+    Module.preRun.push(function() {
+      console.log('[gnubg] Setting up virtual filesystem...');
+      // Access FS from the module's this context or global
+      const FS = this.FS || Module.FS || (typeof window !== 'undefined' && window.FS);
 
+      if (!FS) {
+        console.error('[gnubg] Emscripten FS not available');
+        return;
+      }
+
+      try {
         // Create directories
         FS.mkdir('/gnubg');
         FS.mkdir('/gnubg/data');
@@ -234,8 +257,10 @@ async function loadGnubgInternal() {
         FS.writeFile('/gnubg/data/gnubg_os0.bd', new Uint8Array(bdBuffer));
 
         console.log('[gnubg] Databases installed');
-      },
-    ];
+      } catch (fsError) {
+        console.error('[gnubg] FS setup error:', fsError);
+      }
+    });
 
     // Step 5: Execute the Emscripten code
     console.log('[gnubg] Initializing Emscripten module...');
@@ -245,11 +270,19 @@ async function loadGnubgInternal() {
     const gnubg = await initGnubgModule(Module);
 
     // Wait for module to be ready
-    await new Promise((resolve) => {
+    await new Promise((resolve, reject) => {
+      const initTimeout = setTimeout(() => {
+        reject(new Error('Emscripten module initialization timeout'));
+      }, 30000);
+
       if (gnubg.calledRun) {
+        clearTimeout(initTimeout);
         resolve();
       } else {
-        gnubg.onRuntimeInitialized = resolve;
+        gnubg.onRuntimeInitialized = () => {
+          clearTimeout(initTimeout);
+          resolve();
+        };
       }
     });
 

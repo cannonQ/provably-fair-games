@@ -24,30 +24,54 @@ export async function loadStockfish() {
   loadingPromise = new Promise((resolve, reject) => {
     try {
       // Create a worker that loads Stockfish from CDN
+      // Using stockfish.wasm for better performance (WASM version)
       const workerCode = `
-        // Load Stockfish from CDN
-        importScripts('https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js');
+        let engine = null;
 
-        // Notify that Stockfish is loaded
-        postMessage({ type: 'ready' });
-
-        // Forward messages between Stockfish and main thread
+        // Set up message handler before loading
         onmessage = function(e) {
           if (e.data === 'ping') {
             postMessage({ type: 'pong' });
             return;
           }
 
-          if (typeof STOCKFISH !== 'undefined' && STOCKFISH.postMessage) {
-            STOCKFISH.postMessage(e.data);
+          // Forward UCI commands to engine
+          if (engine && engine.postMessage) {
+            engine.postMessage(e.data);
           }
         };
 
-        // Listen to Stockfish output
-        if (typeof STOCKFISH !== 'undefined') {
-          STOCKFISH.onmessage = function(e) {
-            postMessage({ type: 'stockfish', data: e.data || e });
-          };
+        // Load Stockfish from CDN
+        try {
+          importScripts('https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js');
+
+          // STOCKFISH is a factory function in this version
+          if (typeof STOCKFISH === 'function') {
+            engine = STOCKFISH();
+
+            // Set up output handler
+            engine.onmessage = function(event) {
+              const msg = typeof event === 'string' ? event : (event.data || event);
+              postMessage({ type: 'stockfish', data: msg });
+            };
+
+            // Engine is ready
+            postMessage({ type: 'ready' });
+          } else if (typeof STOCKFISH === 'object' && STOCKFISH.postMessage) {
+            // Alternative: STOCKFISH is already an engine instance
+            engine = STOCKFISH;
+
+            engine.onmessage = function(event) {
+              const msg = typeof event === 'string' ? event : (event.data || event);
+              postMessage({ type: 'stockfish', data: msg });
+            };
+
+            postMessage({ type: 'ready' });
+          } else {
+            throw new Error('STOCKFISH not available after import');
+          }
+        } catch (err) {
+          postMessage({ type: 'error', error: err.message });
         }
       `;
 
@@ -62,9 +86,18 @@ export async function loadStockfish() {
         URL.revokeObjectURL(workerUrl);
         loadingPromise = null;
         reject(new Error('Stockfish loading timeout'));
-      }, 15000);
+      }, 30000); // Increased to 30 seconds for slow connections
 
       worker.onmessage = (e) => {
+        // Handle error from worker
+        if (e.data && e.data.type === 'error') {
+          clearTimeout(timeout);
+          URL.revokeObjectURL(workerUrl);
+          loadingPromise = null;
+          reject(new Error(e.data.error));
+          return;
+        }
+
         // Only resolve when we get the 'ready' message
         if (e.data && e.data.type === 'ready') {
           clearTimeout(timeout);
