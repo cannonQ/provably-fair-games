@@ -96,12 +96,27 @@ class GnubgInterface {
 
     try {
       // Execute command through Emscripten
-      this.module.ccall(
-        'ExecuteCommand',
-        'number',
-        ['string'],
-        [command]
-      );
+      // Try different methods depending on how gnubg was compiled
+      if (typeof this.module.ccall === 'function') {
+        this.module.ccall('ExecuteCommand', 'number', ['string'], [command]);
+      } else if (typeof this.module._ExecuteCommand === 'function') {
+        // Direct function call - need to allocate string on heap
+        const len = this.module.lengthBytesUTF8(command) + 1;
+        const cmdPtr = this.module._malloc(len);
+        this.module.stringToUTF8(command, cmdPtr, len);
+        this.module._ExecuteCommand(cmdPtr);
+        this.module._free(cmdPtr);
+      } else if (typeof this.module.cwrap === 'function') {
+        const execCmd = this.module.cwrap('ExecuteCommand', 'number', ['string']);
+        execCmd(command);
+      } else {
+        // Log available functions for debugging
+        const funcs = Object.keys(this.module).filter(k =>
+          k.startsWith('_') || k === 'ccall' || k === 'cwrap'
+        );
+        console.log('[gnubg] Available module functions:', funcs.slice(0, 30));
+        throw new Error('No suitable method to execute gnubg commands - ccall/cwrap not exported');
+      }
 
       // Wait a tick for output to be captured
       await new Promise(resolve => setTimeout(resolve, 10));
