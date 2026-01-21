@@ -918,8 +918,8 @@ const styles = {
   },
   cardGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(5, 1fr)',
-    gap: 'clamp(2px, 1vw, 6px)',
+    gridTemplateColumns: 'repeat(10, 1fr)', // Cypherpunk: single row of 10 cards (was 2 rows of 5)
+    gap: 'clamp(4px, 1vw, 8px)', // Slightly larger gap for readability
     maxWidth: '100%'
   },
   slot: {
@@ -943,9 +943,10 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     padding: '12px',
-    backgroundColor: '#166534',
+    backgroundColor: '#1e293b', // Cypherpunk: dark slate (was green felt #166534)
     borderRadius: '8px',
-    marginBottom: '4px'
+    marginBottom: '4px',
+    border: '1px solid #6366f1' // Cypherpunk: indigo accent border
   },
   pileContainer: {
     display: 'flex',
@@ -959,7 +960,7 @@ const styles = {
   },
   pileLabel: {
     fontSize: '0.65rem',
-    color: '#86efac',
+    color: '#94a3b8', // Cypherpunk: muted slate-400 (was bright green #86efac)
     marginTop: '2px'
   },
   emptyPile: {
