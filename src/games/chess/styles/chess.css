@@ -471,12 +471,12 @@
   cursor: grabbing;
 }
 
-.chess-piece.white {
+.chess-piece.w {
   color: #00ff88;
   filter: drop-shadow(0 2px 4px rgba(0, 255, 136, 0.5)) drop-shadow(0 0 8px rgba(0, 255, 136, 0.3));
 }
 
-.chess-piece.black {
+.chess-piece.b {
   color: #ff6b6b;
   filter: drop-shadow(0 2px 4px rgba(255, 107, 107, 0.5)) drop-shadow(0 0 8px rgba(255, 107, 107, 0.3));
 }
