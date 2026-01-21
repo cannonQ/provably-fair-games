@@ -2,18 +2,18 @@
  * Lazy loader for Stockfish WASM (browser-compatible version)
  * Loads the engine from CDN using Web Worker
  *
- * Uses stockfish.js directly as Worker script for proper initialization
+ * Fetches stockfish.js and creates a blob worker to avoid CORS issues
  */
 
 let stockfishWorker = null;
 let loadingPromise = null;
 
-// CDN URL for stockfish.js - this version works as a direct Worker script
+// CDN URL for stockfish.js
 const STOCKFISH_CDN_URL = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js';
 
 /**
  * Loads Stockfish engine from CDN (singleton pattern)
- * stockfish.js is designed to be loaded directly as a Worker script
+ * Fetches the script and creates a blob worker to avoid CORS restrictions
  */
 export async function loadStockfish() {
   // Return existing instance if already loaded
@@ -27,62 +27,75 @@ export async function loadStockfish() {
   }
 
   // Start loading
-  loadingPromise = new Promise((resolve, reject) => {
+  loadingPromise = (async () => {
     try {
-      // Load stockfish.js directly as Worker script
-      // This is the recommended way per stockfish.js documentation
-      const worker = new Worker(STOCKFISH_CDN_URL);
+      // Fetch stockfish.js content
+      console.log('[Stockfish] Fetching from CDN...');
+      const response = await fetch(STOCKFISH_CDN_URL);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stockfish.js: ${response.status}`);
+      }
+      const stockfishCode = await response.text();
+      console.log('[Stockfish] Script loaded, size:', stockfishCode.length);
 
-      let isReady = false;
+      // Create blob worker from the fetched code
+      const blob = new Blob([stockfishCode], { type: 'application/javascript' });
+      const workerUrl = URL.createObjectURL(blob);
 
-      // Wait for worker to be ready
-      const timeout = setTimeout(() => {
-        if (!isReady) {
-          worker.terminate();
-          loadingPromise = null;
-          reject(new Error('Stockfish loading timeout'));
-        }
-      }, 30000);
+      return new Promise((resolve, reject) => {
+        const worker = new Worker(workerUrl);
+        let isReady = false;
 
-      worker.onmessage = (e) => {
-        // stockfish.js sends string messages directly
-        const msg = typeof e.data === 'string' ? e.data : (e.data?.data || String(e.data));
-
-        // Check for UCI ready response
-        if (msg.includes('uciok') || msg.includes('Stockfish')) {
+        const timeout = setTimeout(() => {
           if (!isReady) {
-            isReady = true;
-            clearTimeout(timeout);
-            stockfishWorker = worker;
+            worker.terminate();
+            URL.revokeObjectURL(workerUrl);
             loadingPromise = null;
-            resolve(worker);
+            reject(new Error('Stockfish loading timeout'));
           }
-        }
-      };
+        }, 30000);
 
-      worker.onerror = (error) => {
-        clearTimeout(timeout);
-        loadingPromise = null;
-        console.error('Stockfish worker error:', error);
-        reject(new Error('Failed to load Stockfish: ' + (error.message || 'Worker error')));
-      };
+        worker.onmessage = (e) => {
+          const msg = typeof e.data === 'string' ? e.data : String(e.data);
 
-      // Send UCI command to trigger initialization response
-      // stockfish.js will respond with engine info including "uciok"
-      setTimeout(() => {
-        try {
-          worker.postMessage('uci');
-        } catch (e) {
-          console.error('Error sending uci command:', e);
-        }
-      }, 100);
+          // Check for UCI ready response
+          if (msg.includes('uciok') || msg.includes('Stockfish')) {
+            if (!isReady) {
+              isReady = true;
+              clearTimeout(timeout);
+              URL.revokeObjectURL(workerUrl);
+              stockfishWorker = worker;
+              loadingPromise = null;
+              console.log('[Stockfish] Engine ready');
+              resolve(worker);
+            }
+          }
+        };
+
+        worker.onerror = (error) => {
+          clearTimeout(timeout);
+          URL.revokeObjectURL(workerUrl);
+          loadingPromise = null;
+          console.error('[Stockfish] Worker error:', error);
+          reject(new Error('Failed to load Stockfish: ' + (error.message || 'Worker error')));
+        };
+
+        // Send UCI command to initialize
+        setTimeout(() => {
+          try {
+            worker.postMessage('uci');
+          } catch (e) {
+            console.error('[Stockfish] Error sending uci command:', e);
+          }
+        }, 100);
+      });
 
     } catch (error) {
-      console.error('Error creating Stockfish worker:', error);
+      console.error('[Stockfish] Load error:', error);
       loadingPromise = null;
-      reject(error);
+      throw error;
     }
-  });
+  })();
 
   return loadingPromise;
 }
