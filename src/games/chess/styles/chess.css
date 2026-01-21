@@ -408,23 +408,31 @@
 }
 
 .chess-square.light {
-  background: #f0d9b5;
+  background: #eeeed2;
 }
 
 .chess-square.dark {
-  background: #b58863;
+  background: #769656;
 }
 
 .chess-square.selected {
-  background: #ffd700 !important;
+  background: #f6f669 !important;
 }
 
 .chess-square.legal-move {
-  background-color: rgba(76, 175, 80, 0.3);
+  background-color: rgba(76, 175, 80, 0.4);
 }
 
 .chess-square.last-move {
-  background-color: rgba(255, 215, 0, 0.3);
+  background-color: rgba(255, 255, 0, 0.5) !important;
+}
+
+.chess-square.last-move.light {
+  background-color: #f7f783 !important;
+}
+
+.chess-square.last-move.dark {
+  background-color: #bbcc44 !important;
 }
 
 .chess-square.in-check {
