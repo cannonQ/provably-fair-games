@@ -1142,16 +1142,16 @@
   }
 
   .chess-square {
-    width: 35px;
-    height: 35px;
+    width: 34px;
+    height: 34px;
   }
 
   .chess-piece {
-    font-size: 1.6rem;
+    font-size: 1.55rem;
   }
 
   .chess-board {
-    padding: 0.05rem;
+    padding: 0.1rem;
   }
 
   .square-label {
