@@ -319,20 +319,36 @@ game_id = "${data.gameId}"
 # ============================================
 # SEED GENERATION (matches client-side)
 # ============================================
-def simple_hash(s):
-    """Simple hash function matching client-side implementation"""
+def simple_hash(input_str):
+    """Simple hash function matching JavaScript simpleHash"""
     h = 0
-    for c in s:
+    for c in input_str:
         h = ((h << 5) - h) + ord(c)
         h = h & 0xFFFFFFFF  # Convert to 32-bit
-    return format(h, 'x')
+    # Return absolute value to match JavaScript Math.abs
+    if h >= 0x80000000:
+        h = -(0x100000000 - h)
+    return abs(h)
 
 def generate_seed(block_hash, tx_hash, timestamp, game_id, tx_index):
-    combined = f"{block_hash}{tx_hash}{timestamp}{game_id}{tx_index}"
-    seed = ""
-    for i in range(4):
-        seed += simple_hash(combined + str(i))
-    return seed
+    """Generate seed matching JavaScript generateSeed exactly"""
+    # Use colons to separate inputs (matches JavaScript)
+    input_str = f"{block_hash}:{tx_hash}:{timestamp}:{game_id}:{tx_index}"
+
+    # Generate 4 hash rounds (matches JavaScript)
+    hash1 = simple_hash(input_str)
+    hash2 = simple_hash(input_str + str(hash1))
+    hash3 = simple_hash(str(hash1) + str(hash2))
+    hash4 = simple_hash(str(hash2) + str(hash3))
+
+    # Convert to 8-char hex strings (padded with zeros)
+    hex1 = format(hash1, '08x')
+    hex2 = format(hash2, '08x')
+    hex3 = format(hash3, '08x')
+    hex4 = format(hash4, '08x')
+
+    # Concatenate twice and slice to 64 chars (matches JavaScript)
+    return (hex1 + hex2 + hex3 + hex4 + hex1 + hex2 + hex3 + hex4)[:64]
 
 # Generate the seed
 seed = generate_seed(block_hash, tx_hash, timestamp, game_id, tx_index)
