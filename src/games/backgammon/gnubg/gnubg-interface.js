@@ -96,26 +96,46 @@ class GnubgInterface {
 
     try {
       // Execute command through Emscripten
-      // Try different methods depending on how gnubg was compiled
+      // gnubg exports _HandleCommand or _run_command instead of _ExecuteCommand
+
+      // Helper to allocate string on WASM heap
+      const allocString = (str) => {
+        const len = this.module.lengthBytesUTF8(str) + 1;
+        const ptr = this.module._malloc(len);
+        this.module.stringToUTF8(str, ptr, len);
+        return ptr;
+      };
+
       if (typeof this.module.ccall === 'function') {
-        this.module.ccall('ExecuteCommand', 'number', ['string'], [command]);
-      } else if (typeof this.module._ExecuteCommand === 'function') {
-        // Direct function call - need to allocate string on heap
-        const len = this.module.lengthBytesUTF8(command) + 1;
-        const cmdPtr = this.module._malloc(len);
-        this.module.stringToUTF8(command, cmdPtr, len);
-        this.module._ExecuteCommand(cmdPtr);
+        // Try ccall with different function names
+        try {
+          this.module.ccall('HandleCommand', 'number', ['string'], [command]);
+        } catch {
+          this.module.ccall('run_command', 'number', ['string'], [command]);
+        }
+      } else if (typeof this.module._HandleCommand === 'function') {
+        const cmdPtr = allocString(command);
+        this.module._HandleCommand(cmdPtr);
+        this.module._free(cmdPtr);
+      } else if (typeof this.module._run_command === 'function') {
+        const cmdPtr = allocString(command);
+        this.module._run_command(cmdPtr);
         this.module._free(cmdPtr);
       } else if (typeof this.module.cwrap === 'function') {
-        const execCmd = this.module.cwrap('ExecuteCommand', 'number', ['string']);
-        execCmd(command);
+        try {
+          const execCmd = this.module.cwrap('HandleCommand', 'number', ['string']);
+          execCmd(command);
+        } catch {
+          const execCmd = this.module.cwrap('run_command', 'number', ['string']);
+          execCmd(command);
+        }
       } else {
         // Log available functions for debugging
         const funcs = Object.keys(this.module).filter(k =>
           k.startsWith('_') || k === 'ccall' || k === 'cwrap'
         );
-        console.log('[gnubg] Available module functions:', funcs.slice(0, 30));
-        throw new Error('No suitable method to execute gnubg commands - ccall/cwrap not exported');
+        console.log('[gnubg] Available module functions:', funcs);
+        throw new Error('No suitable method to execute gnubg commands');
       }
 
       // Wait a tick for output to be captured
