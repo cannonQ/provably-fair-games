@@ -26,6 +26,12 @@ class GnubgInterface {
   async initialize(gnubgModule) {
     this.module = gnubgModule;
 
+    // Check if this is a stub module
+    if (this.module._isStub) {
+      console.warn('[gnubg] Detected stub module - real WASM not available');
+      throw new Error('GNU Backgammon stub detected - please install real WASM files from https://github.com/hwatheod/gnubg-web');
+    }
+
     // Configure output capture
     this.module.print = (text) => {
       this.outputBuffer.push(text);

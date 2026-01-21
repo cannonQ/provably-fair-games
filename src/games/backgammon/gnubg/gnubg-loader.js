@@ -148,9 +148,15 @@ async function loadGnubgInternal() {
     // Load JS file as text
     const jsResponse = await fetch(jsUrl);
     if (!jsResponse.ok) {
-      throw new Error(`Failed to load gnubg.js: ${jsResponse.statusText}`);
+      throw new Error(`Failed to load gnubg.js: ${jsResponse.statusText} (${jsResponse.status})`);
     }
     const jsCode = await jsResponse.text();
+
+    // Check if we got HTML instead of JS (indicates 404 or missing file)
+    if (jsCode.trim().startsWith('<')) {
+      throw new Error('gnubg.js not found - received HTML instead of JavaScript. Please install WASM files from https://github.com/hwatheod/gnubg-web');
+    }
+
     updateProgress(FILE_SIZES['gnubg.js'], 'gnubg.js');
 
     // Step 2: Setup Emscripten module configuration
