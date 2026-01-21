@@ -46,9 +46,9 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
   };
 
   const sectionStyle = {
-    backgroundColor: '#fff',
+    backgroundColor: '#1e293b', // Cypherpunk: dark slate (was white)
     borderRadius: '8px',
-    border: '2px solid #333',
+    border: '2px solid #334155', // Cypherpunk: slate-700
     overflow: 'hidden',
     minWidth: '280px',
     flex: '1 1 280px',
@@ -56,8 +56,8 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
   };
 
   const headerStyle = {
-    backgroundColor: '#333',
-    color: '#fff',
+    backgroundColor: '#0f172a', // Cypherpunk: darker slate (was #333)
+    color: '#f1f5f9', // Cypherpunk: slate-100
     padding: '10px 15px',
     fontWeight: 'bold',
     fontSize: '16px',
@@ -66,27 +66,28 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
 
   const getRowStyle = (category, isClickable, isSacrifice) => {
     let backgroundColor = 'transparent';
-    
+
     if (isClickable) {
       if (hoveredCategory === category) {
-        backgroundColor = isSacrifice ? '#ffccbc' : '#c8e6c9'; // Red-ish or green-ish hover
+        backgroundColor = isSacrifice ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)'; // Cypherpunk: red or green hover
       } else if (isSacrifice) {
-        backgroundColor = '#fff3e0'; // Light orange for sacrifice rows
+        backgroundColor = 'rgba(239, 68, 68, 0.1)'; // Cypherpunk: light red for sacrifice rows
       } else if (canScore) {
-        backgroundColor = '#e8f5e9'; // Light green for good scoring options
+        backgroundColor = 'rgba(34, 197, 94, 0.1)'; // Cypherpunk: light green for good scoring options
       }
     }
-    
+
     return {
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
       padding: '10px 15px',
-      borderBottom: '1px solid #ddd',
+      borderBottom: '1px solid #334155', // Cypherpunk: slate-700 (was #ddd)
       backgroundColor,
       cursor: isClickable ? 'pointer' : 'default',
       transition: 'background-color 0.15s ease',
-      borderLeft: isClickable ? (isSacrifice ? '4px solid #ff5722' : '4px solid #4caf50') : '4px solid transparent'
+      borderLeft: isClickable ? (isSacrifice ? '4px solid #ef4444' : '4px solid #22c55e') : '4px solid transparent', // Cypherpunk: red-500 / green-500
+      color: '#f1f5f9' // Cypherpunk: slate-100 text
     };
   };
 
@@ -95,14 +96,15 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '10px 15px',
-    borderBottom: '1px solid #ddd',
-    backgroundColor: '#f5f5f5',
-    fontWeight: '600'
+    borderBottom: '1px solid #334155', // Cypherpunk: slate-700
+    backgroundColor: '#0f172a', // Cypherpunk: darker slate (was #f5f5f5)
+    fontWeight: '600',
+    color: '#f1f5f9' // Cypherpunk: slate-100
   };
 
   const grandTotalStyle = {
-    backgroundColor: '#1976d2',
-    color: '#fff',
+    backgroundColor: '#8b5cf6', // Cypherpunk: violet-500 (was blue #1976d2)
+    color: '#f1f5f9', // Cypherpunk: slate-100
     padding: '15px 20px',
     borderRadius: '8px',
     display: 'flex',
@@ -113,41 +115,43 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
     marginTop: '15px',
     width: '100%',
     maxWidth: '720px',
-    boxSizing: 'border-box'
+    boxSizing: 'border-box',
+    border: '2px solid #a78bfa', // Cypherpunk: violet-400 border
+    boxShadow: '0 0 20px rgba(139, 92, 246, 0.3)' // Cypherpunk: violet glow
   };
 
   const renderScoreValue = (category) => {
     const scored = scorecard[category];
     const potential = availableScores[category];
-    
+
     // Already scored
     if (scored !== null) {
       return (
-        <span style={{ color: '#666', fontWeight: '500' }}>
+        <span style={{ color: '#94a3b8', fontWeight: '500' }}> {/* Cypherpunk: slate-400 */}
           {scored}
         </span>
       );
     }
-    
+
     // Can score this turn
     if (canScore && potential !== undefined) {
       if (potential > 0) {
         return (
-          <span style={{ color: '#2e7d32', fontWeight: '600' }}>
+          <span style={{ color: '#22c55e', fontWeight: '600' }}> {/* Cypherpunk: green-500 */}
             +{potential}
           </span>
         );
       } else {
         return (
-          <span style={{ color: '#d84315', fontWeight: '600' }}>
+          <span style={{ color: '#ef4444', fontWeight: '600' }}> {/* Cypherpunk: red-500 */}
             0 (sacrifice)
           </span>
         );
       }
     }
-    
+
     // Not available
-    return <span style={{ color: '#ccc' }}>—</span>;
+    return <span style={{ color: '#64748b' }}>—</span>; {/* Cypherpunk: slate-500 */}
   };
 
   const handleCategoryClick = (category) => {
@@ -181,9 +185,9 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
           isScored ? scorecard[category] : (canScore ? availableScores[category] : 'not available')
         }`}
       >
-        <span style={{ color: isScored ? '#999' : '#333', fontWeight: isClickable ? '500' : 'normal' }}>
+        <span style={{ color: isScored ? '#94a3b8' : '#f1f5f9', fontWeight: isClickable ? '500' : 'normal' }}> {/* Cypherpunk: slate-400 / slate-100 */}
           {CATEGORY_DISPLAY_NAMES[category]}
-          {isClickable && <span style={{ marginLeft: '8px', fontSize: '12px' }}>← click</span>}
+          {isClickable && <span style={{ marginLeft: '8px', fontSize: '12px', color: '#94a3b8' }}>← click</span>}
         </span>
         {renderScoreValue(category)}
       </div>
@@ -198,11 +202,11 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       {/* Player indicator */}
-      <div style={{ 
-        marginBottom: '15px', 
-        fontSize: '18px', 
+      <div style={{
+        marginBottom: '15px',
+        fontSize: '18px',
         fontWeight: '600',
-        color: '#333'
+        color: '#f1f5f9' /* Cypherpunk: slate-100 (was #333) */
       }}>
         {activePlayer}'s Scorecard
       </div>
@@ -210,8 +214,8 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
       {/* Sacrifice warning */}
       {mustSacrifice && (
         <div style={{
-          backgroundColor: '#ffebee',
-          border: '2px solid #f44336',
+          backgroundColor: 'rgba(239, 68, 68, 0.15)', /* Cypherpunk: red with transparency */
+          border: '2px solid #ef4444', /* Cypherpunk: red-500 */
           borderRadius: '8px',
           padding: '12px 20px',
           marginBottom: '15px',
@@ -220,11 +224,11 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
           boxSizing: 'border-box',
           textAlign: 'center'
         }}>
-          <div style={{ color: '#c62828', fontWeight: 'bold', marginBottom: '4px' }}>
+          <div style={{ color: '#ef4444', fontWeight: 'bold', marginBottom: '4px' }}> {/* Cypherpunk: red-500 */}
             ⚠️ No scoring options available!
           </div>
-          <div style={{ color: '#d32f2f', fontSize: '14px' }}>
-            You must sacrifice a category. Click any orange row to take 0 points.
+          <div style={{ color: '#fca5a5', fontSize: '14px' }}> {/* Cypherpunk: red-300 */}
+            You must sacrifice a category. Click any red row to take 0 points.
           </div>
         </div>
       )}
@@ -232,8 +236,8 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
       {/* Good options hint */}
       {hasGoodOptions && (
         <div style={{
-          backgroundColor: '#e8f5e9',
-          border: '2px solid #4caf50',
+          backgroundColor: 'rgba(34, 197, 94, 0.15)', /* Cypherpunk: green with transparency */
+          border: '2px solid #22c55e', /* Cypherpunk: green-500 */
           borderRadius: '8px',
           padding: '10px 20px',
           marginBottom: '15px',
@@ -241,7 +245,7 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
           width: '100%',
           boxSizing: 'border-box',
           textAlign: 'center',
-          color: '#2e7d32',
+          color: '#22c55e', /* Cypherpunk: green-500 */
           fontSize: '14px'
         }}>
           ✓ Click a green row to score points
@@ -260,19 +264,19 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
             <span>{upperSum}</span>
           </div>
           
-          <div style={{ ...totalRowStyle, backgroundColor: upperBonus > 0 ? '#e8f5e9' : '#fff8e1' }}>
+          <div style={{ ...totalRowStyle, backgroundColor: upperBonus > 0 ? 'rgba(34, 197, 94, 0.15)' : 'rgba(251, 191, 36, 0.15)' }}> {/* Cypherpunk: green / amber tint */}
             <span>
               Bonus
-              <span style={{ fontSize: '12px', color: '#666', marginLeft: '8px' }}>
+              <span style={{ fontSize: '12px', color: '#94a3b8', marginLeft: '8px' }}> {/* Cypherpunk: slate-400 */}
                 {bonusText}
               </span>
             </span>
-            <span style={{ color: upperBonus > 0 ? '#2e7d32' : '#999' }}>
+            <span style={{ color: upperBonus > 0 ? '#22c55e' : '#94a3b8' }}> {/* Cypherpunk: green-500 / slate-400 */}
               {upperBonus}
             </span>
           </div>
-          
-          <div style={{ ...totalRowStyle, fontWeight: 'bold', backgroundColor: '#e3f2fd' }}>
+
+          <div style={{ ...totalRowStyle, fontWeight: 'bold', backgroundColor: '#8b5cf6', color: '#f1f5f9' }}> {/* Cypherpunk: violet-500 */}
             <span>Upper Total</span>
             <span>{upperTotal}</span>
           </div>
@@ -285,22 +289,22 @@ function Scorecard({ scorecard, dice, onScore, canScore, rollsRemaining, activeP
           {LOWER_CATEGORIES.map(renderCategoryRow)}
           
           {/* Yahtzee Bonus */}
-          <div style={{ ...totalRowStyle, backgroundColor: scorecard.yahtzeeBonusCount > 0 ? '#fff3e0' : '#f5f5f5' }}>
+          <div style={{ ...totalRowStyle, backgroundColor: scorecard.yahtzeeBonusCount > 0 ? 'rgba(251, 191, 36, 0.15)' : '#0f172a' }}> {/* Cypherpunk: amber tint / darker slate */}
             <span>
               Yahtzee Bonus
-              <span style={{ fontSize: '12px', color: '#666', marginLeft: '8px' }}>
+              <span style={{ fontSize: '12px', color: '#94a3b8', marginLeft: '8px' }}> {/* Cypherpunk: slate-400 */}
                 (+100 each)
               </span>
             </span>
-            <span style={{ color: scorecard.yahtzeeBonusCount > 0 ? '#e65100' : '#999' }}>
-              {scorecard.yahtzeeBonusCount > 0 
+            <span style={{ color: scorecard.yahtzeeBonusCount > 0 ? '#fbbf24' : '#94a3b8' }}> {/* Cypherpunk: amber-400 / slate-400 */}
+              {scorecard.yahtzeeBonusCount > 0
                 ? `${scorecard.yahtzeeBonusCount} × 100 = ${scorecard.yahtzeeBonusCount * 100}`
                 : '0'
               }
             </span>
           </div>
-          
-          <div style={{ ...totalRowStyle, fontWeight: 'bold', backgroundColor: '#e3f2fd' }}>
+
+          <div style={{ ...totalRowStyle, fontWeight: 'bold', backgroundColor: '#6366f1', color: '#f1f5f9' }}> {/* Cypherpunk: indigo-500 */}
             <span>Lower Total</span>
             <span>{lowerTotal}</span>
           </div>
