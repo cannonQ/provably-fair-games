@@ -1,8 +1,11 @@
 /**
  * GNU Backgammon Interface
  *
- * Provides a clean UCI-style interface to the gnubg WASM module.
- * Handles command execution, response parsing, and error handling.
+ * Provides interface to the gnubg-web WASM module.
+ *
+ * NOTE: gnubg-web is designed for interactive game play, not position analysis.
+ * It does NOT support CLI commands like 'hint', 'set board', 'set dice'.
+ * The "Hardest" difficulty falls back to JavaScript-based AI.
  */
 
 import { boardToPositionId, parseGnubgMove, formatDiceForGnubg } from './position-converter.js';
@@ -16,6 +19,7 @@ class GnubgInterface {
     this.initialized = false;
     this.commandQueue = [];
     this.outputBuffer = [];
+    this.cliSupported = false; // gnubg-web doesn't support CLI analysis commands
   }
 
   /**
@@ -41,27 +45,36 @@ class GnubgInterface {
       console.warn('[gnubg]', text);
     };
 
-    // Initialize gnubg with world-class settings
-    await this.setupWorldClassSettings();
+    // Test if CLI commands are supported (they aren't in gnubg-web)
+    await this.testCliSupport();
 
     this.initialized = true;
-    console.log('[gnubg] Interface initialized with world-class settings');
+
+    if (this.cliSupported) {
+      console.log('[gnubg] Interface initialized with full CLI support');
+    } else {
+      console.log('[gnubg] Interface initialized (gnubg-web mode - position analysis not supported)');
+    }
   }
 
   /**
-   * Configure gnubg for world-class play (~2000 FIBS rating)
+   * Test if the gnubg build supports CLI analysis commands
+   * gnubg-web does NOT support: hint, set board, set dice, show evaluation
    */
-  async setupWorldClassSettings() {
-    // gnubg-web uses _run_command for CLI commands
-    // Set up strong evaluation settings
+  async testCliSupport() {
     try {
-      await this.executeCommand('set player gnubg chequer evaluation plies 2');
-      await this.executeCommand('set player gnubg cube evaluation plies 2');
-      await this.executeCommand('set player gnubg chequer evaluation prune on');
+      // Try a simple command that should work in full gnubg but not gnubg-web
+      const output = await this.executeCommand('help hint');
+      // If we get help output (not "Unknown"), CLI is supported
+      this.cliSupported = !output.toLowerCase().includes('unknown') && output.length > 10;
     } catch (e) {
-      console.warn('[gnubg] Setup commands failed (may be normal):', e.message);
+      this.cliSupported = false;
     }
-    console.log('[gnubg] World-class settings applied');
+
+    if (!this.cliSupported) {
+      console.warn('[gnubg] CLI analysis commands not supported in this build (gnubg-web)');
+      console.warn('[gnubg] Position analysis will fall back to JavaScript AI');
+    }
   }
 
   /**
