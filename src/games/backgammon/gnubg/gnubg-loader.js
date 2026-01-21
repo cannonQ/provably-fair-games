@@ -141,15 +141,23 @@ async function loadGnubgInternal() {
   const basePath = '/assets/gnubg/';
 
   try {
-    // Step 1: Check if gnubg files exist first
+    // Step 1: Check if gnubg.data exists (the packaged data file Emscripten expects)
     console.log('[gnubg] Checking for gnubg files...');
-    const jsUrl = basePath + 'gnubg.js';
+    const dataUrl = basePath + 'gnubg.data';
 
-    // Quick HEAD request to check if files exist
-    const checkResponse = await fetch(jsUrl, { method: 'HEAD' });
-    if (!checkResponse.ok) {
+    const dataCheck = await fetch(dataUrl, { method: 'HEAD' });
+    if (!dataCheck.ok) {
       throw new Error(
-        'GNU Backgammon AI files not found. The "Hardest" difficulty requires additional files (~15MB) that are not currently installed. Please use Hard difficulty instead.'
+        'GNU Backgammon data files not found. The "Hardest" difficulty requires gnubg.data (~2MB) which is not installed. Please use Hard difficulty instead.'
+      );
+    }
+
+    // Check gnubg.js
+    const jsUrl = basePath + 'gnubg.js';
+    const jsCheck = await fetch(jsUrl, { method: 'HEAD' });
+    if (!jsCheck.ok) {
+      throw new Error(
+        'GNU Backgammon AI files not found. The "Hardest" difficulty requires additional files that are not currently installed. Please use Hard difficulty instead.'
       );
     }
 
@@ -163,28 +171,36 @@ async function loadGnubgInternal() {
 
     // Check if we got HTML instead of JS (indicates 404 or missing file)
     if (jsCode.trim().startsWith('<')) {
-      throw new Error('gnubg.js not found - received HTML instead of JavaScript. Please install WASM files from https://github.com/hwatheod/gnubg-web');
+      throw new Error('gnubg.js not found - received HTML instead of JavaScript. Please install WASM files.');
     }
 
     updateProgress(FILE_SIZES['gnubg.js'], 'gnubg.js');
 
-    // Step 2: Setup Emscripten module configuration
-    // Store data buffers in closure for preRun access
-    let wdBuffer = null;
-    let bdBuffer = null;
+    // Step 2: Load the data package that Emscripten expects
+    console.log('[gnubg] Loading gnubg.data...');
+    const dataResponse = await fetch(dataUrl);
+    if (!dataResponse.ok) {
+      throw new Error(`Failed to load gnubg.data: ${dataResponse.statusText}`);
+    }
+    const dataBuffer = await dataResponse.arrayBuffer();
+    console.log('[gnubg] Loaded gnubg.data:', dataBuffer.byteLength, 'bytes');
 
+    // Step 3: Setup Emscripten module configuration
     const Module = {
+      // Provide preloaded package data to avoid Emscripten fetching gnubg.data again
+      getPreloadedPackage: (name, size) => {
+        console.log('[gnubg] Providing preloaded package:', name, size);
+        return dataBuffer;
+      },
+
       // Configure file system paths
       locateFile: (path) => {
         console.log('[gnubg] Locating file:', path);
         if (path.endsWith('.wasm')) {
           return basePath + 'gnubg.wasm';
         }
-        if (path.endsWith('.wd')) {
-          return basePath + 'gnubg.wd';
-        }
-        if (path.endsWith('.bd')) {
-          return basePath + 'gnubg_os0.bd';
+        if (path.endsWith('.data')) {
+          return basePath + 'gnubg.data';
         }
         return basePath + path;
       },
@@ -208,11 +224,10 @@ async function loadGnubgInternal() {
         console.log('[gnubg] Dependencies remaining:', left);
       },
 
-      // PreRun will be set up after we load the data files
       preRun: [],
     };
 
-    // Step 3: Load WASM file with progress
+    // Step 4: Load WASM file with progress
     console.log('[gnubg] Loading gnubg.wasm...');
     const wasmBuffer = await loadFileWithProgress(
       basePath + 'gnubg.wasm',
@@ -220,47 +235,7 @@ async function loadGnubgInternal() {
     );
     Module.wasmBinary = wasmBuffer;
 
-    // Step 4: Preload data files
-    console.log('[gnubg] Loading databases...');
-
-    // Load bearoff database
-    wdBuffer = await loadFileWithProgress(
-      basePath + 'gnubg.wd',
-      'gnubg.wd'
-    );
-
-    // Load opening book
-    bdBuffer = await loadFileWithProgress(
-      basePath + 'gnubg_os0.bd',
-      'gnubg_os0.bd'
-    );
-
-    // Setup preloaded files in Emscripten virtual filesystem
-    // The preRun function receives the Module as 'this' context with FS attached
-    Module.preRun.push(function() {
-      console.log('[gnubg] Setting up virtual filesystem...');
-      // Access FS from the module's this context or global
-      const FS = this.FS || Module.FS || (typeof window !== 'undefined' && window.FS);
-
-      if (!FS) {
-        console.error('[gnubg] Emscripten FS not available');
-        return;
-      }
-
-      try {
-        // Create directories
-        FS.mkdir('/gnubg');
-        FS.mkdir('/gnubg/data');
-
-        // Write database files
-        FS.writeFile('/gnubg/data/gnubg.wd', new Uint8Array(wdBuffer));
-        FS.writeFile('/gnubg/data/gnubg_os0.bd', new Uint8Array(bdBuffer));
-
-        console.log('[gnubg] Databases installed');
-      } catch (fsError) {
-        console.error('[gnubg] FS setup error:', fsError);
-      }
-    });
+    updateProgress(FILE_SIZES['gnubg.wd'], 'gnubg.data');
 
     // Step 5: Execute the Emscripten code
     console.log('[gnubg] Initializing Emscripten module...');
