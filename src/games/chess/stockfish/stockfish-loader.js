@@ -50,25 +50,33 @@ export async function loadStockfish() {
           postMessage({ type: 'ready' });
         }
 
-        // Load Stockfish from CDN - use single-threaded version (no SharedArrayBuffer needed)
-        try {
-          // nmrugg/stockfish.js single-threaded build
-          importScripts('https://cdn.jsdelivr.net/npm/stockfish@16.0.0/src/stockfish-16.1-lite-single.js');
+        // Load Stockfish - fetch as text and eval (avoids MIME type issues)
+        async function loadEngine() {
+          try {
+            // Use unpkg which serves with correct MIME type
+            const response = await fetch('https://unpkg.com/stockfish@16.0.0/src/stockfish-16.1-lite-single.js');
+            if (!response.ok) throw new Error('Failed to fetch: ' + response.status);
+            const code = await response.text();
 
-          // Stockfish 16 creates a Stockfish factory function
-          if (typeof Stockfish === 'function') {
-            const sf = Stockfish();
-            setupEngine(sf);
-          } else {
-            // Try alternative global names
-            const globals = Object.keys(self).filter(k =>
-              k.toLowerCase().includes('stock') || k === 'Module'
-            );
-            postMessage({ type: 'error', error: 'Stockfish not found after import. Globals: ' + globals.join(', ') });
+            // Evaluate the code in worker scope
+            eval(code);
+
+            // Stockfish 16 creates a Stockfish factory function
+            if (typeof Stockfish === 'function') {
+              const sf = Stockfish();
+              setupEngine(sf);
+            } else {
+              const globals = Object.keys(self).filter(k =>
+                k.toLowerCase().includes('stock') || k === 'Module'
+              );
+              postMessage({ type: 'error', error: 'Stockfish not found. Globals: ' + globals.join(', ') });
+            }
+          } catch (err) {
+            postMessage({ type: 'error', error: 'Load failed: ' + err.message });
           }
-        } catch (err) {
-          postMessage({ type: 'error', error: 'Import failed: ' + err.message });
         }
+
+        loadEngine();
       `;
 
       const blob = new Blob([workerCode], { type: 'application/javascript' });

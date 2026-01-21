@@ -99,21 +99,17 @@ class GnubgInterface {
       // gnubg exports _HandleCommand or _run_command instead of _ExecuteCommand
 
       // Helper to allocate string on WASM heap
+      // Emscripten helpers may be global or on Module
       const allocString = (str) => {
-        const len = this.module.lengthBytesUTF8(str) + 1;
-        const ptr = this.module._malloc(len);
-        this.module.stringToUTF8(str, ptr, len);
+        const encoder = new TextEncoder();
+        const bytes = encoder.encode(str + '\0'); // null-terminated
+        const ptr = this.module._malloc(bytes.length);
+        const heap = new Uint8Array(this.module.HEAPU8.buffer, ptr, bytes.length);
+        heap.set(bytes);
         return ptr;
       };
 
-      if (typeof this.module.ccall === 'function') {
-        // Try ccall with different function names
-        try {
-          this.module.ccall('HandleCommand', 'number', ['string'], [command]);
-        } catch {
-          this.module.ccall('run_command', 'number', ['string'], [command]);
-        }
-      } else if (typeof this.module._HandleCommand === 'function') {
+      if (typeof this.module._HandleCommand === 'function') {
         const cmdPtr = allocString(command);
         this.module._HandleCommand(cmdPtr);
         this.module._free(cmdPtr);
@@ -121,14 +117,6 @@ class GnubgInterface {
         const cmdPtr = allocString(command);
         this.module._run_command(cmdPtr);
         this.module._free(cmdPtr);
-      } else if (typeof this.module.cwrap === 'function') {
-        try {
-          const execCmd = this.module.cwrap('HandleCommand', 'number', ['string']);
-          execCmd(command);
-        } catch {
-          const execCmd = this.module.cwrap('run_command', 'number', ['string']);
-          execCmd(command);
-        }
       } else {
         // Log available functions for debugging
         const funcs = Object.keys(this.module).filter(k =>
