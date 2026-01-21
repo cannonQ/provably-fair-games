@@ -220,7 +220,7 @@ export function blackjackReducer(state, action) {
       let newSplitAcesHands = [...state.splitAcesHands];
       if (isSplittingAces) {
         // Adjust existing indices that are > activeHandIndex (shift by 1 for inserted hand)
-        newSplitAcesHands = newSplitAcesHands.map(idx => 
+        newSplitAcesHands = newSplitAcesHands.map(idx =>
           idx > state.activeHandIndex ? idx + 1 : idx
         );
         // Both resulting hands are split Aces hands
@@ -228,24 +228,13 @@ export function blackjackReducer(state, action) {
         newSplitAcesHands.push(state.activeHandIndex + 1);
       } else {
         // Adjust existing indices for the inserted hand
-        newSplitAcesHands = newSplitAcesHands.map(idx => 
+        newSplitAcesHands = newSplitAcesHands.map(idx =>
           idx > state.activeHandIndex ? idx + 1 : idx
         );
       }
 
-      // For split Aces, auto-advance to next hand since only 1 card allowed
-      let nextPhase = 'playerTurn';
-      let nextActiveIndex = state.activeHandIndex;
-      
-      if (isSplittingAces) {
-        // Move to hand after the two split Aces hands
-        nextActiveIndex = state.activeHandIndex + 2;
-        if (nextActiveIndex >= newHands.length) {
-          nextPhase = 'dealerTurn';
-          nextActiveIndex = newHands.length - 1;
-        }
-      }
-
+      // Stay on current hand - player must manually stand even on split Aces
+      // (They received their one card, but must still stand to move to next hand)
       return {
         ...state,
         playerHands: newHands,
@@ -253,8 +242,8 @@ export function blackjackReducer(state, action) {
         shoePosition: pos,
         chipBalance: state.chipBalance - bet,
         splitAcesHands: newSplitAcesHands,
-        activeHandIndex: nextActiveIndex,
-        phase: nextPhase
+        activeHandIndex: state.activeHandIndex,
+        phase: 'playerTurn'
       };
     }
 

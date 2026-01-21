@@ -75,7 +75,8 @@ export function canDoubleDown(hand, chipBalance, currentBet, splitAcesHands = []
 /** @returns {boolean} True if pair, has chips, and under 4 hands */
 export function canSplit(hand, chipBalance, currentBet, numHands) {
   if (hand.length !== 2 || numHands >= 4 || chipBalance < currentBet) return false;
-  return getCardValue(hand[0]) === getCardValue(hand[1]);
+  // Must be same RANK, not same VALUE (K-Q-J all have value 10 but can't split)
+  return hand[0].rank === hand[1].rank;
 }
 
 /** @returns {boolean} True if dealer shows Ace and it's player turn */
