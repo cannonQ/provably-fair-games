@@ -249,7 +249,8 @@ const styles = {
   },
   gameIcon: {
     fontSize: '3rem',
-    marginBottom: '0.75rem'
+    marginBottom: '0.75rem',
+    color: '#4ade80' // Green to match theme and be visible
   },
   gameTitle: {
     color: '#fff',
