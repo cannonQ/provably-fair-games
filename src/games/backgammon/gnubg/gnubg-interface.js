@@ -87,7 +87,7 @@ class GnubgInterface {
    * @returns {Promise<string>} Command output
    */
   async executeCommand(command) {
-    if (!this.initialized || !this.module) {
+    if (!this.module) {
       throw new Error('gnubg interface not initialized');
     }
 
