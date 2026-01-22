@@ -95,6 +95,7 @@ async function handler(req, res) {
       winType,          // Backgammon
       difficulty,       // Backgammon, Garbage
       cubeValue,        // Backgammon
+      loserPipCount,    // Backgammon
       rounds,           // Garbage
       // Chess-specific fields
       playerColor,      // Chess
@@ -148,6 +149,7 @@ async function handler(req, res) {
       winType,
       difficulty,
       cubeValue,
+      loserPipCount,
       rounds,
       // Chess-specific fields
       playerColor,
@@ -254,6 +256,9 @@ async function handler(req, res) {
       }
       if (cubeValue) {
         insertData.cube_value = cubeValue;
+      }
+      if (loserPipCount !== undefined) {
+        insertData.loser_pip_count = loserPipCount;
       }
     }
 

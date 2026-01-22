@@ -11,6 +11,7 @@
 
 import CryptoJS from 'crypto-js';
 import { getAllLegalMoves } from './moveValidation';
+import { getPipCount } from './gameLogic';
 
 // ============================================
 // HELPERS
@@ -30,25 +31,35 @@ export function generateGameId(blockHash) {
 
 /**
  * Calculate final score for leaderboard
- * Score = winTypeMultiplier × cubeValue × difficultyBonus
+ * Score = winTypeMultiplier × cubeValue × difficultyBonus × pipBonus
+ *
+ * Pip bonus rewards crushing victories:
+ * - Loser has 0 pips left = 1x (barely won)
+ * - Loser has 100 pips left = 1.5x (solid win)
+ * - Loser has 167 pips left = ~1.8x (total domination)
  */
-export function calculateFinalScore(winType, cubeValue, difficulty) {
+export function calculateFinalScore(winType, cubeValue, difficulty, loserPipCount = 0) {
   const winTypeMultipliers = {
     normal: 1,
     gammon: 2,
     backgammon: 3
   };
-  
+
   const difficultyBonuses = {
     easy: 1,
     normal: 2,
     hard: 3
   };
-  
+
   const winMult = winTypeMultipliers[winType] || 1;
   const diffBonus = difficultyBonuses[difficulty] || 1;
-  
-  return winMult * cubeValue * diffBonus;
+
+  // Pip bonus: 1x for close games, up to 2x for crushing victories
+  // Formula: 1 + (loserPips / 200), capped at 2x
+  const pipBonus = Math.min(2, 1 + (loserPipCount / 200));
+
+  // Round to nearest integer
+  return Math.round(winMult * cubeValue * diffBonus * pipBonus);
 }
 
 /**
@@ -430,39 +441,47 @@ export function gameReducer(state, action) {
     case ActionTypes.DECLINE_DOUBLE: {
       // Declining a double means the opponent wins
       const winner = state.currentPlayer;
+      const loser = winner === 'white' ? 'black' : 'white';
+      const loserPips = getPipCount(state, loser);
       const endTime = Date.now();
       const finalScore = calculateFinalScore(
         'normal',
         state.doublingCube.value,
-        state.aiDifficulty
+        state.aiDifficulty,
+        loserPips
       );
-      
+
       return {
         ...state,
         winner,
         winType: 'normal',
         phase: 'gameOver',
         gameEndTime: endTime,
-        finalScore
+        finalScore,
+        loserPipCount: loserPips
       };
     }
     
     case ActionTypes.END_GAME: {
       const { winner, winType } = action.payload;
+      const loser = winner === 'white' ? 'black' : 'white';
+      const loserPips = getPipCount(state, loser);
       const endTime = Date.now();
       const finalScore = calculateFinalScore(
         winType,
         state.doublingCube.value,
-        state.aiDifficulty
+        state.aiDifficulty,
+        loserPips
       );
-      
+
       return {
         ...state,
         winner,
         winType,
         phase: 'gameOver',
         gameEndTime: endTime,
-        finalScore
+        finalScore,
+        loserPipCount: loserPips
       };
     }
     
