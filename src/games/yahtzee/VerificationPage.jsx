@@ -515,12 +515,15 @@ export default function YahtzeeVerificationPage() {
   };
 
   // Build data for unified component
+  // Use first roll's data for Python script since that's what we verify against
+  const firstRoll = verificationData?.rollHistory?.[0];
   const unifiedData = verificationData ? {
     gameId: verificationData.gameId,
-    blockHash: verificationData.anchor?.blockHash,
-    blockHeight: verificationData.anchor?.blockHeight,
-    timestamp: verificationData.anchor?.timestamp,
-    txHash: verificationData.anchor?.txHash,
+    blockHash: firstRoll?.blockHash || verificationData.anchor?.blockHash,
+    blockHeight: firstRoll?.blockHeight || verificationData.anchor?.blockHeight,
+    timestamp: firstRoll?.timestamp || verificationData.anchor?.timestamp,
+    txHash: firstRoll?.txHash || verificationData.anchor?.txHash,
+    txIndex: firstRoll?.txIndex ?? 0,
     rollHistory: verificationData.rollHistory
   } : null;
 

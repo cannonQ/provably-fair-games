@@ -232,14 +232,14 @@ for i in range(10):
     yahtzee: `
 # Yahtzee-specific: generate dice rolls
 # NOTE: Yahtzee uses per-roll blockchain data (block traversal)
-# This script verifies the first roll using the anchor block
+# This script verifies the first roll using the first roll's block data
 
 def generate_yahtzee_seed(block_hash, tx_hash, timestamp, game_id, tx_index, turn, roll):
     """Generate seed matching Yahtzee's generateSeedFromSource exactly"""
     turn_roll = f"T{turn}R{roll}"
     # Direct concatenation, no separators (matches JavaScript join(''))
     seed_input = f"{block_hash}{tx_hash}{timestamp}{game_id}{tx_index}{turn_roll}"
-    return hashlib.sha256(seed_input.encode()).hexdigest()
+    return hashlib.sha256(seed_input.encode()).hexdigest(), seed_input
 
 def calculate_die_value(seed, die_index):
     """Calculate single die value matching Yahtzee's calculateDieValue"""
@@ -249,14 +249,21 @@ def calculate_die_value(seed, die_index):
 
 def roll_dice(block_hash, tx_hash, timestamp, game_id, tx_index, turn, roll):
     """Roll all 5 dice for a specific turn/roll"""
-    seed = generate_yahtzee_seed(block_hash, tx_hash, timestamp, game_id, tx_index, turn, roll)
+    seed, seed_input = generate_yahtzee_seed(block_hash, tx_hash, timestamp, game_id, tx_index, turn, roll)
     dice = [calculate_die_value(seed, i) for i in range(5)]
-    return dice, seed
+    return dice, seed, seed_input
 
-# First roll (Turn 1, Roll 1) using anchor block data
-dice, roll_seed = roll_dice(block_hash, tx_hash, timestamp, game_id, tx_index, 1, 1)
-print(f"First roll: {dice}")
+# Debug: print all values being used
+print(f"TX Hash: {tx_hash[:20]}..." if tx_hash else "TX Hash: None")
+print(f"TX Index: {tx_index}")
+print(f"Timestamp: {timestamp}")
+print()
+
+# First roll (Turn 1, Roll 1) using first roll's block data
+dice, roll_seed, seed_input = roll_dice(block_hash, tx_hash, timestamp, game_id, tx_index, 1, 1)
+print(f"Seed input (first 80 chars): {seed_input[:80]}...")
 print(f"Roll seed: {roll_seed[:32]}...")
+print(f"First roll: {dice}")
 `,
     backgammon: `
 # Backgammon-specific: generate dice rolls
