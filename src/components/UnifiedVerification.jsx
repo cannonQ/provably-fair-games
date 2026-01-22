@@ -231,17 +231,32 @@ for i in range(10):
 `,
     yahtzee: `
 # Yahtzee-specific: generate dice rolls
-def roll_dice(seed_str, roll_number):
-    roll_seed = f"{seed_str}-{roll_number}"
-    roll_int = int(hashlib.sha256(roll_seed.encode()).hexdigest(), 16)
-    dice = []
-    for i in range(5):
-        dice.append((roll_int >> (i * 3)) % 6 + 1)
-    return dice
+# NOTE: Yahtzee uses per-roll blockchain data (block traversal)
+# This script verifies the first roll using the anchor block
 
-# Example: first roll
-dice = roll_dice(seed, 0)
+def generate_yahtzee_seed(block_hash, tx_hash, timestamp, game_id, tx_index, turn, roll):
+    """Generate seed matching Yahtzee's generateSeedFromSource exactly"""
+    turn_roll = f"T{turn}R{roll}"
+    # Direct concatenation, no separators (matches JavaScript join(''))
+    seed_input = f"{block_hash}{tx_hash}{timestamp}{game_id}{tx_index}{turn_roll}"
+    return hashlib.sha256(seed_input.encode()).hexdigest()
+
+def calculate_die_value(seed, die_index):
+    """Calculate single die value matching Yahtzee's calculateDieValue"""
+    die_hash = hashlib.sha256(f"{seed}{die_index}".encode()).hexdigest()
+    numeric_value = int(die_hash[:8], 16)
+    return (numeric_value % 6) + 1
+
+def roll_dice(block_hash, tx_hash, timestamp, game_id, tx_index, turn, roll):
+    """Roll all 5 dice for a specific turn/roll"""
+    seed = generate_yahtzee_seed(block_hash, tx_hash, timestamp, game_id, tx_index, turn, roll)
+    dice = [calculate_die_value(seed, i) for i in range(5)]
+    return dice, seed
+
+# First roll (Turn 1, Roll 1) using anchor block data
+dice, roll_seed = roll_dice(block_hash, tx_hash, timestamp, game_id, tx_index, 1, 1)
 print(f"First roll: {dice}")
+print(f"Roll seed: {roll_seed[:32]}...")
 `,
     backgammon: `
 # Backgammon-specific: generate dice rolls
