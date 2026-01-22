@@ -201,7 +201,11 @@ const BackgammonGame = () => {
 
       if (legalMoves.length === 0) {
         aiTimeoutRef.current = setTimeout(() => {
-          dispatch(actions.completeTurn());
+          // Double-check state hasn't changed before completing turn
+          const latestState = stateRef.current;
+          if (latestState.phase === 'moving' && latestState.currentPlayer === 'black') {
+            dispatch(actions.completeTurn());
+          }
         }, 500);
         return;
       }
@@ -314,39 +318,36 @@ const BackgammonGame = () => {
 
   // AI roll dice
   const handleAIRoll = async () => {
+    // Prevent multiple simultaneous rolls
+    if (isRolling) return;
     setIsRolling(true);
 
     try {
       const currentState = stateRef.current;
+      // Double-check we should still be rolling
+      if (currentState.phase !== 'rolling' || currentState.currentPlayer !== 'black') {
+        setIsRolling(false);
+        return;
+      }
+
       const block = await getLatestBlock();
       turnNumberRef.current++;
 
       const dice = rollDiceValues(block.blockHash, currentState.gameId, turnNumberRef.current);
       dispatch(actions.rollDice(dice, block.blockHash));
 
-      // Check for no legal moves after roll
-      // Use setTimeout to allow state to update, then check using stateRef
+      // After dispatch, reset isRolling after a short delay
+      // The useEffect will handle checking for no legal moves and completing the turn
       setTimeout(() => {
-        const stateAfterRoll = stateRef.current;
-        // Only check if we're still in moving phase (state might have changed)
-        if (stateAfterRoll.phase === 'moving' && stateAfterRoll.currentPlayer === 'black') {
-          const legalMoves = getAllLegalMoves(stateAfterRoll);
-
-          if (legalMoves.length === 0) {
-            setTimeout(() => {
-              dispatch(actions.completeTurn());
-              setAiThinking(false);
-            }, 1000);
-          }
-        }
+        setIsRolling(false);
       }, 100);
 
     } catch (error) {
       console.error('AI roll failed:', error);
       setErrorMessage('AI failed to roll. Retrying...');
-      setTimeout(handleAIRoll, 2000);
-    } finally {
       setIsRolling(false);
+      // Retry after delay
+      setTimeout(handleAIRoll, 2000);
     }
   };
 
