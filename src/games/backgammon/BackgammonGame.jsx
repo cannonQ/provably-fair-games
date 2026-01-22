@@ -379,6 +379,19 @@ const BackgammonGame = () => {
     }
   };
 
+  // Handle checker double-click (for quick bear off)
+  const handleCheckerDoubleClick = (pointIndex) => {
+    if (state.currentPlayer !== 'white' || state.phase !== 'moving') return;
+
+    const allMoves = getAllLegalMoves(state);
+    // Find a bear-off move from this point
+    const bearOffMove = allMoves.find(m => m.from === pointIndex && m.to === 'bearOff');
+
+    if (bearOffMove) {
+      executeMove(bearOffMove);
+    }
+  };
+
   // Handle bar click
   const handleBarClick = (player) => {
     if (player !== 'white' || state.currentPlayer !== 'white') return;
@@ -677,6 +690,7 @@ const BackgammonGame = () => {
           gameState={state}
           onPointClick={handlePointClick}
           onCheckerClick={handleCheckerClick}
+          onCheckerDoubleClick={handleCheckerDoubleClick}
           onBarClick={handleBarClick}
           selectedPoint={selectedPoint}
           validMoves={validMoves}

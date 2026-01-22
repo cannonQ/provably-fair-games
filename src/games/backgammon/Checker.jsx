@@ -7,12 +7,13 @@
 
 import React from 'react';
 
-const Checker = ({ 
-  color, 
-  count = 1, 
-  isSelected = false, 
-  canSelect = false, 
+const Checker = ({
+  color,
+  count = 1,
+  isSelected = false,
+  canSelect = false,
   onSelect,
+  onDoubleClick,
   style = {}
 }) => {
   // Color definitions
@@ -95,6 +96,7 @@ const Checker = ({
           <div
             key={index}
             onClick={index === count - 1 && canSelect ? onSelect : undefined}
+            onDoubleClick={index === count - 1 && canSelect ? onDoubleClick : undefined}
             onMouseEnter={index === count - 1 ? handleMouseEnter : undefined}
             onMouseLeave={index === count - 1 ? handleMouseLeave : undefined}
             style={{
@@ -117,6 +119,7 @@ const Checker = ({
   return (
     <div
       onClick={canSelect ? onSelect : undefined}
+      onDoubleClick={canSelect ? onDoubleClick : undefined}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       style={checkerStyle}
