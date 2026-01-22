@@ -155,7 +155,11 @@ export default function BlackjackGame() {
       totalPayout,
       blackjackCount,
       insuranceBet: s.insuranceBet,
-      insurancePayout
+      insurancePayout,
+      // Pass captured state values to avoid race conditions
+      handBets: s.handBets,
+      playerHands: s.playerHands,
+      dealerHand
     } });
   }, []);
 
