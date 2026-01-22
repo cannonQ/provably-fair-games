@@ -120,7 +120,7 @@ export function blackjackReducer(state, action) {
       // Now deduct the bet from balance
       const betAmount = state.currentBet;
       if (betAmount > state.chipBalance || betAmount < 5) return state;
-      
+
       let pos = state.shoePosition;
       const p1 = dealCard(state.shoe, pos); pos = p1.newPosition;
       const d1 = dealCard(state.shoe, pos); pos = d1.newPosition;
@@ -131,6 +131,7 @@ export function blackjackReducer(state, action) {
         ...state,
         playerHands: [[p1.card, p2.card]],
         dealerHand: [d1.card, d2.card],
+        handBets: [betAmount], // Explicitly set handBets for this round
         shoePosition: pos,
         activeHandIndex: 0,
         chipBalance: state.chipBalance - betAmount,
