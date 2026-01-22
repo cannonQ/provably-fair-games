@@ -273,18 +273,18 @@ const BackgammonGame = () => {
     try {
       const block = await getLatestBlock();
       turnNumberRef.current++;
-      
-      const dice = rollDiceValues(block.id, state.gameId, turnNumberRef.current);
-      
+
+      const dice = rollDiceValues(block.blockHash, state.gameId, turnNumberRef.current);
+
       // Store verification data
       const verificationData = generateVerificationData(
-        block.id,
+        block.blockHash,
         state.gameId,
         turnNumberRef.current,
         dice
       );
 
-      dispatch(actions.rollDice(dice, block.id));
+      dispatch(actions.rollDice(dice, block.blockHash));
 
       // Check if any moves are possible
       setTimeout(() => {
@@ -321,8 +321,8 @@ const BackgammonGame = () => {
       const block = await getLatestBlock();
       turnNumberRef.current++;
 
-      const dice = rollDiceValues(block.id, currentState.gameId, turnNumberRef.current);
-      dispatch(actions.rollDice(dice, block.id));
+      const dice = rollDiceValues(block.blockHash, currentState.gameId, turnNumberRef.current);
+      dispatch(actions.rollDice(dice, block.blockHash));
 
       // Check for no legal moves after roll
       // Use setTimeout to allow state to update, then check using stateRef
