@@ -31,7 +31,34 @@ const GameControls = ({
   isSubmitting = false
 }) => {
   const [modalDismissed, setModalDismissed] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [showFullBlockHash, setShowFullBlockHash] = useState(false);
+  const [showFullTxHash, setShowFullTxHash] = useState(false);
+  const [showSeedDetails, setShowSeedDetails] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState('');
   const showStatus = ((gameStatus === 'won' && !canContinue) || gameStatus === 'lost') && !modalDismissed;
+
+  // Helper functions for verification
+  const truncateHash = (hash) => {
+    if (!hash || hash.length <= 24) return hash || 'N/A';
+    return `${hash.slice(0, 10)}...${hash.slice(-10)}`;
+  };
+
+  const formatDate = (ts) => {
+    if (!ts) return 'Unknown';
+    return new Date(ts).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  };
+
+  const copyToClipboard = async (text, label) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFeedback(`${label} copied!`);
+      setTimeout(() => setCopyFeedback(''), 2000);
+    } catch (err) {
+      setCopyFeedback('Copy failed');
+      setTimeout(() => setCopyFeedback(''), 2000);
+    }
+  };
 
   const handleClose = () => {
     setModalDismissed(true);
@@ -90,13 +117,6 @@ const GameControls = ({
                   <span style={styles.verificationLabel}>Block:</span>
                   <span style={styles.verificationValue}>#{anchorBlock.blockHeight}</span>
                 </div>
-                <Link
-                  to={`/verify/2048/${gameId}`}
-                  state={{ gameId, score, anchorBlock }}
-                  style={styles.verifyLink}
-                >
-                  View Full Verification →
-                </Link>
               </div>
             )}
 
@@ -138,7 +158,152 @@ const GameControls = ({
               <button style={{ ...styles.button, ...styles.newGameButton }} onClick={onNewGame}>
                 New Game
               </button>
+              {gameId && anchorBlock && (
+                <button style={{ ...styles.button, ...styles.verifyButton }} onClick={() => setShowVerification(true)}>
+                  Verify
+                </button>
+              )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verification Modal */}
+      {showVerification && anchorBlock && (
+        <div style={verifyStyles.overlay}>
+          <div style={verifyStyles.modal}>
+            <button style={verifyStyles.closeBtn} onClick={() => setShowVerification(false)}>×</button>
+
+            {/* Game Summary */}
+            <div style={verifyStyles.section}>
+              <h3 style={verifyStyles.sectionTitle}>Game Summary</h3>
+              <div style={verifyStyles.row}>
+                <span style={verifyStyles.label}>Game ID:</span>
+                <span style={verifyStyles.mono}>{gameId}</span>
+                <button style={verifyStyles.copyBtn} onClick={() => copyToClipboard(gameId, 'Game ID')}>Copy</button>
+              </div>
+              <div style={verifyStyles.row}>
+                <span style={verifyStyles.label}>Result:</span>
+                <span style={gameStatus === 'won' ? verifyStyles.win : verifyStyles.loss}>
+                  {gameStatus === 'won' ? '🏆 Victory!' : '📉 Game Over'}
+                </span>
+              </div>
+              <div style={verifyStyles.row}>
+                <span style={verifyStyles.label}>Score:</span>
+                <span>{formatScore(score)} points</span>
+              </div>
+              <div style={verifyStyles.row}>
+                <span style={verifyStyles.label}>Played:</span>
+                <span>{formatDate(anchorBlock?.timestamp)}</span>
+              </div>
+            </div>
+
+            {/* Blockchain Proof */}
+            <div style={verifyStyles.section}>
+              <h3 style={verifyStyles.sectionTitle}>Blockchain Proof</h3>
+              <div style={verifyStyles.row}>
+                <span style={verifyStyles.label}>Block Height:</span>
+                <span style={verifyStyles.mono}>{anchorBlock?.blockHeight?.toLocaleString()}</span>
+              </div>
+              <div style={verifyStyles.row}>
+                <span style={verifyStyles.label}>Block Hash:</span>
+                <span style={verifyStyles.mono}>
+                  {showFullBlockHash ? anchorBlock?.blockHash : truncateHash(anchorBlock?.blockHash)}
+                </span>
+                <button style={verifyStyles.copyBtn} onClick={() => setShowFullBlockHash(!showFullBlockHash)}>
+                  {showFullBlockHash ? 'Hide' : 'Full'}
+                </button>
+                <button style={verifyStyles.copyBtn} onClick={() => copyToClipboard(anchorBlock?.blockHash, 'Block Hash')}>
+                  Copy
+                </button>
+              </div>
+
+              {/* Anti-Spoofing Box */}
+              <div style={verifyStyles.antiSpoofBox}>
+                <div style={verifyStyles.antiSpoofHeader}>🛡️ Anti-Spoofing Data</div>
+                <div style={verifyStyles.row}>
+                  <span style={verifyStyles.label}>TX Hash:</span>
+                  <span style={verifyStyles.mono}>
+                    {showFullTxHash ? anchorBlock?.txHash : truncateHash(anchorBlock?.txHash)}
+                  </span>
+                  {anchorBlock?.txHash && (
+                    <>
+                      <button style={verifyStyles.copyBtn} onClick={() => setShowFullTxHash(!showFullTxHash)}>
+                        {showFullTxHash ? 'Hide' : 'Full'}
+                      </button>
+                      <button style={verifyStyles.copyBtn} onClick={() => copyToClipboard(anchorBlock?.txHash, 'TX Hash')}>
+                        Copy
+                      </button>
+                    </>
+                  )}
+                </div>
+                <div style={verifyStyles.row}>
+                  <span style={verifyStyles.label}>TX Index:</span>
+                  <span style={verifyStyles.mono}>{anchorBlock?.txIndex} of {anchorBlock?.txCount || '?'}</span>
+                </div>
+                <div style={verifyStyles.row}>
+                  <span style={verifyStyles.label}>Timestamp:</span>
+                  <span style={verifyStyles.mono}>{anchorBlock?.timestamp}</span>
+                </div>
+                <p style={verifyStyles.antiSpoofNote}>TX selected deterministically: index = timestamp % txCount</p>
+              </div>
+
+              {/* Explorer Links */}
+              <div style={verifyStyles.explorerLinks}>
+                <a
+                  href={`https://explorer.ergoplatform.com/en/blocks/${anchorBlock?.blockHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={verifyStyles.explorerLink}
+                >
+                  🔗 View Block
+                </a>
+                {anchorBlock?.txHash && (
+                  <a
+                    href={`https://explorer.ergoplatform.com/en/transactions/${anchorBlock?.txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={verifyStyles.explorerLink}
+                  >
+                    🔗 View Transaction
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Tile Spawn Verification */}
+            <div style={verifyStyles.section}>
+              <h3 style={verifyStyles.sectionTitle}>Tile Spawn Verification</h3>
+              <p style={verifyStyles.info}>
+                All tile spawns (position and value) are generated from the blockchain seed.
+                The seed combines block hash + transaction hash + timestamp + game ID.
+              </p>
+
+              <div
+                style={verifyStyles.collapsibleTitle}
+                onClick={() => setShowSeedDetails(!showSeedDetails)}
+              >
+                {showSeedDetails ? '▼' : '▶'} View Seed Formula
+              </div>
+              {showSeedDetails && (
+                <div style={verifyStyles.seedDetails}>
+                  <code style={verifyStyles.codeBlock}>
+                    seed = HASH(blockHash + txHash + timestamp + gameId + txIndex)
+                  </code>
+                  <p style={verifyStyles.seedNote}>5 independent inputs = virtually impossible to manipulate</p>
+                </div>
+              )}
+            </div>
+
+            {/* Full Verification Link */}
+            <div style={verifyStyles.fullLink}>
+              <Link to={`/verify/2048/${gameId}`} style={{ color: '#60a5fa', textDecoration: 'none', fontSize: '0.9rem' }}>
+                View Full Verification Page →
+              </Link>
+            </div>
+
+            {/* Copy Toast */}
+            {copyFeedback && <div style={verifyStyles.toast}>{copyFeedback}</div>}
           </div>
         </div>
       )}
@@ -314,6 +479,172 @@ const styles = {
   submitButton: {
     backgroundColor: '#3b82f6',
     color: '#fff'
+  },
+  verifyButton: {
+    backgroundColor: '#f59e0b',
+    color: '#fff'
+  }
+};
+
+// Verification modal styles
+const verifyStyles = {
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1100,
+    padding: '16px'
+  },
+  modal: {
+    backgroundColor: '#1e293b',
+    borderRadius: '16px',
+    padding: '24px',
+    maxWidth: '600px',
+    width: '100%',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    position: 'relative'
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: '12px',
+    right: '12px',
+    background: 'none',
+    border: 'none',
+    color: '#64748b',
+    fontSize: '1.5rem',
+    cursor: 'pointer',
+    lineHeight: 1,
+    padding: '4px 8px',
+    borderRadius: '4px'
+  },
+  section: {
+    backgroundColor: '#16213e',
+    borderRadius: '8px',
+    padding: '1rem',
+    marginBottom: '1rem',
+    border: '1px solid #2a3a5e'
+  },
+  sectionTitle: {
+    margin: '0 0 0.75rem 0',
+    fontSize: '1rem',
+    color: '#a0a0ff',
+    borderBottom: '1px solid #2a3a5e',
+    paddingBottom: '0.5rem'
+  },
+  row: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    marginBottom: '0.5rem',
+    flexWrap: 'wrap'
+  },
+  label: {
+    color: '#888',
+    minWidth: '90px',
+    fontSize: '0.85rem'
+  },
+  mono: {
+    fontFamily: 'monospace',
+    backgroundColor: '#0d1a0d',
+    padding: '0.25rem 0.5rem',
+    borderRadius: '4px',
+    fontSize: '0.8rem',
+    wordBreak: 'break-all',
+    color: '#a5b4fc'
+  },
+  copyBtn: {
+    padding: '0.2rem 0.4rem',
+    fontSize: '0.65rem',
+    backgroundColor: '#2a3a5e',
+    color: '#aaa',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  },
+  win: { color: '#4ade80', fontWeight: 'bold' },
+  loss: { color: '#f87171' },
+  antiSpoofBox: {
+    backgroundColor: '#1a2a1a',
+    border: '1px solid #2a4a2a',
+    borderRadius: '6px',
+    padding: '0.75rem',
+    margin: '0.75rem 0'
+  },
+  antiSpoofHeader: {
+    color: '#4ade80',
+    fontWeight: 'bold',
+    fontSize: '0.85rem',
+    marginBottom: '0.5rem'
+  },
+  antiSpoofNote: {
+    color: '#666',
+    fontSize: '0.7rem',
+    margin: '0.5rem 0 0 0',
+    fontStyle: 'italic'
+  },
+  explorerLinks: {
+    display: 'flex',
+    gap: '1rem',
+    marginTop: '0.75rem',
+    flexWrap: 'wrap'
+  },
+  explorerLink: {
+    color: '#60a5fa',
+    textDecoration: 'none',
+    fontSize: '0.85rem'
+  },
+  info: {
+    color: '#aaa',
+    fontSize: '0.85rem',
+    margin: '0 0 0.75rem 0',
+    lineHeight: 1.5
+  },
+  collapsibleTitle: {
+    margin: '0.5rem 0',
+    fontSize: '0.95rem',
+    color: '#a0a0ff',
+    cursor: 'pointer',
+    userSelect: 'none',
+    fontWeight: 'bold'
+  },
+  seedDetails: {
+    backgroundColor: '#0d1a0d',
+    padding: '0.75rem',
+    borderRadius: '6px',
+    marginBottom: '0.75rem'
+  },
+  codeBlock: {
+    fontFamily: 'monospace',
+    fontSize: '0.75rem',
+    color: '#4ade80',
+    display: 'block'
+  },
+  seedNote: {
+    color: '#888',
+    fontSize: '0.7rem',
+    margin: '0.5rem 0 0 0'
+  },
+  fullLink: {
+    textAlign: 'center',
+    marginTop: '1rem',
+    paddingTop: '1rem',
+    borderTop: '1px solid #2a3a5e'
+  },
+  toast: {
+    position: 'fixed',
+    bottom: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: '#333',
+    color: '#fff',
+    padding: '0.5rem 1rem',
+    borderRadius: '6px',
+    fontSize: '0.875rem',
+    zIndex: 1200
   }
 };
 

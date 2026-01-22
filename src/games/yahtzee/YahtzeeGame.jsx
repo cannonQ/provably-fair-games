@@ -412,7 +412,6 @@ function YahtzeeGame() {
           rollHistory={rollHistory}
           onClose={handleGameOverClose}
           onNewGame={handleNewGame}
-          onViewVerification={handleViewVerification}
         />
       )}
     </div>

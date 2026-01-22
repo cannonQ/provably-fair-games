@@ -748,8 +748,8 @@ const BackgammonGame = () => {
           difficulty={state.aiDifficulty}
           duration={selectors.getGameDuration(state)}
           gameId={state.gameId}
+          blockchainData={state.blockchainData}
           onNewGame={handleNewGame}
-          onViewVerification={handleViewVerification}
         />
       )}
 

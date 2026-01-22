@@ -23,14 +23,40 @@ function GameOverModal({
   anchor,
   rollHistory,
   onClose,
-  onNewGame,
-  onViewVerification
+  onNewGame
 }) {
   const [playerName, setPlayerName] = useState(initialPlayerName || '');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitRank, setSubmitRank] = useState(null);
+  const [showVerification, setShowVerification] = useState(false);
+  const [showFullBlockHash, setShowFullBlockHash] = useState(false);
+  const [showFullTxHash, setShowFullTxHash] = useState(false);
+  const [showSeedDetails, setShowSeedDetails] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState('');
+
+  // Helper functions for verification
+  const truncateHash = (hash) => {
+    if (!hash || hash.length <= 24) return hash || 'N/A';
+    return `${hash.slice(0, 10)}...${hash.slice(-10)}`;
+  };
+
+  const formatDate = (ts) => {
+    if (!ts) return 'Unknown';
+    return new Date(ts).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  };
+
+  const copyToClipboard = async (text, label) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFeedback(`${label} copied!`);
+      setTimeout(() => setCopyFeedback(''), 2000);
+    } catch (err) {
+      setCopyFeedback('Copy failed');
+      setTimeout(() => setCopyFeedback(''), 2000);
+    }
+  };
 
   // Calculate score breakdown
   const upperSum = calculateUpperSum(scorecard);
@@ -198,6 +224,184 @@ function GameOverModal({
     return `${mins}:${String(secs).padStart(2, '0')}`;
   };
 
+  // Verification modal styles
+  const verifyOverlayStyle = {
+    position: 'fixed',
+    inset: 0,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1100,
+    padding: '16px'
+  };
+
+  const verifyModalStyle = {
+    backgroundColor: '#1e293b',
+    borderRadius: '16px',
+    padding: '24px',
+    maxWidth: '600px',
+    width: '100%',
+    maxHeight: '90vh',
+    overflowY: 'auto',
+    position: 'relative'
+  };
+
+  const verifyCloseBtnStyle = {
+    position: 'absolute',
+    top: '12px',
+    right: '12px',
+    background: 'none',
+    border: 'none',
+    color: '#64748b',
+    fontSize: '1.5rem',
+    cursor: 'pointer',
+    lineHeight: 1,
+    padding: '4px 8px',
+    borderRadius: '4px'
+  };
+
+  const verifySectionStyle = {
+    backgroundColor: '#16213e',
+    borderRadius: '8px',
+    padding: '1rem',
+    marginBottom: '1rem',
+    border: '1px solid #2a3a5e'
+  };
+
+  const verifySectionTitleStyle = {
+    margin: '0 0 0.75rem 0',
+    fontSize: '1rem',
+    color: '#a0a0ff',
+    borderBottom: '1px solid #2a3a5e',
+    paddingBottom: '0.5rem'
+  };
+
+  const verifyRowStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    marginBottom: '0.5rem',
+    flexWrap: 'wrap'
+  };
+
+  const verifyLabelStyle = {
+    color: '#888',
+    minWidth: '90px',
+    fontSize: '0.85rem'
+  };
+
+  const verifyMonoStyle = {
+    fontFamily: 'monospace',
+    backgroundColor: '#0d1a0d',
+    padding: '0.25rem 0.5rem',
+    borderRadius: '4px',
+    fontSize: '0.8rem',
+    wordBreak: 'break-all',
+    color: '#a5b4fc'
+  };
+
+  const verifyCopyBtnStyle = {
+    padding: '0.2rem 0.4rem',
+    fontSize: '0.65rem',
+    backgroundColor: '#2a3a5e',
+    color: '#aaa',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  };
+
+  const antiSpoofBoxStyle = {
+    backgroundColor: '#1a2a1a',
+    border: '1px solid #2a4a2a',
+    borderRadius: '6px',
+    padding: '0.75rem',
+    margin: '0.75rem 0'
+  };
+
+  const antiSpoofHeaderStyle = {
+    color: '#4ade80',
+    fontWeight: 'bold',
+    fontSize: '0.85rem',
+    marginBottom: '0.5rem'
+  };
+
+  const antiSpoofNoteStyle = {
+    color: '#666',
+    fontSize: '0.7rem',
+    margin: '0.5rem 0 0 0',
+    fontStyle: 'italic'
+  };
+
+  const explorerLinksStyle = {
+    display: 'flex',
+    gap: '1rem',
+    marginTop: '0.75rem',
+    flexWrap: 'wrap'
+  };
+
+  const explorerLinkStyle = {
+    color: '#60a5fa',
+    textDecoration: 'none',
+    fontSize: '0.85rem'
+  };
+
+  const verifyInfoStyle = {
+    color: '#aaa',
+    fontSize: '0.85rem',
+    margin: '0 0 0.75rem 0',
+    lineHeight: 1.5
+  };
+
+  const collapsibleTitleStyle = {
+    margin: '0.5rem 0',
+    fontSize: '0.95rem',
+    color: '#a0a0ff',
+    cursor: 'pointer',
+    userSelect: 'none',
+    fontWeight: 'bold'
+  };
+
+  const seedDetailsStyle = {
+    backgroundColor: '#0d1a0d',
+    padding: '0.75rem',
+    borderRadius: '6px',
+    marginBottom: '0.75rem'
+  };
+
+  const codeBlockStyle = {
+    fontFamily: 'monospace',
+    fontSize: '0.75rem',
+    color: '#4ade80',
+    display: 'block'
+  };
+
+  const seedNoteStyle = {
+    color: '#888',
+    fontSize: '0.7rem',
+    margin: '0.5rem 0 0 0'
+  };
+
+  const fullVerifyLinkStyle = {
+    textAlign: 'center',
+    marginTop: '1rem',
+    paddingTop: '1rem',
+    borderTop: '1px solid #2a3a5e'
+  };
+
+  const copyToastStyle = {
+    position: 'fixed',
+    bottom: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    backgroundColor: '#333',
+    color: '#fff',
+    padding: '0.5rem 1rem',
+    borderRadius: '6px',
+    fontSize: '0.875rem',
+    zIndex: 1200
+  };
+
   return (
     <div style={overlayStyle} onClick={onClose}>
       <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
@@ -299,13 +503,14 @@ function GameOverModal({
 
         {/* Buttons */}
         <div style={buttonContainerStyle}>
-          <button style={primaryButtonStyle} onClick={onNewGame}>
-            Play Again
-          </button>
-
-          <button style={secondaryButtonStyle} onClick={onViewVerification}>
-            View Verification Proof
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button style={primaryButtonStyle} onClick={onNewGame}>
+              Play Again
+            </button>
+            <button style={{ ...secondaryButtonStyle, backgroundColor: '#f59e0b' }} onClick={() => setShowVerification(true)}>
+              Verify
+            </button>
+          </div>
 
           <Link to="/leaderboard?game=yahtzee" style={linkButtonStyle}>
             View Leaderboard
@@ -317,6 +522,139 @@ function GameOverModal({
           Game ID: {gameId}
         </div>
       </div>
+
+      {/* Verification Modal */}
+      {showVerification && anchor && (
+        <div style={verifyOverlayStyle} onClick={() => setShowVerification(false)}>
+          <div style={verifyModalStyle} onClick={(e) => e.stopPropagation()}>
+            <button style={verifyCloseBtnStyle} onClick={() => setShowVerification(false)}>×</button>
+
+            {/* Game Summary */}
+            <div style={verifySectionStyle}>
+              <h3 style={verifySectionTitleStyle}>Game Summary</h3>
+              <div style={verifyRowStyle}>
+                <span style={verifyLabelStyle}>Game ID:</span>
+                <span style={verifyMonoStyle}>{gameId}</span>
+                <button style={verifyCopyBtnStyle} onClick={() => copyToClipboard(gameId, 'Game ID')}>Copy</button>
+              </div>
+              <div style={verifyRowStyle}>
+                <span style={verifyLabelStyle}>Final Score:</span>
+                <span style={{ color: '#4ade80', fontWeight: 'bold' }}>{grandTotal} points</span>
+              </div>
+              <div style={verifyRowStyle}>
+                <span style={verifyLabelStyle}>Played:</span>
+                <span>{formatDate(anchor?.timestamp)}</span>
+              </div>
+            </div>
+
+            {/* Blockchain Proof */}
+            <div style={verifySectionStyle}>
+              <h3 style={verifySectionTitleStyle}>Blockchain Proof</h3>
+              <div style={verifyRowStyle}>
+                <span style={verifyLabelStyle}>Block Height:</span>
+                <span style={verifyMonoStyle}>{anchor?.blockHeight?.toLocaleString()}</span>
+              </div>
+              <div style={verifyRowStyle}>
+                <span style={verifyLabelStyle}>Block Hash:</span>
+                <span style={verifyMonoStyle}>
+                  {showFullBlockHash ? anchor?.blockHash : truncateHash(anchor?.blockHash)}
+                </span>
+                <button style={verifyCopyBtnStyle} onClick={() => setShowFullBlockHash(!showFullBlockHash)}>
+                  {showFullBlockHash ? 'Hide' : 'Full'}
+                </button>
+                <button style={verifyCopyBtnStyle} onClick={() => copyToClipboard(anchor?.blockHash, 'Block Hash')}>
+                  Copy
+                </button>
+              </div>
+
+              {/* Anti-Spoofing Box */}
+              <div style={antiSpoofBoxStyle}>
+                <div style={antiSpoofHeaderStyle}>🛡️ Anti-Spoofing Data</div>
+                <div style={verifyRowStyle}>
+                  <span style={verifyLabelStyle}>TX Hash:</span>
+                  <span style={verifyMonoStyle}>
+                    {showFullTxHash ? anchor?.txHash : truncateHash(anchor?.txHash)}
+                  </span>
+                  {anchor?.txHash && (
+                    <>
+                      <button style={verifyCopyBtnStyle} onClick={() => setShowFullTxHash(!showFullTxHash)}>
+                        {showFullTxHash ? 'Hide' : 'Full'}
+                      </button>
+                      <button style={verifyCopyBtnStyle} onClick={() => copyToClipboard(anchor?.txHash, 'TX Hash')}>
+                        Copy
+                      </button>
+                    </>
+                  )}
+                </div>
+                <div style={verifyRowStyle}>
+                  <span style={verifyLabelStyle}>TX Index:</span>
+                  <span style={verifyMonoStyle}>{anchor?.txIndex} of {anchor?.txCount || '?'}</span>
+                </div>
+                <div style={verifyRowStyle}>
+                  <span style={verifyLabelStyle}>Timestamp:</span>
+                  <span style={verifyMonoStyle}>{anchor?.timestamp}</span>
+                </div>
+                <p style={antiSpoofNoteStyle}>TX selected deterministically: index = timestamp % txCount</p>
+              </div>
+
+              {/* Explorer Links */}
+              <div style={explorerLinksStyle}>
+                <a
+                  href={`https://explorer.ergoplatform.com/en/blocks/${anchor?.blockHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={explorerLinkStyle}
+                >
+                  🔗 View Block
+                </a>
+                {anchor?.txHash && (
+                  <a
+                    href={`https://explorer.ergoplatform.com/en/transactions/${anchor?.txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={explorerLinkStyle}
+                  >
+                    🔗 View Transaction
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Dice Roll Verification */}
+            <div style={verifySectionStyle}>
+              <h3 style={verifySectionTitleStyle}>Dice Roll Verification</h3>
+              <p style={verifyInfoStyle}>
+                All dice rolls are generated from the blockchain seed. The seed combines block hash + transaction hash + timestamp + game ID.
+              </p>
+
+              <div
+                style={collapsibleTitleStyle}
+                onClick={() => setShowSeedDetails(!showSeedDetails)}
+              >
+                {showSeedDetails ? '▼' : '▶'} View Seed Formula
+              </div>
+              {showSeedDetails && (
+                <div style={seedDetailsStyle}>
+                  <code style={codeBlockStyle}>
+                    seed = HASH(blockHash + txHash + timestamp + gameId + txIndex)
+                  </code>
+                  <p style={seedNoteStyle}>5 independent inputs = virtually impossible to manipulate</p>
+                </div>
+              )}
+            </div>
+
+            {/* Full Verification Link */}
+            <div style={fullVerifyLinkStyle}>
+              <Link to={`/verify/yahtzee/${gameId}`} style={{ color: '#60a5fa', textDecoration: 'none', fontSize: '0.9rem' }}>
+                View Full Verification Page →
+              </Link>
+            </div>
+
+            {/* Copy Toast */}
+            {copyFeedback && <div style={copyToastStyle}>{copyFeedback}</div>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -330,8 +668,7 @@ GameOverModal.propTypes = {
   anchor: PropTypes.object,
   rollHistory: PropTypes.array.isRequired,
   onClose: PropTypes.func.isRequired,
-  onNewGame: PropTypes.func.isRequired,
-  onViewVerification: PropTypes.func.isRequired
+  onNewGame: PropTypes.func.isRequired
 };
 
 export default GameOverModal;
