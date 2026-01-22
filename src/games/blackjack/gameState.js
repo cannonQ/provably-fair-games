@@ -261,16 +261,23 @@ export function blackjackReducer(state, action) {
     }
 
     case 'RESOLVE_ROUND': {
-      const { results, totalPayout, blackjackCount, insuranceBet, insurancePayout } = action.payload;
+      const {
+        results, totalPayout, blackjackCount, insuranceBet, insurancePayout,
+        // Use payload values to avoid race conditions with state
+        handBets: payloadHandBets,
+        playerHands: payloadPlayerHands,
+        dealerHand: payloadDealerHand
+      } = action.payload;
       const newBalance = state.chipBalance + totalPayout;
       const wins = results.filter(r => ['win', 'blackjack', 'losebust'].includes(r.outcome)).length;
 
       const record = {
         roundNumber: state.handsPlayed + 1,
         gameId: state.gameId,
-        playerHands: state.playerHands,
-        dealerHand: state.dealerHand,
-        handBets: state.handBets,
+        // Use payload values (captured at resolve time) to ensure consistency
+        playerHands: payloadPlayerHands || state.playerHands,
+        dealerHand: payloadDealerHand || state.dealerHand,
+        handBets: payloadHandBets || state.handBets,
         results,
         insuranceBet: insuranceBet || 0,
         insurancePayout: insurancePayout || 0,
