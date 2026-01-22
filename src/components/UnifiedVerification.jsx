@@ -267,16 +267,34 @@ print(f"First roll: {dice}")
 `,
     backgammon: `
 # Backgammon-specific: generate dice rolls
-def roll_dice(seed_str, turn_number):
-    turn_seed = f"{seed_str}-{turn_number}"
-    turn_int = int(hashlib.sha256(turn_seed.encode()).hexdigest(), 16)
-    die1 = (turn_int % 6) + 1
-    die2 = ((turn_int >> 8) % 6) + 1
-    return (die1, die2)
+# Uses rejection sampling to eliminate modulo bias (matches JavaScript exactly)
+def roll_dice(block_hash, game_id, turn_number):
+    """Generate two dice values using blockchain seed"""
+    seed_input = f"{block_hash}{game_id}{turn_number}"
+    hash_hex = hashlib.sha256(seed_input.encode()).hexdigest()
 
-# Example: first turn
-dice = roll_dice(seed, 0)
-print(f"First roll: {dice}")
+    dice = []
+    byte_index = 0
+
+    # Rejection sampling: skip bytes >= 252 to avoid bias
+    while len(dice) < 2 and byte_index < len(hash_hex) - 1:
+        byte_val = int(hash_hex[byte_index:byte_index + 2], 16)
+        byte_index += 2
+        if byte_val < 252:
+            dice.append((byte_val % 6) + 1)
+
+    return tuple(dice), seed_input, hash_hex
+
+# Generate first 5 rolls
+print("First 5 dice rolls:")
+print("-" * 40)
+for turn in range(1, 6):
+    dice, seed_input, hash_hex = roll_dice(block_hash, game_id, turn)
+    print(f"Turn {turn}: {dice}")
+    if turn == 1:
+        print(f"  Seed: {seed_input[:60]}...")
+        print(f"  Hash: {hash_hex[:32]}...")
+print()
 `,
     '2048': `
 # 2048-specific: generate tile spawns
