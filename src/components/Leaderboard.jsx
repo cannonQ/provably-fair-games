@@ -103,6 +103,7 @@ export default function Leaderboard({ game, currentGameId = null }) {
   const isYahtzee = game === 'yahtzee';
   const isBlackjack = game === 'blackjack';
   const isChess = game === 'chess';
+  const isBackgammon = game === 'backgammon';
 
   const getScoreDisplay = (entry) => {
     if (isSolitaire) {
@@ -134,6 +135,31 @@ export default function Leaderboard({ game, currentGameId = null }) {
       return (
         <span style={{ color: isHighScore ? '#4caf50' : '#64b5f6', fontWeight: 'bold' }}>
           {entry.score.toLocaleString()} pts
+        </span>
+      );
+    }
+    if (isBackgammon) {
+      // Show score with breakdown if available
+      const winTypeShort = {
+        normal: 'N',
+        gammon: 'G',
+        backgammon: 'BG'
+      };
+      const winType = entry.win_type || 'normal';
+      const cubeValue = entry.cube_value || 1;
+      const diff = entry.difficulty || 'normal';
+      const diffShort = { easy: 'E', normal: 'N', hard: 'H' };
+      const pipCount = entry.loser_pip_count || 0;
+      const pipBonus = Math.min(2, 1 + (pipCount / 200));
+
+      return (
+        <span style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <span style={{ color: '#4ade80', fontWeight: 'bold' }}>
+            {entry.score} pts
+          </span>
+          <span style={{ color: '#888', fontSize: '10px' }}>
+            {winTypeShort[winType]}×{cubeValue}×{diffShort[diff]}×{pipBonus.toFixed(1)}
+          </span>
         </span>
       );
     }
@@ -172,7 +198,10 @@ export default function Leaderboard({ game, currentGameId = null }) {
       {isChess && (
         <p style={styles.subtitle}>Ranked by: Score → AI Difficulty → Moves</p>
       )}
-      {!isSolitaire && !isYahtzee && !isBlackjack && !isChess && (
+      {isBackgammon && (
+        <p style={styles.subtitle}>Ranked by: Score (WinType × Cube × Difficulty × PipBonus) → Time</p>
+      )}
+      {!isSolitaire && !isYahtzee && !isBlackjack && !isChess && !isBackgammon && (
         <p style={styles.subtitle}>Ranked by: Score → Time → Moves</p>
       )}
 

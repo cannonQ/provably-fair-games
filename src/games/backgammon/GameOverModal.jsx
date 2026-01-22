@@ -128,6 +128,7 @@ const GameOverModal = ({
           winType,
           difficulty,
           cubeValue,
+          loserPipCount,
           moveHistory: moveHistory || []
         })
       });
