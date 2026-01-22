@@ -244,9 +244,12 @@ const BackgammonGame = () => {
       // Get blockchain data and start game
       const block = await getLatestBlock();
       const blockchainData = {
-        blockHeight: block.height,
-        blockHash: block.id,
-        timestamp: block.timestamp
+        blockHeight: block.blockHeight,
+        blockHash: block.blockHash,
+        timestamp: block.timestamp,
+        txHash: block.txHash,
+        txIndex: block.txIndex,
+        txCount: block.txCount
       };
 
       dispatch(actions.initGame(difficulty, blockchainData));
