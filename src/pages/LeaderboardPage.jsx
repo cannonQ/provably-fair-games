@@ -291,49 +291,103 @@ function LeaderboardPage() {
         {activeGame === 'backgammon' && (
           <div style={styles.scoringContent}>
             <div style={styles.rankingBox}>
-              <h3 style={styles.rankingTitle}>Ranking Order</h3>
+              <h3 style={styles.rankingTitle}>Score Formula</h3>
+              <p style={{ color: '#4ade80', textAlign: 'center', fontSize: '1.1rem', margin: '0.5rem 0 1rem' }}>
+                <strong>Score = WinType × Cube × Difficulty × PipBonus</strong>
+              </p>
               <div style={styles.rankingList}>
                 <div style={styles.rankingItem}>
-                  <span style={styles.rankNum}>1st</span>
-                  <span style={styles.rankLabel}>Final Score</span>
-                  <span style={styles.rankDesc}>Points × cube value × difficulty multiplier</span>
-                </div>
-                <div style={styles.rankingItem}>
-                  <span style={styles.rankNum}>2nd</span>
+                  <span style={styles.rankNum}>W</span>
                   <span style={styles.rankLabel}>Win Type</span>
-                  <span style={styles.rankDesc}>Backgammon (3x) > Gammon (2x) > Normal (1x)</span>
+                  <span style={styles.rankDesc}>Normal (1x) • Gammon (2x) • Backgammon (3x)</span>
                 </div>
                 <div style={styles.rankingItem}>
-                  <span style={styles.rankNum}>3rd</span>
-                  <span style={styles.rankLabel}>Time</span>
-                  <span style={styles.rankDesc}>Faster wins = higher rank</span>
+                  <span style={styles.rankNum}>C</span>
+                  <span style={styles.rankLabel}>Cube Value</span>
+                  <span style={styles.rankDesc}>1x → 2x → 4x → 8x → 16x → 32x → 64x</span>
+                </div>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>D</span>
+                  <span style={styles.rankLabel}>Difficulty</span>
+                  <span style={styles.rankDesc}>Easy (1x) • Normal (2x) • Hard (3x)</span>
+                </div>
+                <div style={styles.rankingItem}>
+                  <span style={styles.rankNum}>P</span>
+                  <span style={styles.rankLabel}>Pip Bonus</span>
+                  <span style={styles.rankDesc}>1.0x (close game) → 2.0x (crushing victory)</span>
                 </div>
               </div>
             </div>
 
             <div style={styles.infoGrid}>
               <div style={styles.infoCard}>
-                <h4 style={styles.infoTitle}>🎲 Win Types</h4>
+                <h4 style={styles.infoTitle}>🎲 Win Types Explained</h4>
                 <p style={styles.infoText}>
-                  <strong>Normal:</strong> Opponent bore off at least 1 checker<br/>
-                  <strong>Gammon (2x):</strong> Opponent bore off 0 checkers<br/>
-                  <strong>Backgammon (3x):</strong> Opponent has checker on bar or in your home
+                  <strong>Normal (N):</strong> Opponent bore off at least 1 checker<br/>
+                  <strong>Gammon (G):</strong> Opponent bore off 0 checkers<br/>
+                  <strong>Backgammon (BG):</strong> Opponent still has checker on bar or in your home board
+                </p>
+              </div>
+              <div style={styles.infoCard}>
+                <h4 style={styles.infoTitle}>📊 Pip Bonus</h4>
+                <p style={styles.infoText}>
+                  Based on loser's remaining pip count (distance to bear off all checkers).<br/>
+                  <strong>Formula:</strong> 1 + (pips ÷ 200), max 2x<br/>
+                  0 pips = 1.0x • 100 pips = 1.5x • 167 pips = 1.8x
                 </p>
               </div>
               <div style={styles.infoCard}>
                 <h4 style={styles.infoTitle}>📦 Doubling Cube</h4>
                 <p style={styles.infoText}>
-                  Double the stakes during your turn. Opponent can accept (2x points)
-                  or decline (forfeit at current stakes). Cube goes up to 64x!
+                  Double the stakes during your turn before rolling.
+                  Opponent can accept (play for 2x) or decline (forfeit at current stakes).
                 </p>
               </div>
               <div style={styles.infoCard}>
                 <h4 style={styles.infoTitle}>🔒 Provably Fair Dice</h4>
                 <p style={styles.infoText}>
-                  Every dice roll is generated from Ergo blockchain data.
-                  Block hash + game ID + turn number = verifiable dice!
+                  Every dice roll uses Ergo blockchain data.
+                  Block hash + game ID + turn = verifiable dice!
                 </p>
               </div>
+            </div>
+
+            <div style={styles.example}>
+              <h4 style={styles.exampleTitle}>Example Score Calculations:</h4>
+              <table style={styles.exampleTable}>
+                <thead>
+                  <tr>
+                    <th>Win Type</th>
+                    <th>Cube</th>
+                    <th>Diff</th>
+                    <th>Pips</th>
+                    <th>Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Normal</td>
+                    <td>1x</td>
+                    <td>Easy</td>
+                    <td>50</td>
+                    <td style={{color: '#4ade80'}}>1×1×1×1.25 = <strong>1</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Gammon</td>
+                    <td>2x</td>
+                    <td>Normal</td>
+                    <td>100</td>
+                    <td style={{color: '#4ade80'}}>2×2×2×1.5 = <strong>12</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Backgammon</td>
+                    <td>4x</td>
+                    <td>Hard</td>
+                    <td>150</td>
+                    <td style={{color: '#ff9800'}}>3×4×3×1.75 = <strong>63</strong></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         )}
