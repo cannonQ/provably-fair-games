@@ -770,6 +770,7 @@ const BackgammonGame = () => {
           rollHistory={state.rollHistory}
           gameStartTime={state.gameStartTime}
           gameEndTime={state.gameEndTime}
+          loserPipCount={state.loserPipCount || 0}
           onNewGame={handleNewGame}
         />
       )}

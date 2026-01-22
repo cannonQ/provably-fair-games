@@ -20,6 +20,7 @@ const GameOverModal = ({
   rollHistory,
   gameStartTime,
   gameEndTime,
+  loserPipCount = 0,
   onNewGame
 }) => {
   const navigate = useNavigate();
@@ -36,7 +37,8 @@ const GameOverModal = ({
     rollHistory,
     gameStartTime,
     gameEndTime,
-    doublingCube: { value: cubeValue }
+    doublingCube: { value: cubeValue },
+    loserPipCount
   });
 
   // Save verification data to localStorage
@@ -100,6 +102,8 @@ const GameOverModal = ({
   const difficultyBonuses = { easy: 1, normal: 2, hard: 3 };
   const winTypeMult = winTypeMultipliers[winType] || 1;
   const diffBonus = difficultyBonuses[difficulty] || 1;
+  // Pip bonus: 1x for close games, up to 2x for crushing victories
+  const pipBonus = Math.min(2, 1 + (loserPipCount / 200));
 
   // Submit score to leaderboard
   const handleSubmit = async () => {
@@ -299,11 +303,15 @@ const GameOverModal = ({
               <span style={labelStyle}>Difficulty ({difficulty})</span>
               <span style={valueStyle}>{diffBonus}x</span>
             </div>
+            <div style={rowStyle}>
+              <span style={labelStyle}>Pip Bonus ({loserPipCount} pips)</span>
+              <span style={valueStyle}>{pipBonus.toFixed(2)}x</span>
+            </div>
             <div style={scoreStyle}>
               {finalScore} pts
             </div>
             <div style={{ textAlign: 'center', color: '#888', fontSize: '12px' }}>
-              {winTypeMult} × {cubeValue} × {diffBonus} = {finalScore}
+              {winTypeMult} × {cubeValue} × {diffBonus} × {pipBonus.toFixed(2)} = {finalScore}
             </div>
           </div>
         )}
