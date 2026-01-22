@@ -16,6 +16,7 @@ const GameOverModal = ({
   difficulty,
   duration,
   blockchainData,
+  moveHistory,
   onNewGame
 }) => {
   const navigate = useNavigate();
@@ -79,14 +80,15 @@ const GameOverModal = ({
           playerName: playerName.trim() || 'Anonymous',
           score: finalScore,
           timeSeconds,
-          moves: 0,
+          moves: moveHistory?.length || 0,
           blockHeight: blockchainData?.blockHeight,
           blockHash: blockchainData?.blockHash,
           txHash: blockchainData?.txHash,
           blockTimestamp: blockchainData?.timestamp,
           winType,
           difficulty,
-          cubeValue
+          cubeValue,
+          moveHistory: moveHistory || []
         })
       });
 

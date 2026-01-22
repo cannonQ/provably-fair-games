@@ -13,12 +13,13 @@ import { useNavigate } from 'react-router-dom';
 
 // Game logic imports
 import { gameReducer, initialState, actions, selectors } from './gameState';
-import { 
-  rollDiceValues, 
-  isDoubles, 
-  checkGameOver, 
+import {
+  rollDiceValues,
+  isDoubles,
+  checkGameOver,
   detectWinType,
-  generateVerificationData 
+  generateVerificationData,
+  getPipCount
 } from './gameLogic';
 import { getAllLegalMoves, isTurnComplete, applyMove } from './moveValidation';
 import { selectMove, selectTurnSequence, shouldDouble, shouldAcceptDouble, getThinkingDelay } from './ai';
@@ -705,10 +706,8 @@ const BackgammonGame = () => {
           <div style={statusStyle}>
             <h4 style={{ marginBottom: '10px' }}>Pip Count</h4>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>You: {selectors.getCheckersOnBoard(state, 'white') > 0 ? 
-                '...' : state.bearOff.white}</span>
-              <span>AI: {selectors.getCheckersOnBoard(state, 'black') > 0 ? 
-                '...' : state.bearOff.black}</span>
+              <span>You: {getPipCount(state, 'white')}</span>
+              <span>AI: {getPipCount(state, 'black')}</span>
             </div>
           </div>
 
@@ -749,6 +748,7 @@ const BackgammonGame = () => {
           duration={selectors.getGameDuration(state)}
           gameId={state.gameId}
           blockchainData={state.blockchainData}
+          moveHistory={state.moveHistory}
           onNewGame={handleNewGame}
         />
       )}
