@@ -234,15 +234,26 @@ export default function BackgammonVerificationPage() {
       setGameData(location.state.gameState);
       setLoading(false);
     } else {
-      // Try localStorage
-      const saved = localStorage.getItem(`backgammon-${gameId}`);
-      if (saved) {
-        setGameData(JSON.parse(saved));
+      // Try localStorage - check verification data first, then game state
+      const verifyData = localStorage.getItem(`backgammon_verify_${gameId}`);
+      if (verifyData) {
+        setGameData(JSON.parse(verifyData));
         setLoading(false);
-      } else {
-        setNotFound(true);
-        setLoading(false);
+        return;
       }
+
+      // Fallback to game state storage (uses backgammon_game_ prefix)
+      const savedGame = localStorage.getItem(`backgammon_game_${gameId}`);
+      if (savedGame) {
+        const parsed = JSON.parse(savedGame);
+        // Game state is wrapped in { state, savedAt, version }
+        setGameData(parsed.state || parsed);
+        setLoading(false);
+        return;
+      }
+
+      setNotFound(true);
+      setLoading(false);
     }
   }, [gameId, location.state]);
 

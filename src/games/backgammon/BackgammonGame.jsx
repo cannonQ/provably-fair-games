@@ -753,6 +753,9 @@ const BackgammonGame = () => {
           gameId={state.gameId}
           blockchainData={state.blockchainData}
           moveHistory={state.moveHistory}
+          rollHistory={state.rollHistory}
+          gameStartTime={state.gameStartTime}
+          gameEndTime={state.gameEndTime}
           onNewGame={handleNewGame}
         />
       )}

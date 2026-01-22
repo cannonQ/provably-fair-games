@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const GameOverModal = ({
   gameId,
@@ -17,9 +17,45 @@ const GameOverModal = ({
   duration,
   blockchainData,
   moveHistory,
+  rollHistory,
+  gameStartTime,
+  gameEndTime,
   onNewGame
 }) => {
   const navigate = useNavigate();
+
+  // Build verification data for the full verification page
+  const buildVerificationData = () => ({
+    gameId,
+    winner,
+    winType,
+    finalScore,
+    difficulty,
+    blockchainData,
+    moveHistory,
+    rollHistory,
+    gameStartTime,
+    gameEndTime,
+    doublingCube: { value: cubeValue }
+  });
+
+  // Save verification data to localStorage
+  const saveVerificationData = () => {
+    try {
+      const data = buildVerificationData();
+      localStorage.setItem(`backgammon_verify_${gameId}`, JSON.stringify(data));
+    } catch (err) {
+      console.warn('Failed to save verification data:', err);
+    }
+  };
+
+  // Navigate to full verification page with state
+  const handleViewFullVerification = () => {
+    saveVerificationData();
+    navigate(`/verify/backgammon/${gameId}`, {
+      state: { gameState: buildVerificationData() }
+    });
+  };
 
   // Local state
   const [playerName, setPlayerName] = useState('');
@@ -326,7 +362,10 @@ const GameOverModal = ({
             </button>
             <button
               style={{ ...buttonStyle('#f59e0b'), flex: 1 }}
-              onClick={() => setShowVerification(true)}
+              onClick={() => {
+                saveVerificationData();
+                setShowVerification(true);
+              }}
             >
               Verify
             </button>
@@ -474,9 +513,20 @@ const GameOverModal = ({
 
             {/* Full Verification Link */}
             <div style={fullVerifyLinkStyle}>
-              <Link to={`/verify/backgammon/${gameId}`} style={{ color: '#60a5fa', textDecoration: 'none', fontSize: '0.9rem' }}>
+              <button
+                onClick={handleViewFullVerification}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#60a5fa',
+                  textDecoration: 'none',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+              >
                 View Full Verification Page →
-              </Link>
+              </button>
             </div>
 
             {/* Copy Toast */}
