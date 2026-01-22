@@ -86,7 +86,8 @@ function GameOverModal({
           blockHash: anchor?.blockHash,
           txHash: anchor?.txHash,
           blockTimestamp: anchor?.timestamp,
-          rollHistory: rollHistory || []
+          rollHistory: rollHistory || [],
+          scorecard: scorecard
         })
       });
 
@@ -126,32 +127,33 @@ function GameOverModal({
   };
 
   const modalStyle = {
-    backgroundColor: '#fff',
+    backgroundColor: '#1e293b',
     borderRadius: '16px',
     padding: '30px',
     maxWidth: '420px',
     width: '100%',
     textAlign: 'center',
-    boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
-    position: 'relative'
+    boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+    position: 'relative',
+    color: '#f1f5f9'
   };
 
   const headerStyle = {
     fontSize: '32px',
     fontWeight: 'bold',
     marginBottom: '10px',
-    color: isHighScore ? '#ff9800' : '#333'
+    color: isHighScore ? '#f59e0b' : '#f1f5f9'
   };
 
   const scoreStyle = {
     fontSize: '56px',
     fontWeight: 'bold',
-    color: isHighScore ? '#4caf50' : isExcellent ? '#1976d2' : '#333',
+    color: isHighScore ? '#4ade80' : isExcellent ? '#60a5fa' : '#f1f5f9',
     marginBottom: '5px'
   };
 
   const breakdownStyle = {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#0f172a',
     borderRadius: '8px',
     padding: '15px',
     margin: '20px 0',
@@ -162,7 +164,7 @@ function GameOverModal({
     display: 'flex',
     justifyContent: 'space-between',
     padding: '6px 0',
-    borderBottom: '1px solid #e0e0e0'
+    borderBottom: '1px solid #334155'
   };
 
   const totalRowStyle = {
@@ -171,7 +173,7 @@ function GameOverModal({
     borderBottom: 'none',
     paddingTop: '10px',
     marginTop: '5px',
-    borderTop: '2px solid #333'
+    borderTop: '2px solid #f1f5f9'
   };
 
   const buttonContainerStyle = {
@@ -206,8 +208,8 @@ function GameOverModal({
 
   const linkButtonStyle = {
     backgroundColor: 'transparent',
-    color: '#1976d2',
-    border: '1px solid #1976d2',
+    color: '#60a5fa',
+    border: '1px solid #334155',
     padding: '10px 20px',
     fontSize: '14px',
     borderRadius: '8px',
@@ -411,13 +413,13 @@ function GameOverModal({
         </div>
 
         {/* Time */}
-        <div style={{ color: '#666', marginBottom: '15px' }}>
+        <div style={{ color: '#94a3b8', marginBottom: '15px' }}>
           {formatTime(elapsedSeconds)}
         </div>
 
         {/* Final Score */}
         <div style={scoreStyle}>{grandTotal}</div>
-        <div style={{ color: '#666', fontSize: '14px', marginBottom: '15px' }}>
+        <div style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '15px' }}>
           Final Score
         </div>
 
@@ -429,7 +431,7 @@ function GameOverModal({
           </div>
           <div style={rowStyle}>
             <span>Upper Bonus</span>
-            <span style={{ color: upperBonus > 0 ? '#2e7d32' : '#999' }}>
+            <span style={{ color: upperBonus > 0 ? '#4ade80' : '#64748b' }}>
               {upperBonus > 0 ? `+${upperBonus}` : '+0'}
             </span>
           </div>
@@ -440,7 +442,7 @@ function GameOverModal({
           {yahtzeeBonuses > 0 && (
             <div style={rowStyle}>
               <span>Yahtzee Bonuses</span>
-              <span style={{ color: '#e65100' }}>+{yahtzeeBonuses}</span>
+              <span style={{ color: '#f59e0b' }}>+{yahtzeeBonuses}</span>
             </div>
           )}
           <div style={totalRowStyle}>
@@ -451,8 +453,8 @@ function GameOverModal({
 
         {/* Submission Form */}
         {!submitted ? (
-          <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f5f5f5', borderRadius: '8px' }}>
-            <p style={{ fontSize: '14px', marginBottom: '10px', color: '#666' }}>
+          <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#0f172a', borderRadius: '8px' }}>
+            <p style={{ fontSize: '14px', marginBottom: '10px', color: '#94a3b8' }}>
               Submit to Leaderboard:
             </p>
             <input
@@ -465,8 +467,10 @@ function GameOverModal({
                 width: '100%',
                 padding: '10px',
                 fontSize: '14px',
-                borderRadius: '4px',
-                border: '1px solid #ddd',
+                borderRadius: '6px',
+                border: '1px solid #334155',
+                backgroundColor: '#1e293b',
+                color: '#f1f5f9',
                 marginBottom: '10px',
                 boxSizing: 'border-box'
               }}
@@ -483,18 +487,18 @@ function GameOverModal({
               {submitting ? 'Submitting...' : '📤 Submit Score'}
             </button>
             {submitError && (
-              <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#ffebee', color: '#c62828', borderRadius: '6px', fontSize: '13px' }}>
+              <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#7f1d1d', color: '#fca5a5', borderRadius: '6px', fontSize: '13px' }}>
                 ⚠ {submitError}
               </div>
             )}
           </div>
         ) : (
-          <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#e8f5e9', borderRadius: '8px' }}>
-            <div style={{ color: '#2e7d32', fontSize: '14px', fontWeight: '500' }}>
+          <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#166534', borderRadius: '8px' }}>
+            <div style={{ color: '#4ade80', fontSize: '14px', fontWeight: '500' }}>
               ✓ Score submitted to leaderboard!
             </div>
             {submitRank && (
-              <div style={{ color: '#555', fontSize: '13px', marginTop: '5px' }}>
+              <div style={{ color: '#bbf7d0', fontSize: '13px', marginTop: '5px' }}>
                 Your rank: #{submitRank}
               </div>
             )}
@@ -518,7 +522,7 @@ function GameOverModal({
         </div>
 
         {/* Game ID */}
-        <div style={{ fontSize: '11px', color: '#999', marginTop: '15px' }}>
+        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '15px' }}>
           Game ID: {gameId}
         </div>
       </div>
