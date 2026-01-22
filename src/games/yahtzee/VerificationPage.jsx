@@ -11,19 +11,22 @@ import { generateSeedFromSource, calculateDieValue } from './diceLogic';
 // ============================================
 // DICE DISPLAY HELPERS
 // ============================================
-const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-
 const DiceValue = ({ value }) => (
   <span style={{
-    display: 'inline-block',
-    padding: '4px 8px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '28px',
+    height: '28px',
     margin: '2px',
     backgroundColor: '#fff',
     borderRadius: '4px',
-    fontSize: '16px',
-    color: '#1a1a1a'
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#1a1a1a',
+    border: '2px solid #334155'
   }}>
-    {DICE_FACES[value - 1] || value}
+    {value}
   </span>
 );
 
