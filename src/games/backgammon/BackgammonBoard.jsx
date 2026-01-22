@@ -16,6 +16,7 @@ const BackgammonBoard = ({
   gameState,
   onPointClick,
   onCheckerClick,
+  onCheckerDoubleClick,
   onBarClick,
   selectedPoint,
   validMoves = []
@@ -228,6 +229,7 @@ const BackgammonBoard = ({
         isSelected={selectedPoint === index}
         onPointClick={(idx) => onPointClick && onPointClick(idx)}
         onCheckerClick={(idx) => onCheckerClick && onCheckerClick(idx)}
+        onCheckerDoubleClick={(idx) => onCheckerDoubleClick && onCheckerDoubleClick(idx)}
       />
     ));
   };

@@ -15,7 +15,8 @@ const Point = ({
   isValidDestination = false,
   isSelected = false,
   onPointClick,
-  onCheckerClick
+  onCheckerClick,
+  onCheckerDoubleClick
 }) => {
   // Alternating colors for points
   const isDark = pointIndex % 2 === 0;
@@ -86,6 +87,7 @@ const Point = ({
             isSelected={isSelected && isTopChecker}
             canSelect={isTopChecker && onCheckerClick !== undefined}
             onSelect={() => onCheckerClick && onCheckerClick(pointIndex)}
+            onDoubleClick={() => onCheckerDoubleClick && onCheckerDoubleClick(pointIndex)}
           />
         </div>
       );
