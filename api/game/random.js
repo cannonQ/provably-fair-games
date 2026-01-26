@@ -19,7 +19,6 @@
 
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
-import axios from 'axios';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -32,14 +31,24 @@ const ERGO_API_BASE = 'https://api.ergoplatform.com/api/v1';
 
 /**
  * Verify that blockchain data is real by querying Ergo API
+ * Uses native fetch (available in Node.js 18+)
  */
 async function verifyBlockchainData(blockData) {
   try {
     const { blockHash, blockHeight } = blockData;
 
-    // Fetch block from Ergo blockchain
-    const response = await axios.get(`${ERGO_API_BASE}/blocks/${blockHash}`);
-    const block = response.data.block;
+    // Fetch block from Ergo blockchain using native fetch
+    const response = await fetch(`${ERGO_API_BASE}/blocks/${blockHash}`);
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { valid: false, error: 'Block not found on Ergo blockchain' };
+      }
+      return { valid: false, error: `Ergo API error: ${response.status}` };
+    }
+
+    const data = await response.json();
+    const block = data.block;
 
     // Verify height matches
     if (block.header.height !== blockHeight) {
@@ -48,9 +57,7 @@ async function verifyBlockchainData(blockData) {
 
     return { valid: true };
   } catch (error) {
-    if (error.response && error.response.status === 404) {
-      return { valid: false, error: 'Block not found on Ergo blockchain' };
-    }
+    console.error('Blockchain verification error:', error);
     return { valid: false, error: 'Failed to verify blockchain data' };
   }
 }
