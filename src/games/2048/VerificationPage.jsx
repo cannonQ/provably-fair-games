@@ -198,7 +198,13 @@ export default function VerificationPage2048() {
   };
 
   const gameData = getGameData();
-  const { gameId, score, spawnHistory, moveHistory, gameStatus, anchorBlock } = gameData?.mismatch ? {} : (gameData || {});
+  const rawData = gameData?.mismatch ? {} : (gameData || {});
+
+  // Support both session-based (new) and legacy formats
+  // Session-based games store blockchain data in blockchainData
+  // Legacy games store it in anchorBlock
+  const anchorBlock = rawData.blockchainData || rawData.anchorBlock;
+  const { gameId, score, spawnHistory, moveHistory, gameStatus } = rawData;
 
   // Leaderboard data for replay mode
   const [leaderboardData, setLeaderboardData] = useState(null);
@@ -327,7 +333,9 @@ export default function VerificationPage2048() {
           gameId: leaderboardData.game_id,
           blockHash: leaderboardData.block_hash,
           blockHeight: leaderboardData.block_height,
-          timestamp: leaderboardData.block_timestamp
+          timestamp: leaderboardData.block_timestamp,
+          txHash: leaderboardData.tx_hash,
+          txIndex: leaderboardData.tx_index
         }}
         verified={hasReplayData}
         eventCount={leaderboardData.moves || 0}
@@ -487,7 +495,12 @@ export default function VerificationPage2048() {
         gameId,
         blockHash: anchorBlock?.blockHash,
         blockHeight: anchorBlock?.blockHeight,
-        timestamp: anchorBlock?.timestamp
+        timestamp: anchorBlock?.timestamp,
+        txHash: anchorBlock?.txHash,
+        txIndex: anchorBlock?.txIndex,
+        // Include session data if available
+        sessionId: anchorBlock?.sessionId,
+        secretHash: anchorBlock?.secretHash
       }}
       verified={allValid}
       eventCount={spawnHistory.length}

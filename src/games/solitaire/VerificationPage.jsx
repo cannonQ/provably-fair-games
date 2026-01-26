@@ -58,7 +58,14 @@ export default function SolitaireVerificationPage() {
       if (storedData) {
         try {
           const data = JSON.parse(storedData);
-          const { blockHash, blockHeight, timestamp, txHash, txIndex, txCount, seed } = data;
+          // Support both session-based (new) and legacy formats
+          const blockHash = data.blockchainData?.blockHash || data.blockHash;
+          const blockHeight = data.blockchainData?.blockHeight || data.blockHeight;
+          const timestamp = data.blockchainData?.timestamp || data.timestamp;
+          const txHash = data.blockchainData?.txHash || data.txHash;
+          const txIndex = data.blockchainData?.txIndex ?? data.txIndex;
+          const txCount = data.blockchainData?.txCount ?? data.txCount;
+          const seed = data.seed;
 
           // Regenerate seed using full block data
           const blockData = { blockHash, txHash, timestamp, txIndex };
@@ -79,7 +86,10 @@ export default function SolitaireVerificationPage() {
             txCount,
             seed,
             regeneratedSeed,
-            source: 'local'
+            source: 'local',
+            // Include session data if available
+            sessionId: data.blockchainData?.sessionId,
+            secretHash: data.blockchainData?.secretHash
           });
           setShuffledDeck(deck);
           setIsVerified(verified);

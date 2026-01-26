@@ -133,32 +133,39 @@ export default function BlackjackVerificationPage() {
           const data = JSON.parse(storedData);
           const { blockchainData, shoe, roundHistory } = data;
 
+          // Support both session-based (new) and legacy formats
+          // blockchainData could be nested (session-based) or at top level (legacy)
+          const bcData = blockchainData || data;
+
           const blockData = {
-            blockHash: blockchainData.blockHash,
-            txHash: blockchainData.txHash,
-            timestamp: blockchainData.timestamp,
-            txIndex: blockchainData.txIndex
+            blockHash: bcData.blockHash,
+            txHash: bcData.txHash,
+            timestamp: bcData.timestamp,
+            txIndex: bcData.txIndex
           };
           const regeneratedSeed = generateSeed(blockData, gameId);
           const rawShoe = createSixDeckShoe();
           const regeneratedShoe = shuffleArray(rawShoe, regeneratedSeed);
 
-          const seedsMatch = regeneratedSeed === blockchainData.seed;
+          const seedsMatch = regeneratedSeed === bcData.seed;
           const shoeMatches = shoe?.every((card, i) => card.id === regeneratedShoe[i]?.id);
           const verified = seedsMatch && shoeMatches;
 
           setVerificationData({
             ...data,
             gameId,
-            blockHash: blockchainData.blockHash,
-            blockHeight: blockchainData.blockHeight,
-            timestamp: blockchainData.timestamp,
-            txHash: blockchainData.txHash,
-            txIndex: blockchainData.txIndex,
-            seed: blockchainData.seed,
+            blockHash: bcData.blockHash,
+            blockHeight: bcData.blockHeight,
+            timestamp: bcData.timestamp,
+            txHash: bcData.txHash,
+            txIndex: bcData.txIndex,
+            seed: bcData.seed,
             regeneratedSeed,
             regeneratedShoe,
-            source: 'local'
+            source: 'local',
+            // Include session data if available
+            sessionId: bcData.sessionId,
+            secretHash: bcData.secretHash
           });
           setIsVerified(verified);
           setLoading(false);

@@ -519,12 +519,16 @@ export default function YahtzeeVerificationPage() {
   const firstRoll = verificationData?.rollHistory?.[0];
   const unifiedData = verificationData ? {
     gameId: verificationData.gameId,
-    blockHash: firstRoll?.blockHash || verificationData.anchor?.blockHash,
-    blockHeight: firstRoll?.blockHeight || verificationData.anchor?.blockHeight,
-    timestamp: firstRoll?.timestamp || verificationData.anchor?.timestamp,
-    txHash: firstRoll?.txHash || verificationData.anchor?.txHash,
-    txIndex: firstRoll?.txIndex ?? 0,
-    rollHistory: verificationData.rollHistory
+    // Support both session-based (new) and legacy formats
+    blockHash: verificationData.blockchainData?.blockHash || firstRoll?.blockHash || verificationData.anchor?.blockHash,
+    blockHeight: verificationData.blockchainData?.blockHeight || firstRoll?.blockHeight || verificationData.anchor?.blockHeight,
+    timestamp: verificationData.blockchainData?.timestamp || firstRoll?.timestamp || verificationData.anchor?.timestamp,
+    txHash: verificationData.blockchainData?.txHash || firstRoll?.txHash || verificationData.anchor?.txHash,
+    txIndex: verificationData.blockchainData?.txIndex ?? firstRoll?.txIndex ?? 0,
+    rollHistory: verificationData.rollHistory,
+    // Include session data if available
+    sessionId: verificationData.blockchainData?.sessionId,
+    secretHash: verificationData.blockchainData?.secretHash
   } : null;
 
   return (

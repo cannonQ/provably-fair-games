@@ -408,9 +408,15 @@ export default function ChessVerificationPage() {
   // Build unified data
   const unifiedData = gameData ? {
     gameId: gameData.gameId || gameId,
-    blockHash: gameData.colorAssignment?.blockHash || gameData.blockHash,
-    blockHeight: gameData.colorAssignment?.blockHeight || gameData.blockHeight,
-    timestamp: gameData.colorAssignment?.timestamp || gameData.timestamp
+    // Support both session-based (new) and legacy formats
+    blockHash: gameData.blockchainData?.blockHash || gameData.colorAssignment?.blockHash || gameData.blockHash,
+    blockHeight: gameData.blockchainData?.blockHeight || gameData.colorAssignment?.blockHeight || gameData.blockHeight,
+    timestamp: gameData.blockchainData?.timestamp || gameData.colorAssignment?.timestamp || gameData.timestamp,
+    txHash: gameData.blockchainData?.txHash,
+    txIndex: gameData.blockchainData?.txIndex,
+    // Include session data if available
+    sessionId: gameData.blockchainData?.sessionId,
+    secretHash: gameData.blockchainData?.secretHash
   } : null;
 
   return (
