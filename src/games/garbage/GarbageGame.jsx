@@ -5,10 +5,10 @@
  * Player vs AI with provably fair deck ordering.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getLatestBlock } from '../../blockchain/ergo-api';
-import { generateSeed, shuffleDeckStrings } from '../../blockchain/shuffle';
+import { shuffleDeckStrings } from '../../blockchain/shuffle';
+import { startSecureGame, getSecureRandom, endSecureSession } from '../../blockchain/secureRng';
 import {
   dealInitialCards,
   getValidPositions,
@@ -32,6 +32,10 @@ function GarbageGame() {
   const [blockData, setBlockData] = useState(null);
   const [gameId, setGameId] = useState(null);
   const [deck, setDeck] = useState([]);
+
+  // Secure RNG session
+  const [sessionId, setSessionId] = useState(null);
+  const [secretHash, setSecretHash] = useState(null);
 
   // Player state
   const [playerCards, setPlayerCards] = useState(Array(10).fill(null));
@@ -98,13 +102,35 @@ function GarbageGame() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // End secure session and reveal secret when game ends
+  useEffect(() => {
+    if (gameState === 'finished' && sessionId && blockData) {
+      const timeSeconds = getElapsedSeconds();
+      endSecureSession(sessionId, {
+        gameId: gameId,
+        winner: winner,
+        moves: moves,
+        timeSeconds: timeSeconds,
+        playerFilledPositions: countFilledPositions(playerCards),
+        score: winner === 'player' ? calculateScore() : 0
+      }).then(revealData => {
+        console.log('✅ Game session ended and verified:', revealData);
+        if (revealData.verified) {
+          console.log('🔐 Server secret revealed and verified!');
+        }
+      }).catch(error => {
+        console.error('❌ Failed to end secure session:', error);
+      });
+    }
+  }, [gameState, sessionId, blockData, gameId, winner, moves, getElapsedSeconds, playerCards, calculateScore]);
+
   /**
    * Start a new game
    */
   const startNewGame = useCallback(async () => {
     setGameState('shuffling');
     setError(null);
-    setMessage('Fetching blockchain data...');
+    setMessage('Initializing secure session...');
     setSubmitted(false);
     setSubmitError(null);
     setSubmitRank(null);
@@ -113,16 +139,29 @@ function GarbageGame() {
     setShowMenu(false);
 
     try {
-      const block = await getLatestBlock();
-      setBlockData(block);
+      // Initialize secure session (server commits secret, then get blockchain data)
+      const { sessionId, secretHash, blockData: block } = await startSecureGame('garbage');
       setMessage(`Block #${block.blockHeight} loaded. Shuffling...`);
 
       const newGameId = generateGameId();
       setGameId(newGameId);
 
-      const seed = generateSeed(block, newGameId);
+      // Get secure random value for deck shuffle
+      const seed = await getSecureRandom(sessionId, 'deck-shuffle');
       const shuffledDeck = shuffleDeckStrings(seed);
       setDeck(shuffledDeck);
+
+      const blockDataWithSession = {
+        ...block,
+        sessionId,      // Add session ID
+        secretHash,     // Add commitment hash
+        gameId: newGameId
+      };
+      setBlockData(blockDataWithSession);
+
+      // Store session info
+      setSessionId(sessionId);
+      setSecretHash(secretHash);
 
       const dealt = dealInitialCards(shuffledDeck);
       setPlayerCards(dealt.playerCards);

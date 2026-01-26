@@ -9,6 +9,7 @@ import React, { useReducer, useEffect, useState, useCallback, useRef } from 'rea
 import { Link } from 'react-router-dom';
 import { getLatestBlock } from '../../blockchain/ergo-api';
 import { generateSeed, shuffleDeck } from '../../blockchain/shuffle';
+import { startSecureGame, getSecureRandom, endSecureSession } from '../../blockchain/secureRng';
 import { solitaireReducer, initialState, getFoundationCount } from './gameState';
 import { checkWinCondition, canAutoComplete, getHint, isGameStuck } from './gameLogic';
 import { submitScore } from '../../services/leaderboard';
@@ -44,6 +45,10 @@ export default function SolitaireGame() {
   const [showFullTxHash, setShowFullTxHash] = useState(false);
   const [showSeedDetails, setShowSeedDetails] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState('');
+
+  // Secure RNG session
+  const [sessionId, setSessionId] = useState(null);
+  const [secretHash, setSecretHash] = useState(null);
 
   const gameAreaRef = useRef(null);
 
@@ -96,6 +101,26 @@ export default function SolitaireGame() {
     }
   }, [state.tableau, state.waste, state.stock, state.foundations, state.gameStatus, state.blockchainData]);
 
+  // End secure session and reveal secret when game ends
+  useEffect(() => {
+    if ((state.gameStatus === 'won' || state.gameStatus === 'lost') && sessionId && state.blockchainData) {
+      endSecureSession(sessionId, {
+        gameId: state.blockchainData.gameId,
+        status: state.gameStatus,
+        foundationCount: getFoundationCount(state.foundations),
+        moves: state.moves,
+        time: elapsed
+      }).then(revealData => {
+        console.log('✅ Game session ended and verified:', revealData);
+        if (revealData.verified) {
+          console.log('🔐 Server secret revealed and verified!');
+        }
+      }).catch(error => {
+        console.error('❌ Failed to end secure session:', error);
+      });
+    }
+  }, [state.gameStatus, sessionId, state.blockchainData, state.moves, elapsed]);
+
   const foundationCount = getFoundationCount(state.foundations);
 
   // Helper functions for verification modal
@@ -134,21 +159,31 @@ export default function SolitaireGame() {
     setShowMenu(false);
 
     try {
-      const block = await getLatestBlock();
+      // Initialize secure session (server commits secret, then get blockchain data)
+      const { sessionId, secretHash, blockData } = await startSecureGame('solitaire');
+
       const gameId = `SOL-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const seed = generateSeed(block, gameId);
+
+      // Get secure random value for deck shuffle
+      const seed = await getSecureRandom(sessionId, 'deck-shuffle');
       const shuffledDeck = shuffleDeck(seed);
 
       const blockchainData = {
-        blockHeight: block.blockHeight,
-        blockHash: block.blockHash,
-        timestamp: block.timestamp,
-        txHash: block.txHash,
-        txIndex: block.txIndex,
-        txCount: block.txCount,
+        blockHeight: blockData.blockHeight,
+        blockHash: blockData.blockHash,
+        timestamp: blockData.timestamp,
+        txHash: blockData.txHash,
+        txIndex: blockData.txIndex,
+        txCount: blockData.txCount,
+        sessionId,      // Add session ID
+        secretHash,     // Add commitment hash
         seed,
         gameId
       };
+
+      // Store session info
+      setSessionId(sessionId);
+      setSecretHash(secretHash);
 
       localStorage.setItem(`solitaire-${gameId}`, JSON.stringify(blockchainData));
 
@@ -161,7 +196,7 @@ export default function SolitaireGame() {
         }
       });
     } catch (err) {
-      setError('Failed to fetch blockchain data. Please try again.');
+      setError('Failed to start secure game. Please try again.');
       console.error('New game error:', err);
     } finally {
       setLoading(false);

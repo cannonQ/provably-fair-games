@@ -13,7 +13,8 @@ import {
   toggleHold,
   resetDice,
   clearAllHolds,
-  getDiceValues
+  getDiceValues,
+  calculateDieValue
 } from './diceLogic';
 import {
   createEmptyScorecard,
@@ -24,10 +25,10 @@ import {
 } from './scoringLogic';
 import {
   initializeAnchor,
-  getSourceForRoll,
   createInitialTraceState,
   buildVerificationTrail
 } from './blockTraversal';
+import { startSecureGame, getSecureRandom, endSecureSession } from '../../blockchain/secureRng';
 
 /**
  * Generate unique game ID
@@ -49,6 +50,10 @@ function YahtzeeGame() {
   const [scorecard, setScorecard] = useState(createEmptyScorecard());
   const [phase, setPhase] = useState('ready'); // ready, rolling, scoring, gameOver
 
+  // Secure RNG session
+  const [sessionId, setSessionId] = useState(null);
+  const [secretHash, setSecretHash] = useState(null);
+
   // Block traversal state
   const [anchor, setAnchor] = useState(null);
   const [traceState, setTraceState] = useState(createInitialTraceState());
@@ -63,7 +68,7 @@ function YahtzeeGame() {
   const [showMenu, setShowMenu] = useState(false);
 
   /**
-   * Initialize game - fetch anchor block
+   * Initialize game - start secure session
    */
   const startGame = useCallback(async () => {
     setIsLoading(true);
@@ -73,8 +78,24 @@ function YahtzeeGame() {
       const newGameId = generateGameId();
       setGameId(newGameId);
 
-      // Fetch anchor block with transaction list
-      const anchorBlock = await initializeAnchor();
+      // Initialize secure session (server commits secret, then get blockchain data)
+      const { sessionId, secretHash, blockData } = await startSecureGame('yahtzee');
+
+      // Store session info
+      setSessionId(sessionId);
+      setSecretHash(secretHash);
+
+      // Store blockchain data as anchor for compatibility
+      const anchorBlock = {
+        blockHeight: blockData.blockHeight,
+        blockHash: blockData.blockHash,
+        timestamp: blockData.timestamp,
+        txHash: blockData.txHash,
+        txIndex: blockData.txIndex,
+        txCount: blockData.txCount,
+        sessionId,
+        secretHash
+      };
       setAnchor(anchorBlock);
 
       // Reset trace state for new game
@@ -98,10 +119,10 @@ function YahtzeeGame() {
   }, []);
 
   /**
-   * Handle dice roll - uses block traversal for RNG source
+   * Handle dice roll - uses secure RNG
    */
   const handleRoll = useCallback(async () => {
-    if (rollsRemaining <= 0 || isLoading || !anchor) return;
+    if (rollsRemaining <= 0 || isLoading || !sessionId) return;
 
     setIsLoading(true);
     setError(null);
@@ -109,54 +130,48 @@ function YahtzeeGame() {
     try {
       const rollNumber = 4 - rollsRemaining; // 1, 2, or 3
 
-      // Get roll source via block traversal
-      const rollSource = await getSourceForRoll(
-        anchor,
-        traceState,
-        currentTurn,
-        rollNumber
-      );
+      // Get secure random seed for this roll
+      const purpose = `turn-${currentTurn}-roll-${rollNumber}`;
+      const seed = await getSecureRandom(sessionId, purpose);
 
-      // Update React state with mutated traceState
-      setTraceState({ ...traceState });
-
-      // Roll the dice using blockchain seed
-      const result = rollDice(
-        dice,
-        rollSource,
-        gameId,
-        currentTurn,
-        rollNumber
-      );
+      // Roll the dice using secure seed
+      const newDice = dice.map((die, index) => {
+        if (die.isHeld) {
+          return { ...die };
+        }
+        return {
+          ...die,
+          value: calculateDieValue(seed, index)
+        };
+      });
 
       // Record roll in history for verification
       const historyEntry = {
         turn: currentTurn,
         roll: rollNumber,
-        source: rollSource.source,
-        blockHeight: rollSource.blockHeight,
-        blockHash: rollSource.blockHash,
-        txHash: rollSource.txHash,
-        timestamp: rollSource.timestamp,
-        txIndex: rollSource.txIndex,
-        traceDepth: rollSource.traceDepth,
-        parentTxHash: rollSource.parentTxHash || null,
-        nowTimestamp: rollSource.nowTimestamp || false,
-        seed: result.seed,
-        diceValues: getDiceValues(result.dice)
+        source: 'secure-rng',
+        blockHeight: anchor?.blockHeight,
+        blockHash: anchor?.blockHash,
+        txHash: anchor?.txHash,
+        timestamp: anchor?.timestamp,
+        txIndex: anchor?.txIndex,
+        sessionId: sessionId,
+        purpose: purpose,
+        seed: seed,
+        diceValues: getDiceValues(newDice)
       };
 
       setRollHistory(prev => [...prev, historyEntry]);
-      setDice(result.dice);
+      setDice(newDice);
       setRollsRemaining(prev => prev - 1);
 
     } catch (err) {
       console.error('Roll failed:', err);
-      setError('Failed to fetch blockchain data. Please try again.');
+      setError('Failed to get random value. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  }, [rollsRemaining, isLoading, anchor, traceState, currentTurn, dice, gameId]);
+  }, [rollsRemaining, isLoading, sessionId, currentTurn, dice, anchor]);
 
   /**
    * Handle toggling dice hold
@@ -254,6 +269,26 @@ function YahtzeeGame() {
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
+
+  // End secure session and reveal secret when game ends
+  useEffect(() => {
+    if (phase === 'gameOver' && sessionId && anchor) {
+      const finalScore = calculateGrandTotal(scorecard);
+      endSecureSession(sessionId, {
+        gameId: gameId,
+        finalScore: finalScore,
+        elapsedSeconds: getElapsedSeconds(),
+        rollHistory: rollHistory
+      }).then(revealData => {
+        console.log('✅ Game session ended and verified:', revealData);
+        if (revealData.verified) {
+          console.log('🔐 Server secret revealed and verified!');
+        }
+      }).catch(error => {
+        console.error('❌ Failed to end secure session:', error);
+      });
+    }
+  }, [phase, sessionId, anchor, gameId, scorecard, getElapsedSeconds, rollHistory]);
 
   // Render start screen
   if (phase === 'ready') {
