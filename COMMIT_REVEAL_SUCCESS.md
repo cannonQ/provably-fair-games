@@ -82,6 +82,18 @@ The secure commit-reveal system is **fully functional** for Backgammon!
 **Cause:** Validator didn't include pip bonus in calculation
 **Fix:** Updated validator to use same formula as game ✅
 
+### **Issue 5: Verification Page Block Height N/A**
+**Error:** Verification page showed "Block Height: N/A" despite having valid block data
+**Cause:** Verification pages looked for blockHeight in legacy locations (rollHistory[0], etc.) instead of new session-based location (blockchainData)
+**Fix:** Updated ALL game verification pages to check both formats ✅
+- Backgammon: Check `blockchainData` first, then `rollHistory[0]`
+- Yahtzee: Check `blockchainData`, then `rollHistory[0]`, then `anchor`
+- Garbage: Check `blockchainData` first, then `blockData`
+- Chess: Check `blockchainData`, then `colorAssignment`, then top-level
+- Solitaire: Extract from `blockchainData` with fallback to top-level
+- Blackjack: Check `blockchainData` with fallback to top-level
+- 2048: Use `blockchainData` or `anchorBlock` interchangeably
+
 ---
 
 ## 🔐 **Security Flow (Verified Working)**
@@ -173,6 +185,15 @@ The secure commit-reveal system is **fully functional** for Backgammon!
 
 ### **Validation:**
 - `lib/validation/games/backgammon/historyValidator.js` - Updated score formula
+
+### **Verification Pages (All games prepared for secure RNG):**
+- `src/games/backgammon/VerificationPage.jsx` - Support session-based blockchain data
+- `src/games/yahtzee/VerificationPage.jsx` - Support session-based blockchain data
+- `src/games/garbage/VerificationPage.jsx` - Support session-based blockchain data
+- `src/games/chess/VerificationPage.jsx` - Support session-based blockchain data
+- `src/games/solitaire/VerificationPage.jsx` - Support session-based blockchain data
+- `src/games/blackjack/VerificationPage.jsx` - Support session-based blockchain data
+- `src/games/2048/VerificationPage.jsx` - Support session-based blockchain data
 
 ---
 
