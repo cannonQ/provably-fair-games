@@ -27,6 +27,7 @@ export default function BlackjackGame() {
   // Secure RNG session
   const [sessionId, setSessionId] = useState(null);
   const [secretHash, setSecretHash] = useState(null);
+  const [revealedSecret, setRevealedSecret] = useState(null);
 
   // Use ref to avoid stale closure in dealer auto-play
   const stateRef = useRef(state);
@@ -106,6 +107,7 @@ export default function BlackjackGame() {
           handsWon: state.handsWon,
           blackjacksHit: state.blackjacksHit
         }).then(revealData => {
+          setRevealedSecret(revealData.serverSecret);
           console.log('✅ Game session ended and verified:', revealData);
           if (revealData.verified) {
             console.log('🔐 Server secret revealed and verified!');
@@ -129,6 +131,9 @@ export default function BlackjackGame() {
           handsWon: state.handsWon,
           blackjacksHit: state.blackjacksHit,
           startingBalance: state.startingBalance,
+          serverSecret: revealedSecret,
+          secretHash: secretHash,
+          sessionId: sessionId,
           savedAt: Date.now()
         };
         try {

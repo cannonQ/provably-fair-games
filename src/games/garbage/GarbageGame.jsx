@@ -36,6 +36,7 @@ function GarbageGame() {
   // Secure RNG session
   const [sessionId, setSessionId] = useState(null);
   const [secretHash, setSecretHash] = useState(null);
+  const [revealedSecret, setRevealedSecret] = useState(null);
 
   // Player state
   const [playerCards, setPlayerCards] = useState(Array(10).fill(null));
@@ -118,6 +119,9 @@ function GarbageGame() {
         if (revealData.verified) {
           console.log('🔐 Server secret revealed and verified!');
         }
+        setRevealedSecret(revealData.serverSecret);
+        // Update blockData with revealed secret
+        setBlockData(prev => ({ ...prev, serverSecret: revealData.serverSecret }));
       }).catch(error => {
         console.error('❌ Failed to end secure session:', error);
       });

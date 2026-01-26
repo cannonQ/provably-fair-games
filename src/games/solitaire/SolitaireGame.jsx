@@ -49,6 +49,7 @@ export default function SolitaireGame() {
   // Secure RNG session
   const [sessionId, setSessionId] = useState(null);
   const [secretHash, setSecretHash] = useState(null);
+  const [revealedSecret, setRevealedSecret] = useState(null);
 
   const gameAreaRef = useRef(null);
 
@@ -112,6 +113,7 @@ export default function SolitaireGame() {
         time: elapsed
       }).then(revealData => {
         console.log('✅ Game session ended and verified:', revealData);
+        setRevealedSecret(revealData.serverSecret);
         if (revealData.verified) {
           console.log('🔐 Server secret revealed and verified!');
         }
@@ -120,6 +122,21 @@ export default function SolitaireGame() {
       });
     }
   }, [state.gameStatus, sessionId, state.blockchainData, state.moves, elapsed]);
+
+  // Save verification data to localStorage when revealed secret is available
+  useEffect(() => {
+    if (revealedSecret && state.blockchainData) {
+      const gameId = state.blockchainData.gameId;
+      const existingData = JSON.parse(localStorage.getItem(`solitaire-${gameId}`) || '{}');
+      const verificationData = {
+        ...existingData,
+        serverSecret: revealedSecret,
+        secretHash: secretHash,
+        sessionId: sessionId
+      };
+      localStorage.setItem(`solitaire-${gameId}`, JSON.stringify(verificationData));
+    }
+  }, [revealedSecret, state.blockchainData, secretHash, sessionId]);
 
   const foundationCount = getFoundationCount(state.foundations);
 
