@@ -366,8 +366,22 @@ const BackgammonGame = () => {
 
     try {
       const currentState = stateRef.current;
+
       // Double-check we should still be rolling
       if (currentState.phase !== 'rolling' || currentState.currentPlayer !== 'black') {
+        setIsRolling(false);
+        return;
+      }
+
+      // Check if game is over (prevents rolling after game ends)
+      if (currentState.phase === 'gameOver') {
+        setIsRolling(false);
+        return;
+      }
+
+      // Check if session is still valid
+      if (!sessionId) {
+        console.warn('⚠️ No session ID, skipping AI roll');
         setIsRolling(false);
         return;
       }
@@ -376,16 +390,29 @@ const BackgammonGame = () => {
 
       // Use secure RNG (combines server secret + blockchain)
       const dice = await rollDiceSecure(sessionId, turnNumberRef.current);
+
+      // Check again if game ended during the async call
+      if (stateRef.current.phase === 'gameOver') {
+        setIsRolling(false);
+        return;
+      }
+
       dispatch(actions.rollDice(dice, currentState.blockchainData.blockHash));
 
       // After dispatch, reset isRolling after a short delay
-      // The useEffect will handle checking for no legal moves and completing the turn
       setTimeout(() => {
         setIsRolling(false);
       }, 100);
 
     } catch (error) {
       console.error('AI roll failed:', error);
+
+      // Don't retry if session ended or game is over
+      if (error.message?.includes('Session already ended') || stateRef.current.phase === 'gameOver') {
+        setIsRolling(false);
+        return;
+      }
+
       setErrorMessage('AI failed to roll. Retrying...');
       setIsRolling(false);
       // Retry after delay
