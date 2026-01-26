@@ -173,6 +173,18 @@ const BackgammonGame = () => {
   // Show game over modal and end secure session
   useEffect(() => {
     if (state.phase === 'gameOver' && state.winner && sessionId) {
+      // Clear any pending AI timeouts to prevent errors
+      if (aiTimeoutRef.current) {
+        clearTimeout(aiTimeoutRef.current);
+        aiTimeoutRef.current = null;
+      }
+      if (aiCooldownRef.current) {
+        clearTimeout(aiCooldownRef.current);
+        aiCooldownRef.current = null;
+      }
+      setAiThinking(false);
+      setIsRolling(false);
+
       // End secure session and reveal secret
       endSecureSession(sessionId, {
         gameId: state.gameId,
