@@ -55,7 +55,7 @@ const BackgammonGame = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [showGameOver, setShowGameOver] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState(null);
-  const [validMoves, setValidMoves([]);
+  const [validMoves, setValidMoves] = useState([]);
 
   // Secure RNG session
   const [sessionId, setSessionId] = useState(null);
