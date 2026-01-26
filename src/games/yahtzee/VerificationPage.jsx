@@ -266,21 +266,43 @@ export default function YahtzeeVerificationPage() {
   // Load verification data
   useEffect(() => {
     const loadData = async () => {
-      // Try sessionStorage
-      const stored = sessionStorage.getItem('yahtzeeVerification');
-      if (stored) {
-        const data = JSON.parse(stored);
-        setVerificationData(data);
+      console.log('Loading verification data, gameId:', gameId);
 
-        // Verify commitment if we have the server secret
-        if (data.serverSecret && data.secretHash) {
-          const verified = verifySecretCommitment(data.serverSecret, data.secretHash);
-          setCommitmentVerified(verified);
+      // Try sessionStorage first
+      const stored = sessionStorage.getItem('yahtzeeVerification');
+      console.log('SessionStorage data:', stored ? 'Found' : 'Not found');
+
+      if (stored) {
+        try {
+          const data = JSON.parse(stored);
+          console.log('Parsed data:', data);
+
+          // If gameId provided in URL, verify it matches
+          if (gameId && data.gameId !== gameId) {
+            console.warn('GameId mismatch:', gameId, 'vs', data.gameId);
+          }
+
+          setVerificationData(data);
+
+          // Verify commitment if we have the server secret
+          if (data.serverSecret && data.secretHash) {
+            const verified = verifySecretCommitment(data.serverSecret, data.secretHash);
+            setCommitmentVerified(verified);
+            console.log('Commitment verified:', verified);
+          } else {
+            console.warn('Missing serverSecret or secretHash:', {
+              hasSecret: !!data.serverSecret,
+              hasHash: !!data.secretHash
+            });
+          }
+          setLoading(false);
+          return;
+        } catch (err) {
+          console.error('Failed to parse verification data:', err);
         }
-        setLoading(false);
-        return;
       }
 
+      console.error('No verification data found in sessionStorage');
       setNotFound(true);
       setLoading(false);
     };
