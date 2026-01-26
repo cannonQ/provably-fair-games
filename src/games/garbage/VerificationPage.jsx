@@ -421,10 +421,15 @@ export default function GarbageVerificationPage() {
   // Build unified data
   const unifiedData = gameData ? {
     gameId: gameData.gameId || gameId,
-    blockHash: gameData.blockData?.blockHash,
-    blockHeight: gameData.blockData?.blockHeight,
-    txHash: gameData.blockData?.txHash,
-    timestamp: gameData.blockData?.timestamp
+    // Support both session-based (new) and legacy formats
+    blockHash: gameData.blockchainData?.blockHash || gameData.blockData?.blockHash,
+    blockHeight: gameData.blockchainData?.blockHeight || gameData.blockData?.blockHeight,
+    txHash: gameData.blockchainData?.txHash || gameData.blockData?.txHash,
+    timestamp: gameData.blockchainData?.timestamp || gameData.blockData?.timestamp,
+    txIndex: gameData.blockchainData?.txIndex,
+    // Include session data if available
+    sessionId: gameData.blockchainData?.sessionId,
+    secretHash: gameData.blockchainData?.secretHash
   } : null;
 
   return (

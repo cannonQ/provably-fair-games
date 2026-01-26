@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { gameReducer, initialState, actions, selectors } from './gameState';
 import {
   rollDiceValues,
+  rollDiceSecure,
   isDoubles,
   checkGameOver,
   detectWinType,
@@ -31,8 +32,9 @@ import DoublingCube from './DoublingCube';
 import GameOverModal from './GameOverModal';
 import RotatePrompt from './RotatePrompt';
 
-// Blockchain API
+// Blockchain API (legacy and secure)
 import { getLatestBlock } from '../../blockchain/ergo-api';
+import { startSecureGame, endSecureSession } from '../../blockchain/secureRng';
 
 // Storage (localStorage persistence)
 import { saveGameState, loadGameState, clearGameState } from './storage';
@@ -54,6 +56,10 @@ const BackgammonGame = () => {
   const [showGameOver, setShowGameOver] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [validMoves, setValidMoves] = useState([]);
+
+  // Secure RNG session
+  const [sessionId, setSessionId] = useState(null);
+  const [secretHash, setSecretHash] = useState(null);
 
   // Refs for cleanup
   const aiTimeoutRef = useRef(null);
@@ -164,12 +170,41 @@ const BackgammonGame = () => {
     }
   }, [state.bearOff.white, state.bearOff.black, state.phase]);
 
-  // Show game over modal
+  // Show game over modal and end secure session
   useEffect(() => {
-    if (state.phase === 'gameOver' && state.winner) {
+    if (state.phase === 'gameOver' && state.winner && sessionId) {
+      // Clear any pending AI timeouts to prevent errors
+      if (aiTimeoutRef.current) {
+        clearTimeout(aiTimeoutRef.current);
+        aiTimeoutRef.current = null;
+      }
+      if (aiCooldownRef.current) {
+        clearTimeout(aiCooldownRef.current);
+        aiCooldownRef.current = null;
+      }
+      setAiThinking(false);
+      setIsRolling(false);
+
+      // End secure session and reveal secret
+      endSecureSession(sessionId, {
+        gameId: state.gameId,
+        winner: state.winner,
+        winType: state.winType,
+        finalScore: state.finalScore,
+        moveHistory: state.moveHistory,
+        rollHistory: state.rollHistory
+      }).then(revealData => {
+        console.log('✅ Game session ended and verified:', revealData);
+        if (revealData.verified) {
+          console.log('🔐 Server secret revealed and verified!');
+        }
+      }).catch(error => {
+        console.error('❌ Failed to end secure session:', error);
+      });
+
       setShowGameOver(true);
     }
-  }, [state.phase, state.winner]);
+  }, [state.phase, state.winner, sessionId, state.gameId, state.winType, state.finalScore, state.moveHistory, state.rollHistory]);
 
   // AI turn automation
   useEffect(() => {
@@ -245,50 +280,57 @@ const BackgammonGame = () => {
     setIsProcessing(true);
 
     try {
-      // Get blockchain data and start game
-      const block = await getLatestBlock();
+      // Initialize secure session (server commits secret, then get blockchain data)
+      const { sessionId, secretHash, blockData } = await startSecureGame('backgammon');
+
       const blockchainData = {
-        blockHeight: block.blockHeight,
-        blockHash: block.blockHash,
-        timestamp: block.timestamp,
-        txHash: block.txHash,
-        txIndex: block.txIndex,
-        txCount: block.txCount
+        blockHeight: blockData.blockHeight,
+        blockHash: blockData.blockHash,
+        timestamp: blockData.timestamp,
+        txHash: blockData.txHash,
+        txIndex: blockData.txIndex,
+        txCount: blockData.txCount,
+        sessionId,      // Add session ID
+        secretHash      // Add commitment hash
       };
+
+      // Store session info
+      setSessionId(sessionId);
+      setSecretHash(secretHash);
 
       dispatch(actions.initGame(difficulty, blockchainData));
       setGameStarted(true);
       turnNumberRef.current = 0;
     } catch (error) {
-      console.error('Failed to fetch blockchain data:', error);
+      console.error('Failed to start secure game:', error);
       setErrorMessage('Failed to connect to blockchain. Please try again.');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Roll dice using blockchain
+  // Roll dice using secure RNG
   const handleRollDice = async () => {
     if (state.phase !== 'rolling' || isRolling) return;
-    
+
     setIsRolling(true);
     setErrorMessage(null);
 
     try {
-      const block = await getLatestBlock();
       turnNumberRef.current++;
 
-      const dice = rollDiceValues(block.blockHash, state.gameId, turnNumberRef.current);
+      // Use secure RNG (combines server secret + blockchain)
+      const dice = await rollDiceSecure(sessionId, turnNumberRef.current);
 
       // Store verification data
       const verificationData = generateVerificationData(
-        block.blockHash,
+        state.blockchainData.blockHash,
         state.gameId,
         turnNumberRef.current,
         dice
       );
 
-      dispatch(actions.rollDice(dice, block.blockHash));
+      dispatch(actions.rollDice(dice, state.blockchainData.blockHash));
 
       // Check if any moves are possible
       setTimeout(() => {
@@ -299,7 +341,7 @@ const BackgammonGame = () => {
           phase: 'moving'
         };
         const legalMoves = getAllLegalMoves(newState);
-        
+
         if (legalMoves.length === 0) {
           // No legal moves, end turn
           setTimeout(() => {
@@ -310,7 +352,7 @@ const BackgammonGame = () => {
 
     } catch (error) {
       console.error('Failed to roll dice:', error);
-      setErrorMessage('Failed to fetch blockchain data for dice roll.');
+      setErrorMessage('Failed to get secure random value for dice roll.');
     } finally {
       setIsRolling(false);
     }
@@ -324,26 +366,53 @@ const BackgammonGame = () => {
 
     try {
       const currentState = stateRef.current;
+
       // Double-check we should still be rolling
       if (currentState.phase !== 'rolling' || currentState.currentPlayer !== 'black') {
         setIsRolling(false);
         return;
       }
 
-      const block = await getLatestBlock();
+      // Check if game is over (prevents rolling after game ends)
+      if (currentState.phase === 'gameOver') {
+        setIsRolling(false);
+        return;
+      }
+
+      // Check if session is still valid
+      if (!sessionId) {
+        console.warn('⚠️ No session ID, skipping AI roll');
+        setIsRolling(false);
+        return;
+      }
+
       turnNumberRef.current++;
 
-      const dice = rollDiceValues(block.blockHash, currentState.gameId, turnNumberRef.current);
-      dispatch(actions.rollDice(dice, block.blockHash));
+      // Use secure RNG (combines server secret + blockchain)
+      const dice = await rollDiceSecure(sessionId, turnNumberRef.current);
+
+      // Check again if game ended during the async call
+      if (stateRef.current.phase === 'gameOver') {
+        setIsRolling(false);
+        return;
+      }
+
+      dispatch(actions.rollDice(dice, currentState.blockchainData.blockHash));
 
       // After dispatch, reset isRolling after a short delay
-      // The useEffect will handle checking for no legal moves and completing the turn
       setTimeout(() => {
         setIsRolling(false);
       }, 100);
 
     } catch (error) {
       console.error('AI roll failed:', error);
+
+      // Don't retry if session ended or game is over
+      if (error.message?.includes('Session already ended') || stateRef.current.phase === 'gameOver') {
+        setIsRolling(false);
+        return;
+      }
+
       setErrorMessage('AI failed to roll. Retrying...');
       setIsRolling(false);
       // Retry after delay
@@ -452,6 +521,8 @@ const BackgammonGame = () => {
     setSelectedPoint(null);
     setValidMoves([]);
     setAiThinking(false);
+    setSessionId(null);
+    setSecretHash(null);
     dispatch(actions.newGame());
   };
 

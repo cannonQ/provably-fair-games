@@ -471,9 +471,13 @@ export default function BackgammonVerificationPage() {
   // Build unified data
   const unifiedData = gameData ? {
     gameId,
-    blockHash: gameData.rollHistory?.[0]?.blockHash,
-    blockHeight: gameData.rollHistory?.[0]?.blockHeight,
-    timestamp: gameData.gameStartTime
+    // Support both session-based (new) and legacy games
+    blockHash: gameData.blockchainData?.blockHash || gameData.rollHistory?.[0]?.blockHash,
+    blockHeight: gameData.blockchainData?.blockHeight || gameData.rollHistory?.[0]?.blockHeight,
+    timestamp: gameData.gameStartTime,
+    // Include session data if available
+    sessionId: gameData.blockchainData?.sessionId,
+    secretHash: gameData.blockchainData?.secretHash
   } : null;
 
   return (

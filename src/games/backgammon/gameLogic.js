@@ -1,18 +1,58 @@
 /**
  * Backgammon Game Logic
- * 
+ *
  * Core rules, dice functions, movement helpers, and win detection.
  * Uses blockchain hash for provably fair dice rolls.
  */
 
 import CryptoJS from 'crypto-js';
+import { getSecureRandom } from '../../blockchain/secureRng';
 
 // ============================================
 // DICE FUNCTIONS
 // ============================================
 
 /**
- * Generate provably fair dice values from blockchain data
+ * Generate provably fair dice values using secure RNG (commit-reveal)
+ * Uses rejection sampling to eliminate modulo bias
+ * @param {string} sessionId - Secure session ID
+ * @param {number} turnNumber - Current turn number for uniqueness
+ * @returns {Promise<[number, number]>} Two dice values (1-6 each)
+ */
+export async function rollDiceSecure(sessionId, turnNumber) {
+  // Get secure random from server (combines secret + blockchain)
+  const purpose = `roll-${turnNumber}`;
+  const randomHex = await getSecureRandom(sessionId, purpose);
+
+  const dice = [];
+  let byteIndex = 0;
+
+  // Use rejection sampling to eliminate modulo bias
+  // Reject values >= 252 (252 = 42 * 6, evenly divisible)
+  while (dice.length < 2 && byteIndex < randomHex.length - 1) {
+    const byte = parseInt(randomHex.substring(byteIndex, byteIndex + 2), 16);
+    byteIndex += 2;
+
+    // Only accept values that don't introduce bias
+    if (byte < 252) {
+      dice.push((byte % 6) + 1);
+    }
+  }
+
+  // Fallback if we run out of bytes (extremely unlikely)
+  while (dice.length < 2) {
+    const extraHash = CryptoJS.SHA256(randomHex + dice.length).toString(CryptoJS.enc.Hex);
+    const byte = parseInt(extraHash.substring(0, 2), 16);
+    if (byte < 252) {
+      dice.push((byte % 6) + 1);
+    }
+  }
+
+  return [dice[0], dice[1]];
+}
+
+/**
+ * Generate provably fair dice values from blockchain data (LEGACY)
  * Uses rejection sampling to eliminate modulo bias
  * @param {string} blockHash - Blockchain block hash
  * @param {string} gameId - Unique game identifier
