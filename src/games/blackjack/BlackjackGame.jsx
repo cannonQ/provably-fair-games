@@ -5,12 +5,12 @@
 import React, { useReducer, useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import './blackjack.css';
-import { getLatestBlock } from '../../blockchain/ergo-api';
-import { generateSeed, shuffleArray } from '../../blockchain/shuffle';
+import { shuffleArray } from '../../blockchain/shuffle';
+import { startSecureGame, getSecureRandom, endSecureSession } from '../../blockchain/secureRng';
 import { blackjackReducer, initialState, createSixDeckShoe, dealCard } from './gameState';
-import { 
+import {
   shouldDealerHit, isBlackjack, isBust, calculateHandValue,
-  compareHands, calculatePayout, calculateInsurancePayout 
+  compareHands, calculatePayout, calculateInsurancePayout
 } from './gameLogic';
 import BlackjackTable from './BlackjackTable';
 import BettingControls from './BettingControls';
@@ -23,7 +23,11 @@ export default function BlackjackGame() {
   const [showGameOver, setShowGameOver] = useState(false);
   const [insuranceDeclined, setInsuranceDeclined] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  
+
+  // Secure RNG session
+  const [sessionId, setSessionId] = useState(null);
+  const [secretHash, setSecretHash] = useState(null);
+
   // Use ref to avoid stale closure in dealer auto-play
   const stateRef = useRef(state);
   useEffect(() => {
@@ -35,30 +39,31 @@ export default function BlackjackGame() {
     setLoading(true);
     setError(null);
     try {
-      const block = await getLatestBlock();
+      // Initialize secure session (server commits secret, then get blockchain data)
+      const { sessionId, secretHash, blockData } = await startSecureGame('blackjack');
       const newGameId = `BJK-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Use full anti-spoofing seed generation (matches Solitaire)
-      const blockData = {
-        blockHash: block.blockHash,
-        txHash: block.txHash,
-        timestamp: block.timestamp,
-        txIndex: block.txIndex
-      };
-      const seed = generateSeed(blockData, newGameId);
+
+      // Get secure random value for shoe shuffle
+      const seed = await getSecureRandom(sessionId, 'shoe-shuffle');
       const rawShoe = createSixDeckShoe();
       const shuffledShoe = shuffleArray(rawShoe, seed);
-      
+
       const blockchainData = {
-        blockHeight: block.blockHeight,
-        blockHash: block.blockHash,
-        timestamp: block.timestamp,
-        txHash: block.txHash,
-        txIndex: block.txIndex,
-        txCount: block.txCount,
+        blockHeight: blockData.blockHeight,
+        blockHash: blockData.blockHash,
+        timestamp: blockData.timestamp,
+        txHash: blockData.txHash,
+        txIndex: blockData.txIndex,
+        txCount: blockData.txCount,
+        sessionId,      // Add session ID
+        secretHash,     // Add commitment hash
         seed
       };
-      
+
+      // Store session info
+      setSessionId(sessionId);
+      setSecretHash(secretHash);
+
       dispatch({
         type: 'INIT_SHOE',
         payload: {
@@ -90,7 +95,26 @@ export default function BlackjackGame() {
   useEffect(() => {
     if (state.phase === 'sessionOver') {
       setShowGameOver(true);
-      
+
+      // End secure session and reveal secret
+      if (sessionId && state.blockchainData) {
+        endSecureSession(sessionId, {
+          gameId: state.gameId,
+          finalBalance: state.chipBalance,
+          peakBalance: state.peakBalance,
+          handsPlayed: state.handsPlayed,
+          handsWon: state.handsWon,
+          blackjacksHit: state.blackjacksHit
+        }).then(revealData => {
+          console.log('✅ Game session ended and verified:', revealData);
+          if (revealData.verified) {
+            console.log('🔐 Server secret revealed and verified!');
+          }
+        }).catch(error => {
+          console.error('❌ Failed to end secure session:', error);
+        });
+      }
+
       // Save game data to localStorage for verification
       if (state.gameId) {
         const verificationData = {
@@ -114,9 +138,9 @@ export default function BlackjackGame() {
         }
       }
     }
-  }, [state.phase, state.gameId, state.shoe, state.shoePosition, state.roundHistory, 
+  }, [state.phase, state.gameId, state.shoe, state.shoePosition, state.roundHistory,
       state.blockchainData, state.chipBalance, state.peakBalance, state.handsPlayed,
-      state.handsWon, state.blackjacksHit, state.startingBalance]);
+      state.handsWon, state.blackjacksHit, state.startingBalance, sessionId]);
 
   // Resolve round and calculate payouts
   const resolveRound = useCallback((finalDealerHand, currentState) => {
@@ -281,20 +305,20 @@ export default function BlackjackGame() {
 
   const handleNewRound = async () => {
     const needsReshuffle = state.shoePosition >= state.cutCardPosition;
-    
+
     if (needsReshuffle) {
       setLoading(true);
       try {
-        const block = await getLatestBlock();
-        const seed = generateSeed(block.hash, block.height);
+        // Get secure random value for reshuffle
+        const seed = await getSecureRandom(sessionId, `reshuffle-${Date.now()}`);
         const rawShoe = createSixDeckShoe();
         const shuffledShoe = shuffleArray(rawShoe, seed);
-        
+
         dispatch({
           type: 'RESHUFFLE',
           payload: {
             shuffledShoe,
-            blockchainData: { blockHeight: block.height, blockHash: block.hash, timestamp: block.timestamp }
+            blockchainData: state.blockchainData // Keep existing blockchain data
           }
         });
       } catch (err) {
@@ -303,7 +327,7 @@ export default function BlackjackGame() {
         setLoading(false);
       }
     }
-    
+
     dispatch({ type: 'NEW_ROUND' });
   };
 
