@@ -416,7 +416,9 @@ export default function ChessVerificationPage() {
     txIndex: gameData.blockchainData?.txIndex,
     // Include session data if available
     sessionId: gameData.blockchainData?.sessionId,
-    secretHash: gameData.blockchainData?.secretHash
+    secretHash: gameData.blockchainData?.secretHash,
+    // Include color assignment data for Python verification script
+    userSeed: gameData.colorAssignment?.userSeed
   } : null;
 
   return (

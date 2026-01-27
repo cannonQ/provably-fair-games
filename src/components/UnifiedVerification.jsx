@@ -134,26 +134,25 @@ const generatePythonScript = (game, data) => {
   const gameSpecificCode = {
     solitaire: `
 # Solitaire-specific: shuffle 52 cards
-# Uses EXACT same algorithm as JavaScript
+# Uses commit-reveal system: SHA256(serverSecret + blockHash + timestamp + 'deck-shuffle')
+# Then LCG + Fisher-Yates shuffle (matches JavaScript exactly)
 
 RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 SUITS_NAMES = ['hearts', 'diamonds', 'clubs', 'spades']
-SUITS_SYMBOLS = ['♥', '♦', '♣', '♠']
+SUITS_SYMBOLS = ['\\u2665', '\\u2666', '\\u2663', '\\u2660']
 
-# Linear Congruential Generator (matches JavaScript seedRandom)
 class SeededRandom:
+    """Linear Congruential Generator (matches JavaScript seedRandom, glibc constants)"""
     def __init__(self, seed_hex):
         self.state = int(seed_hex[:8], 16)
-        self.a = 1103515245  # glibc constants
+        self.a = 1103515245
         self.c = 12345
         self.m = 2**31
-
     def random(self):
         self.state = (self.a * self.state + self.c) % self.m
         return self.state / self.m
 
 def create_deck():
-    """Create deck in same order as JavaScript"""
     deck = []
     for suit in SUITS_NAMES:
         for rank in RANKS:
@@ -173,29 +172,38 @@ def format_card(card_obj):
     suit_idx = SUITS_NAMES.index(card_obj['suit'])
     return f"{card_obj['rank']}{SUITS_SYMBOLS[suit_idx]}"
 
-deck = create_deck()
-shuffled_deck = shuffle_array(deck, seed)
+if not server_secret:
+    print("Server secret not available - cannot verify shuffle.")
+    print("The server secret is revealed after the game ends.")
+else:
+    seed = generate_commit_reveal_seed(server_secret, block_hash, timestamp, 'deck-shuffle')
+    print(f"Commit-reveal seed: {seed[:32]}...")
+    print(f"Purpose: 'deck-shuffle'")
 
-print(f"\\nShuffled deck (first 10 cards):")
-for i in range(10):
-    print(f"  {i+1}. {format_card(shuffled_deck[i])}")
+    deck = create_deck()
+    shuffled_deck = shuffle_array(deck, seed)
+
+    print(f"\\nShuffled deck (first 10 cards):")
+    for i in range(10):
+        print(f"  {i+1}. {format_card(shuffled_deck[i])}")
+    print(f"  ... ({len(shuffled_deck) - 10} more cards)")
 `,
     blackjack: `
 # Blackjack-specific: shuffle 312 cards (6 decks)
-# Uses EXACT same algorithm as JavaScript
+# Uses commit-reveal system: SHA256(serverSecret + blockHash + timestamp + 'shoe-shuffle')
+# Then LCG + Fisher-Yates shuffle (matches JavaScript exactly)
 
 RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 SUITS_NAMES = ['hearts', 'diamonds', 'clubs', 'spades']
-SUITS_SYMBOLS = ['♥', '♦', '♣', '♠']
+SUITS_SYMBOLS = ['\\u2665', '\\u2666', '\\u2663', '\\u2660']
 
-# Linear Congruential Generator (matches JavaScript seedRandom)
 class SeededRandom:
+    """Linear Congruential Generator (matches JavaScript seedRandom, glibc constants)"""
     def __init__(self, seed_hex):
         self.state = int(seed_hex[:8], 16)
-        self.a = 1103515245  # glibc constants
+        self.a = 1103515245
         self.c = 12345
         self.m = 2**31
-
     def random(self):
         self.state = (self.a * self.state + self.c) % self.m
         return self.state / self.m
@@ -203,7 +211,7 @@ class SeededRandom:
 def create_shoe():
     """Create 6-deck shoe in same order as JavaScript"""
     shoe = []
-    for deck in range(1, 7):  # decks 1-6
+    for deck in range(1, 7):
         for suit in SUITS_NAMES:
             for rank in RANKS:
                 shoe.append({'rank': rank, 'suit': suit, 'deck': deck})
@@ -222,79 +230,86 @@ def format_card(card_obj):
     suit_idx = SUITS_NAMES.index(card_obj['suit'])
     return f"{card_obj['rank']}{SUITS_SYMBOLS[suit_idx]}"
 
-shoe = create_shoe()
-shuffled_shoe = shuffle_array(shoe, seed)
+if not server_secret:
+    print("Server secret not available - cannot verify shuffle.")
+    print("The server secret is revealed after the game ends.")
+else:
+    seed = generate_commit_reveal_seed(server_secret, block_hash, timestamp, 'shoe-shuffle')
+    print(f"Commit-reveal seed: {seed[:32]}...")
+    print(f"Purpose: 'shoe-shuffle'")
 
-print(f"\\nShuffled shoe (first 10 cards):")
-for i in range(10):
-    print(f"  {i+1}. {format_card(shuffled_shoe[i])}")
+    shoe = create_shoe()
+    shuffled_shoe = shuffle_array(shoe, seed)
+
+    print(f"\\nShuffled shoe (first 10 cards):")
+    for i in range(10):
+        print(f"  {i+1}. {format_card(shuffled_shoe[i])}")
+    print(f"  ... ({len(shuffled_shoe) - 10} more cards)")
 `,
     yahtzee: `
 # Yahtzee-specific: generate dice rolls
-# NOTE: Yahtzee uses per-roll blockchain data (block traversal)
-# This script verifies the first roll using the first roll's block data
-
-def generate_yahtzee_seed(block_hash, tx_hash, timestamp, game_id, tx_index, turn, roll):
-    """Generate seed matching Yahtzee's generateSeedFromSource exactly"""
-    turn_roll = f"T{turn}R{roll}"
-    # Direct concatenation, no separators (matches JavaScript join(''))
-    seed_input = f"{block_hash}{tx_hash}{timestamp}{game_id}{tx_index}{turn_roll}"
-    return hashlib.sha256(seed_input.encode()).hexdigest(), seed_input
+# Uses commit-reveal system: SHA256(serverSecret + blockHash + timestamp + purpose)
+# Purpose format: 'turn-{N}-roll-{M}' (e.g., 'turn-1-roll-1')
+# Each die: SHA256(seed + dieIndex) -> first 8 hex -> mod 6 + 1
 
 def calculate_die_value(seed, die_index):
-    """Calculate single die value matching Yahtzee's calculateDieValue"""
+    """Calculate single die value: SHA256(seed + index) -> mod 6 + 1"""
     die_hash = hashlib.sha256(f"{seed}{die_index}".encode()).hexdigest()
-    numeric_value = int(die_hash[:8], 16)
-    return (numeric_value % 6) + 1
+    return (int(die_hash[:8], 16) % 6) + 1
 
-def roll_dice(block_hash, tx_hash, timestamp, game_id, tx_index, turn, roll):
-    """Roll all 5 dice for a specific turn/roll"""
-    seed, seed_input = generate_yahtzee_seed(block_hash, tx_hash, timestamp, game_id, tx_index, turn, roll)
-    dice = [calculate_die_value(seed, i) for i in range(5)]
-    return dice, seed, seed_input
+def roll_five_dice(seed):
+    """Roll all 5 dice from a seed"""
+    return [calculate_die_value(seed, i) for i in range(5)]
 
-# Debug: print all values being used
-print(f"TX Hash: {tx_hash[:20]}..." if tx_hash else "TX Hash: None")
-print(f"TX Index: {tx_index}")
-print(f"Timestamp: {timestamp}")
-print()
-
-# First roll (Turn 1, Roll 1) using first roll's block data
-dice, roll_seed, seed_input = roll_dice(block_hash, tx_hash, timestamp, game_id, tx_index, 1, 1)
-print(f"Seed input (first 80 chars): {seed_input[:80]}...")
-print(f"Roll seed: {roll_seed[:32]}...")
-print(f"First roll: {dice}")
+if not server_secret:
+    print("Server secret not available - cannot verify dice rolls.")
+    print("The server secret is revealed after the game ends.")
+else:
+    print("Verifying first 3 turns (roll 1 of each):")
+    print("-" * 50)
+    for turn in range(1, 4):
+        purpose = f"turn-{turn}-roll-1"
+        seed = generate_commit_reveal_seed(server_secret, block_hash, timestamp, purpose)
+        dice = roll_five_dice(seed)
+        print(f"  Turn {turn}, Roll 1: {dice}")
+        print(f"    Purpose: '{purpose}'")
+        print(f"    Seed: {seed[:24]}...")
+    print()
+    print("Each turn can have up to 3 rolls (turn-N-roll-1, turn-N-roll-2, turn-N-roll-3)")
+    print("Yahtzee has 13 turns total.")
 `,
     backgammon: `
 # Backgammon-specific: generate dice rolls
-# Uses rejection sampling to eliminate modulo bias (matches JavaScript exactly)
-def roll_dice(block_hash, game_id, turn_number):
-    """Generate two dice values using blockchain seed"""
-    seed_input = f"{block_hash}{game_id}{turn_number}"
-    hash_hex = hashlib.sha256(seed_input.encode()).hexdigest()
+# Uses commit-reveal system: SHA256(serverSecret + blockHash + timestamp + purpose)
+# Purpose format: 'roll-{N}' (e.g., 'roll-1', 'roll-2', ...)
+# Rejection sampling eliminates modulo bias (matches JavaScript exactly)
 
+def calculate_dice_from_seed(seed_hex):
+    """Extract two dice values using rejection sampling"""
     dice = []
     byte_index = 0
-
-    # Rejection sampling: skip bytes >= 252 to avoid bias
-    while len(dice) < 2 and byte_index < len(hash_hex) - 1:
-        byte_val = int(hash_hex[byte_index:byte_index + 2], 16)
+    while len(dice) < 2 and byte_index < len(seed_hex) - 1:
+        byte_val = int(seed_hex[byte_index:byte_index + 2], 16)
         byte_index += 2
-        if byte_val < 252:
+        if byte_val < 252:  # 252 = 42 * 6, reject >= 252 to avoid bias
             dice.append((byte_val % 6) + 1)
+    return tuple(dice) if len(dice) == 2 else (0, 0)
 
-    return tuple(dice), seed_input, hash_hex
-
-# Generate first 5 rolls
-print("First 5 dice rolls:")
-print("-" * 40)
-for turn in range(1, 6):
-    dice, seed_input, hash_hex = roll_dice(block_hash, game_id, turn)
-    print(f"Turn {turn}: {dice}")
-    if turn == 1:
-        print(f"  Seed: {seed_input[:60]}...")
-        print(f"  Hash: {hash_hex[:32]}...")
-print()
+if not server_secret:
+    print("Server secret not available - cannot verify dice rolls.")
+    print("The server secret is revealed after the game ends.")
+else:
+    print("First 5 dice rolls:")
+    print("-" * 50)
+    for turn in range(1, 6):
+        purpose = f"roll-{turn}"
+        seed = generate_commit_reveal_seed(server_secret, block_hash, timestamp, purpose)
+        dice = calculate_dice_from_seed(seed)
+        print(f"  Turn {turn}: {dice}")
+        if turn == 1:
+            print(f"    Purpose: '{purpose}'")
+            print(f"    Seed: {seed[:32]}...")
+    print()
 `,
     '2048': `
 # 2048-specific: full game replay and spawn verification
@@ -484,30 +499,86 @@ else:
 `,
     chess: `
 # Chess-specific: verify color assignment
-def get_player_color(block_hash, user_seed):
-    combined = block_hash + str(user_seed)
+# Formula: SUM(charCode(blockHash + userSeed)) mod 2 -> 0=white, 1=black
+user_seed = "${data.userSeed || ''}"
+
+def get_player_color(bh, us):
+    combined = bh + str(us)
     char_sum = sum(ord(c) for c in combined)
     return "white" if char_sum % 2 == 0 else "black"
 
-color = get_player_color(block_hash, "${data.userSeed || 'USER_SEED'}")
-print(f"Assigned color: {color}")
+if not user_seed:
+    print("User seed not available - cannot verify color assignment.")
+    print("User seed is generated at game start (typically Date.now()).")
+else:
+    color = get_player_color(block_hash, user_seed)
+    print(f"User Seed: {user_seed}")
+    combined = block_hash + str(user_seed)
+    char_sum = sum(ord(c) for c in combined)
+    print(f"Character sum: {char_sum}")
+    print(f"Sum mod 2: {char_sum % 2} ({'even = white' if char_sum % 2 == 0 else 'odd = black'})")
+    print(f"Assigned color: {color}")
 `,
     garbage: `
-# Garbage-specific: shuffle and deal cards
-import random
+# Garbage-specific: shuffle and deal 52 cards
+# Uses commit-reveal system: SHA256(serverSecret + blockHash + timestamp + 'deck-shuffle')
+# Then LCG + Fisher-Yates shuffle (matches JavaScript exactly)
+# Deal: player (10), AI (10), draw pile (32)
 
-def deal_garbage(seed_int):
-    deck = list(range(52))
-    random.seed(seed_int)
-    random.shuffle(deck)
-    player_hand = deck[:10]
-    ai_hand = deck[10:20]
-    draw_pile = deck[20:]
-    return player_hand, ai_hand, draw_pile
+SUITS = ['\\u2660', '\\u2665', '\\u2666', '\\u2663']  # spades, hearts, diamonds, clubs
+RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 
-player, ai, draw = deal_garbage(seed_int)
-print(f"Player hand: {player}")
-print(f"AI hand: {ai}")
+class SeededRandom:
+    """Linear Congruential Generator (matches JavaScript seedRandom, glibc constants)"""
+    def __init__(self, seed_hex):
+        self.state = int(seed_hex[:8], 16)
+        self.a = 1103515245
+        self.c = 12345
+        self.m = 2**31
+    def random(self):
+        self.state = (self.a * self.state + self.c) % self.m
+        return self.state / self.m
+
+def create_deck_strings():
+    """Create 52-card deck as strings (matches JavaScript createDeckStrings)"""
+    deck = []
+    for suit in SUITS:
+        for rank in RANKS:
+            deck.append(f"{rank}{suit}")
+    return deck
+
+def shuffle_array(array, seed_hex):
+    """Fisher-Yates shuffle matching JavaScript"""
+    result = array.copy()
+    rng = SeededRandom(seed_hex)
+    for i in range(len(result) - 1, 0, -1):
+        j = int(rng.random() * (i + 1))
+        result[i], result[j] = result[j], result[i]
+    return result
+
+if not server_secret:
+    print("Server secret not available - cannot verify shuffle.")
+    print("The server secret is revealed after the game ends.")
+else:
+    seed = generate_commit_reveal_seed(server_secret, block_hash, timestamp, 'deck-shuffle')
+    print(f"Commit-reveal seed: {seed[:32]}...")
+    print(f"Purpose: 'deck-shuffle'")
+
+    deck = create_deck_strings()
+    shuffled = shuffle_array(deck, seed)
+
+    player_hand = shuffled[:10]
+    ai_hand = shuffled[10:20]
+    draw_pile = shuffled[20:]
+
+    print(f"\\nPlayer hand (positions 1-10):")
+    for i, card in enumerate(player_hand):
+        print(f"  {i+1:2d}. {card}")
+    print(f"\\nAI hand (positions 1-10):")
+    for i, card in enumerate(ai_hand):
+        print(f"  {i+1:2d}. {card}")
+    print(f"\\nDraw pile: {len(draw_pile)} cards")
+    print(f"  First 5: {', '.join(draw_pile[:5])}")
 `
   };
 
@@ -531,51 +602,63 @@ tx_index = ${data.txIndex ?? 0}
 timestamp = ${data.timestamp || 'None'}
 game_id = "${data.gameId}"
 
+# Commit-reveal system data (if available)
+server_secret = "${data.serverSecret || ''}"
+secret_hash = "${data.secretHash || ''}"
+
 # ============================================
-# SEED GENERATION (matches client-side)
+# SEED GENERATION
 # ============================================
+
+def generate_commit_reveal_seed(secret, bh, ts, purpose):
+    """Commit-reveal formula: SHA256(serverSecret + blockHash + timestamp + purpose)
+    This is the CURRENT system used by most games."""
+    input_str = secret + bh + str(ts) + purpose
+    return hashlib.sha256(input_str.encode()).hexdigest()
+
 def simple_hash(input_str):
-    """Simple hash function matching JavaScript simpleHash"""
+    """Simple hash function matching JavaScript simpleHash (legacy)"""
     h = 0
     for c in input_str:
         h = ((h << 5) - h) + ord(c)
         h = h & 0xFFFFFFFF  # Convert to 32-bit
-    # Return absolute value to match JavaScript Math.abs
     if h >= 0x80000000:
         h = -(0x100000000 - h)
     return abs(h)
 
-def generate_seed(block_hash, tx_hash, timestamp, game_id, tx_index):
-    """Generate seed matching JavaScript generateSeed exactly"""
-    # Use colons to separate inputs (matches JavaScript)
+def generate_seed_legacy(block_hash, tx_hash, timestamp, game_id, tx_index):
+    """Legacy seed generation (pre-commit-reveal)"""
     input_str = f"{block_hash}:{tx_hash}:{timestamp}:{game_id}:{tx_index}"
-
-    # Generate 4 hash rounds (matches JavaScript)
     hash1 = simple_hash(input_str)
     hash2 = simple_hash(input_str + str(hash1))
     hash3 = simple_hash(str(hash1) + str(hash2))
     hash4 = simple_hash(str(hash2) + str(hash3))
-
-    # Convert to 8-char hex strings (padded with zeros)
     hex1 = format(hash1, '08x')
     hex2 = format(hash2, '08x')
     hex3 = format(hash3, '08x')
     hex4 = format(hash4, '08x')
-
-    # Concatenate twice and slice to 64 chars (matches JavaScript)
     return (hex1 + hex2 + hex3 + hex4 + hex1 + hex2 + hex3 + hex4)[:64]
 
-# Generate the seed
-seed = generate_seed(block_hash, tx_hash, timestamp, game_id, tx_index)
-seed_int = int(hashlib.sha256(seed.encode()).hexdigest(), 16)
-
-print("=" * 50)
+print("=" * 60)
 print("VERIFICATION RESULTS")
-print("=" * 50)
+print("=" * 60)
 print(f"Game ID: {game_id}")
 print(f"Block Height: {block_height}")
 print(f"Block Hash: {block_hash[:20]}...")
-print(f"Generated Seed: {seed[:32]}...")
+
+# Verify server commitment if available
+if server_secret and secret_hash:
+    calc_hash = hashlib.sha256(server_secret.encode()).hexdigest()
+    if calc_hash == secret_hash:
+        print(f"Commitment: VERIFIED (SHA256(secret) matches committed hash)")
+    else:
+        print(f"Commitment: FAILED! SHA256(secret) != committed hash")
+        print(f"  Expected: {secret_hash[:32]}...")
+        print(f"  Got:      {calc_hash[:32]}...")
+elif server_secret:
+    print(f"Server Secret: present (no hash to verify against)")
+else:
+    print(f"Server Secret: not available (revealed after game ends)")
 print()
 
 # ============================================
