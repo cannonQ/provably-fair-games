@@ -243,6 +243,10 @@ CREATE TABLE game_sessions (
 4. `0a4d7f4` - Update games and Yahtzee verification to use commit-reveal
 5. `1e5a725` - Update all 5 verification pages to use commit-reveal formula
 6. `1473990` - Add session cleanup cron job
+7. `2a64052` - Add comprehensive completion summary document
+8. `3737b2f` - Fix Solitaire verification deck data issues
+9. `247b59f` - Fix Solitaire win screen not showing automatically
+10. `71df1dd` - Update documentation pages to reflect commit-reveal system
 
 **Branch:** `claude/commit-reveal-system-ZT6oE`
 
@@ -294,11 +298,13 @@ Test all 5 verification pages to ensure:
 
 ## 📚 Documentation
 
-- `VERIFICATION_MIGRATION_GUIDE.md` - Step-by-step migration guide
-- `COMMIT_REVEAL_SUCCESS.md` - Backgammon implementation summary
-- `COMMIT_REVEAL_COMPLETION_SUMMARY.md` - This document
-- API endpoint comments - Inline documentation
-- Verification pages - "How It Works" sections
+- ✅ `VERIFICATION_MIGRATION_GUIDE.md` - Step-by-step migration guide
+- ✅ `COMMIT_REVEAL_SUCCESS.md` - Backgammon implementation summary
+- ✅ `COMMIT_REVEAL_COMPLETION_SUMMARY.md` - This document
+- ✅ API endpoint comments - Inline documentation
+- ✅ Verification pages - "How It Works" sections
+- ✅ `src/pages/HowItWorks.jsx` - Complete rewrite explaining commit-reveal
+- ✅ `src/pages/LeaderboardPage.jsx` - Updated provably fair explanations
 
 ---
 
@@ -310,8 +316,9 @@ Test all 5 verification pages to ensure:
 - [x] All 5 verification pages updated
 - [x] Session cleanup cron job created
 - [x] Vercel configuration updated
-- [x] Documentation complete
+- [x] Documentation complete (including HowItWorks and Leaderboard pages)
 - [x] Code committed and pushed
+- [x] Solitaire verification bug fixes (deck data + win screen)
 - [ ] Manual testing by user (when available)
 
 ---
