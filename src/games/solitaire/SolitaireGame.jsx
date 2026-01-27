@@ -82,6 +82,13 @@ export default function SolitaireGame() {
     }
   }, [state.foundations, state.gameStatus]);
 
+  // Show game over modal when game ends
+  useEffect(() => {
+    if (state.gameStatus === 'won' || state.gameStatus === 'lost') {
+      setShowGameOver(true);
+    }
+  }, [state.gameStatus]);
+
   // Auto-complete detection
   useEffect(() => {
     if (state.gameStatus === 'playing' && state.blockchainData) {
