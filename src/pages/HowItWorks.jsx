@@ -1,7 +1,7 @@
 /**
  * HowItWorks.jsx - Educational Page
- * 
- * Explains provably fair gaming, blockchain RNG, verification, and leaderboards.
+ *
+ * Explains provably fair gaming with commit-reveal RNG, blockchain verification, and leaderboards.
  */
 
 import React from 'react';
@@ -13,58 +13,60 @@ function HowItWorks() {
       {/* Page Title */}
       <header style={styles.header}>
         <h1 style={styles.title}>How Provably Fair Gaming Works</h1>
-        <p style={styles.subtitle}>The math behind blockchain-verified randomness</p>
+        <p style={styles.subtitle}>Cryptographic commit-reveal + blockchain verification</p>
       </header>
 
       {/* The Problem */}
       <section style={styles.section}>
         <h2 style={styles.sectionTitle}>🎰 The Problem</h2>
         <p style={styles.text}>
-          <strong>Traditional online games require trust.</strong> When you play cards online, 
-          you must trust that the company didn't rig the shuffle. There's no way to verify 
+          <strong>Traditional online games require trust.</strong> When you play cards online,
+          you must trust that the company didn't rig the shuffle. There's no way to verify
           if the randomness was actually fair.
         </p>
         <p style={styles.text}>
-          History is full of examples where this trust was violated — from rigged online poker 
+          History is full of examples where this trust was violated — from rigged online poker
           rooms to manipulated casino games. Even honest operators can't prove their innocence.
         </p>
       </section>
 
       {/* The Solution */}
       <section style={styles.section}>
-        <h2 style={styles.sectionTitle}>⛓️ The Solution: Blockchain RNG</h2>
+        <h2 style={styles.sectionTitle}>⛓️ The Solution: Commit-Reveal + Blockchain</h2>
         <p style={styles.text}>
-          <strong>Blockchain provides public, unchangeable data.</strong> Every few minutes, 
-          the Ergo blockchain publishes a new block with unique data determined by miners.
+          <strong>Cryptographic commitment prevents cheating by both parties.</strong> Before
+          the game starts, our server commits to a secret value by publishing its hash. Then we
+          use blockchain data for additional entropy. After the game, the secret is revealed
+          so you can verify everything was fair.
         </p>
         <ul style={styles.list}>
-          <li>Anyone can access it (public)</li>
-          <li>Published before your game starts</li>
-          <li>Cannot be changed retroactively (immutable)</li>
-          <li>We don't control it (trustless)</li>
+          <li><strong>Server can't cheat</strong> — secret committed before blockchain data is known</li>
+          <li><strong>Player can't cheat</strong> — blockchain is immutable and unpredictable</li>
+          <li><strong>Fully verifiable</strong> — anyone can verify after secret is revealed</li>
+          <li><strong>Industry standard</strong> — used by major provably fair platforms</li>
         </ul>
       </section>
 
       {/* How It Works - Steps */}
       <section style={styles.section}>
         <h2 style={styles.sectionTitle}>🔧 How It Works</h2>
-        
+
         {/* Step 1 */}
         <div style={styles.step}>
           <div style={styles.stepHeader}>
             <span style={styles.stepNumber}>1</span>
-            <h3 style={styles.stepTitle}>You Click "New Game"</h3>
+            <h3 style={styles.stepTitle}>Server Commits Secret</h3>
           </div>
           <p style={styles.stepText}>
-            Our system fetches the latest Ergo blockchain block, including transaction data. 
-            This was published minutes ago by miners — we have no control over its contents.
+            When you click "New Game", our server generates a random secret (256-bit entropy)
+            and immediately commits to it by publishing SHA256(secret). This commitment is stored
+            in the database <strong>before</strong> any blockchain data is fetched.
           </p>
           <div style={styles.codeBlock}>
-            Block #1,700,090<br/>
-            Block Hash: 3f27eb915a...3510a1e0ba<br/>
-            TX Hash: 9c44d92897...f44a02b84f<br/>
-            TX Index: 5 of 6<br/>
-            Timestamp: 1768450201667
+            serverSecret = "f955bb427fa9d7b41f883aee6eb2f2d9..."<br/>
+            secretHash = SHA256(serverSecret)<br/>
+            = "f5f5fc362a1c142dccd4bfbe7e918fc0..."<br/><br/>
+            ✓ Commitment stored (secret hidden)
           </div>
         </div>
 
@@ -72,22 +74,19 @@ function HowItWorks() {
         <div style={styles.step}>
           <div style={styles.stepHeader}>
             <span style={styles.stepNumber}>2</span>
-            <h3 style={styles.stepTitle}>Generate Random Seed (Anti-Spoofing)</h3>
+            <h3 style={styles.stepTitle}>Fetch Blockchain Data</h3>
           </div>
           <p style={styles.stepText}>
-            We combine <strong>5 independent inputs</strong> using a cryptographic hash. 
-            This makes prediction virtually impossible — an attacker would need to control 
-            the blockchain, predict the timestamp, AND know your game ID.
+            After the commitment, we fetch the latest Ergo blockchain block. This was published
+            minutes ago by independent miners — we have no control over its contents. The server
+            cannot predict or manipulate this data.
           </p>
           <div style={styles.codeBlock}>
-            seed = HASH(blockHash + txHash + timestamp + gameId + txIndex)<br/><br/>
-            5 inputs = virtually impossible to manipulate
-          </div>
-          <div style={styles.infoBox}>
-            <strong>🛡️ Why 5 inputs?</strong><br/>
-            Block hash alone could theoretically be predicted. By adding transaction hash, 
-            timestamp, game ID, and TX index, we create unpredictable entropy that no one 
-            can control or anticipate.
+            Block #1,708,396<br/>
+            Block Hash: 5eb87daac12fdda5e735b480...<br/>
+            TX Hash: 4614a3f199533ec1ecaa46ee...<br/>
+            TX Index: 6<br/>
+            Timestamp: 1769453096322
           </div>
         </div>
 
@@ -95,19 +94,25 @@ function HowItWorks() {
         <div style={styles.step}>
           <div style={styles.stepHeader}>
             <span style={styles.stepNumber}>3</span>
-            <h3 style={styles.stepTitle}>Generate Game Randomness</h3>
+            <h3 style={styles.stepTitle}>Generate Random Seed (Commit-Reveal Formula)</h3>
           </div>
           <p style={styles.stepText}>
-            Using cryptographic algorithms, we generate verifiable random outcomes. For card games,
-            we use Fisher-Yates shuffle. For 2048, we determine tile spawn positions. For Backgammon,
-            we generate dice rolls. Same seed = same result, every time, guaranteed.
+            We combine the server secret (hidden until game ends) + blockchain data + timestamp +
+            purpose using SHA256. This creates unpredictable randomness that neither the server nor
+            player can manipulate.
           </p>
-          <div style={styles.diagram}>
-            <span style={styles.diagramLabel}>Card Games:</span>
-            <span style={styles.diagramContent}>A♠ 2♠ 3♠ ... → 7♣ K♠ 3♦ A♥ ...</span>
-            <span style={styles.diagramArrow}>↓ Blockchain Seed</span>
-            <span style={styles.diagramLabel}>2048 / Backgammon:</span>
-            <span style={styles.diagramContent}>Tile position & value / Dice rolls</span>
+          <div style={styles.codeBlock}>
+            seed = SHA256(serverSecret + blockHash + timestamp + purpose)<br/><br/>
+            Server secret (committed first) ✓<br/>
+            Blockchain (immutable, public) ✓<br/>
+            Timestamp (unpredictable) ✓<br/>
+            Purpose (context-specific) ✓
+          </div>
+          <div style={styles.infoBox}>
+            <strong>🔐 Why Commit-Reveal?</strong><br/>
+            The server commits SHA256(secret) BEFORE seeing blockchain data. This prevents the
+            server from cherry-picking favorable outcomes. The player can't manipulate the
+            blockchain. After the game, the secret is revealed and anyone can verify the commitment.
           </div>
         </div>
 
@@ -115,24 +120,64 @@ function HowItWorks() {
         <div style={styles.step}>
           <div style={styles.stepHeader}>
             <span style={styles.stepNumber}>4</span>
-            <h3 style={styles.stepTitle}>Play the Game</h3>
+            <h3 style={styles.stepTitle}>Generate Game Randomness</h3>
           </div>
           <p style={styles.stepText}>
-            Cards are dealt from the shuffled deck. In 2048, every tile spawn uses fresh blockchain
-            data. In Backgammon, every dice roll is blockchain-verified. You make decisions, the
-            AI responds — all randomness is locked in and verifiable.
+            Using the commit-reveal seed, we generate verifiable random outcomes. For card games,
+            we use Fisher-Yates shuffle. For dice games, we use rejection sampling. Same inputs =
+            same result, every time, guaranteed.
           </p>
+          <div style={styles.diagram}>
+            <span style={styles.diagramLabel}>Card Games (Solitaire, Blackjack, Garbage):</span>
+            <span style={styles.diagramContent}>A♠ 2♠ 3♠ ... → 7♣ K♠ 3♦ A♥ ...</span>
+            <span style={styles.diagramArrow}>↓ Fisher-Yates Shuffle</span>
+            <span style={styles.diagramLabel}>Dice Games (Backgammon, Yahtzee):</span>
+            <span style={styles.diagramContent}>Rejection Sampling → Fair Dice Rolls</span>
+          </div>
         </div>
 
         {/* Step 5 */}
         <div style={styles.step}>
           <div style={styles.stepHeader}>
             <span style={styles.stepNumber}>5</span>
+            <h3 style={styles.stepTitle}>Play the Game</h3>
+          </div>
+          <p style={styles.stepText}>
+            Cards are dealt from the shuffled deck. In dice games, each roll uses a unique
+            purpose (e.g., "turn-3-roll-2") to generate fresh randomness. All outcomes are
+            locked in and verifiable.
+          </p>
+        </div>
+
+        {/* Step 6 */}
+        <div style={styles.step}>
+          <div style={styles.stepHeader}>
+            <span style={styles.stepNumber}>6</span>
+            <h3 style={styles.stepTitle}>Secret Reveal & Verification</h3>
+          </div>
+          <p style={styles.stepText}>
+            When the game ends, our server reveals the secret. The verification page shows both
+            the commitment (hash) and the revealed secret. Anyone can verify that SHA256(secret)
+            matches the commitment, then recalculate all random outcomes to confirm they match.
+          </p>
+          <div style={styles.codeBlock}>
+            ✓ SHA256(serverSecret) === secretHash<br/>
+            ✓ Recalculated shuffle matches game deck<br/>
+            ✓ All dice rolls match game history<br/>
+            ✓ Blockchain data verified on Ergo Explorer<br/>
+            ✓ VERIFIED PROVABLY FAIR
+          </div>
+        </div>
+
+        {/* Step 7 */}
+        <div style={styles.step}>
+          <div style={styles.stepHeader}>
+            <span style={styles.stepNumber}>7</span>
             <h3 style={styles.stepTitle}>Submit Your Score</h3>
           </div>
           <p style={styles.stepText}>
-            When the game ends (win or lose), you can submit your score to the leaderboard. 
-            Your result is linked to the blockchain proof — anyone can verify your game was fair.
+            When the game ends (win or lose), you can submit your score to the leaderboard.
+            Your result is linked to the cryptographic proof — anyone can verify your game was fair.
           </p>
           <div style={styles.codeBlock}>
             Game ID: SOL-1768455876-x7k2<br/>
@@ -142,34 +187,15 @@ function HowItWorks() {
             ✓ Submitted to Leaderboard
           </div>
         </div>
-
-        {/* Step 6 */}
-        <div style={styles.step}>
-          <div style={styles.stepHeader}>
-            <span style={styles.stepNumber}>6</span>
-            <h3 style={styles.stepTitle}>Verify Afterwards</h3>
-          </div>
-          <p style={styles.stepText}>
-            Anyone can verify any game on the leaderboard. Look up the block on Ergo Explorer, 
-            confirm the transaction, re-run our shuffle algorithm, and verify the deck matches.
-          </p>
-          <div style={styles.codeBlock}>
-            ✓ Block exists on blockchain<br/>
-            ✓ Transaction hash matches<br/>
-            ✓ TX index = timestamp % txCount<br/>
-            ✓ Re-shuffled deck is identical<br/>
-            ✓ VERIFIED FAIR
-          </div>
-        </div>
       </section>
 
       {/* Leaderboards */}
       <section style={styles.section}>
         <h2 style={styles.sectionTitle}>🏆 Leaderboards</h2>
         <p style={styles.text}>
-          Every game you play can be submitted to our public leaderboard. Unlike traditional 
-          leaderboards, every entry is verifiable — click "Verify" on any score to confirm 
-          the game was provably fair.
+          Every game you play can be submitted to our public leaderboard. Unlike traditional
+          leaderboards, every entry is cryptographically verifiable — click "Verify" on any
+          score to see the commitment, revealed secret, and full blockchain proof.
         </p>
         <div style={styles.leaderboardDemo}>
           <div style={styles.lbHeader}>
@@ -212,28 +238,28 @@ function HowItWorks() {
         <h2 style={styles.sectionTitle}>🔒 Why This is Trustless</h2>
         <div style={styles.trustGrid}>
           <div style={styles.trustItem}>
-            <strong>Block published first</strong>
-            <span>Data existed before your game — can't be manipulated</span>
+            <strong>Cryptographic commitment</strong>
+            <span>Server commits secret hash before blockchain fetch</span>
           </div>
           <div style={styles.trustItem}>
-            <strong>5 independent inputs</strong>
-            <span>Impossible to predict or control all factors</span>
+            <strong>Immutable blockchain</strong>
+            <span>Data published by miners, impossible to manipulate</span>
           </div>
           <div style={styles.trustItem}>
-            <strong>Deterministic algorithm</strong>
-            <span>Anyone can reproduce the exact shuffle</span>
+            <strong>Deterministic algorithms</strong>
+            <span>Anyone can reproduce exact shuffle/rolls</span>
+          </div>
+          <div style={styles.trustItem}>
+            <strong>Secret reveal</strong>
+            <span>Server proves it didn't cheat by revealing secret</span>
           </div>
           <div style={styles.trustItem}>
             <strong>Open source code</strong>
-            <span>No hidden tricks — read it yourself</span>
-          </div>
-          <div style={styles.trustItem}>
-            <strong>Public blockchain</strong>
-            <span>Permanent, accessible record</span>
+            <span>No hidden tricks — audit it yourself</span>
           </div>
           <div style={styles.trustItem}>
             <strong>Verifiable leaderboard</strong>
-            <span>Every score can be independently verified</span>
+            <span>Every score independently verifiable</span>
           </div>
         </div>
       </section>
@@ -241,54 +267,76 @@ function HowItWorks() {
       {/* FAQ */}
       <section style={styles.section}>
         <h2 style={styles.sectionTitle}>❓ Frequently Asked Questions</h2>
-        
+
         <div style={styles.faq}>
           <h4 style={styles.question}>Do I need cryptocurrency?</h4>
           <p style={styles.answer}>No. We only read public blockchain data, which is completely free.</p>
         </div>
-        
+
         <div style={styles.faq}>
           <h4 style={styles.question}>Do I need a wallet?</h4>
           <p style={styles.answer}>No. We never make transactions — just reading public data.</p>
         </div>
-        
+
         <div style={styles.faq}>
           <h4 style={styles.question}>What blockchain do you use?</h4>
           <p style={styles.answer}>
             Ergo blockchain. It's fast, reliable, and free to read via public APIs.
           </p>
         </div>
-        
+
         <div style={styles.faq}>
-          <h4 style={styles.question}>Can this be rigged?</h4>
+          <h4 style={styles.question}>Can the server rig the game?</h4>
           <p style={styles.answer}>
-            No. The block and transaction were published by independent miners before your game started. 
-            We combine 5 inputs making prediction virtually impossible.
+            No. The server must commit SHA256(secret) before seeing blockchain data. It cannot
+            change the secret later because the hash is stored in the database. After the game,
+            the revealed secret proves the server didn't cheat.
           </p>
         </div>
-        
+
         <div style={styles.faq}>
-          <h4 style={styles.question}>What are the 5 anti-spoofing inputs?</h4>
+          <h4 style={styles.question}>Can I manipulate the blockchain?</h4>
           <p style={styles.answer}>
-            Block hash, transaction hash, block timestamp, your game ID, and the transaction index. 
-            All combined cryptographically to create the shuffle seed.
+            No. Blockchain data is published by independent miners and is immutable. Even if you
+            could delay your game start, the server secret (committed first) prevents you from
+            gaining any advantage.
           </p>
         </div>
-        
+
+        <div style={styles.faq}>
+          <h4 style={styles.question}>What is the commit-reveal formula?</h4>
+          <p style={styles.answer}>
+            <code>seed = SHA256(serverSecret + blockHash + timestamp + purpose)</code><br/>
+            The server secret was committed before blockchain data. The purpose (e.g., "deck-shuffle"
+            or "turn-3-roll-2") ensures unique randomness for each event.
+          </p>
+        </div>
+
         <div style={styles.faq}>
           <h4 style={styles.question}>How can I verify myself?</h4>
           <p style={styles.answer}>
-            Use the <a href="https://explorer.ergoplatform.com" target="_blank" 
-            rel="noopener noreferrer" style={styles.link}>Ergo Explorer</a> to find the block and transaction, 
-            then run our open-source shuffle algorithm with the same inputs.
+            Each game's verification page shows the commitment, revealed secret, and blockchain data.
+            You can verify SHA256(secret) matches the hash, look up the block on{' '}
+            <a href="https://explorer.ergoplatform.com" target="_blank"
+            rel="noopener noreferrer" style={styles.link}>Ergo Explorer</a>,
+            then recalculate the shuffle/rolls yourself using our open-source code.
           </p>
         </div>
 
         <div style={styles.faq}>
           <h4 style={styles.question}>Can I submit losing games?</h4>
           <p style={styles.answer}>
-            Yes! The leaderboard ranks by cards to foundation, time, and moves. Even if you don't win, 
+            Yes! The leaderboard ranks by cards to foundation, time, and moves. Even if you don't win,
             you can still compete for the best partial completion.
+          </p>
+        </div>
+
+        <div style={styles.faq}>
+          <h4 style={styles.question}>Why is this better than traditional RNG?</h4>
+          <p style={styles.answer}>
+            Traditional games use server-side RNG that you must trust. Our commit-reveal system
+            provides cryptographic proof that neither party could cheat. It's mathematically
+            verifiable, not trust-based.
           </p>
         </div>
       </section>
@@ -297,13 +345,13 @@ function HowItWorks() {
       <section style={styles.cta}>
         <h2 style={styles.ctaTitle}>Try It Yourself</h2>
         <p style={styles.ctaText}>
-          Experience provably fair gaming firsthand. Play a game, submit your score, then verify the randomness.
+          Experience provably fair gaming firsthand. Play a game, submit your score, then verify the
+          commitment and secret reveal.
         </p>
         <div style={styles.ctaButtons}>
           <Link to="/solitaire" style={styles.primaryBtn}>Play Solitaire</Link>
           <Link to="/blackjack" style={styles.primaryBtn}>Play Blackjack</Link>
           <Link to="/yahtzee" style={styles.primaryBtn}>Play Yahtzee</Link>
-          <Link to="/2048" style={styles.primaryBtn}>Play 2048</Link>
           <Link to="/backgammon" style={styles.primaryBtn}>Play Backgammon</Link>
           <Link to="/garbage" style={styles.primaryBtn}>Play Garbage</Link>
         </div>
@@ -435,7 +483,7 @@ const styles = {
     color: '#4ade80',
     padding: '0.5rem 0'
   },
-  
+
   // Leaderboard demo
   leaderboardDemo: {
     backgroundColor: '#1a1a2e',
@@ -459,7 +507,7 @@ const styles = {
     borderBottom: '1px solid #2a3a5e',
     color: '#ccc'
   },
-  
+
   trustGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',

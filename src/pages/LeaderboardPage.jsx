@@ -16,7 +16,7 @@ function LeaderboardPage() {
       {/* Header */}
       <header style={styles.header}>
         <h1 style={styles.title}>🏆 Leaderboards</h1>
-        <p style={styles.subtitle}>Provably fair rankings you can verify</p>
+        <p style={styles.subtitle}>Cryptographically verified rankings • Commit-reveal protocol</p>
       </header>
 
       {/* Game Tabs */}
@@ -188,9 +188,9 @@ function LeaderboardPage() {
               <div style={styles.infoCard}>
                 <h4 style={styles.infoTitle}>🔒 Provably Fair Dice</h4>
                 <p style={styles.infoText}>
-                  Every dice roll uses blockchain data. The seed is generated from
-                  block hash + transaction + game ID + turn/roll number.
-                  Completely verifiable!
+                  Every dice roll uses cryptographic commit-reveal protocol.
+                  Server commits secret hash before fetching blockchain data,
+                  then combines both for verifiable randomness.
                 </p>
               </div>
             </div>
@@ -280,8 +280,8 @@ function LeaderboardPage() {
               <div style={styles.infoCard}>
                 <h4 style={styles.infoTitle}>🔒 Provably Fair Spawns</h4>
                 <p style={styles.infoText}>
-                  Every new tile spawn uses blockchain data for position and value (90% 2s, 10% 4s).
-                  Completely verifiable!
+                  Every new tile spawn uses deterministic randomness from blockchain
+                  data for position and value (90% 2s, 10% 4s). Completely verifiable!
                 </p>
               </div>
             </div>
@@ -346,8 +346,9 @@ function LeaderboardPage() {
               <div style={styles.infoCard}>
                 <h4 style={styles.infoTitle}>🔒 Provably Fair Dice</h4>
                 <p style={styles.infoText}>
-                  Every dice roll uses Ergo blockchain data.
-                  Block hash + game ID + turn = verifiable dice!
+                  Cryptographic commit-reveal protocol: server commits secret hash
+                  first, then combines with blockchain data for each roll.
+                  Fully verifiable and tamper-proof!
                 </p>
               </div>
             </div>
@@ -440,9 +441,9 @@ function LeaderboardPage() {
               <div style={styles.infoCard}>
                 <h4 style={styles.infoTitle}>🔒 Provably Fair Chess</h4>
                 <p style={styles.infoText}>
-                  Color assignment uses blockchain hash (white/black is proven random).
-                  AI difficulty is cryptographically committed before the game starts.
-                  Completely verifiable!
+                  Color assignment (white/black) uses blockchain data for proven randomness.
+                  AI difficulty level is recorded and verifiable on the blockchain.
+                  Fair play guaranteed!
                 </p>
               </div>
             </div>
@@ -454,12 +455,12 @@ function LeaderboardPage() {
       <section style={styles.verifySection}>
         <h3 style={styles.verifyTitle}>🔍 Every Score is Verifiable</h3>
         <p style={styles.verifyText}>
-          Click "Verify" on any leaderboard entry to see the blockchain proof. 
-          The randomness was determined by Ergo blockchain data before the game started — 
-          no one can cheat or manipulate results.
+          Click "Verify" on any leaderboard entry to see the cryptographic proof.
+          Our commit-reveal protocol ensures the server commits to a secret before blockchain
+          data is fetched — creating verifiable randomness that neither player nor server can manipulate.
         </p>
         <Link to="/how-it-works" style={styles.learnLink}>
-          Learn how provably fair gaming works →
+          Learn how commit-reveal verification works →
         </Link>
       </section>
 
