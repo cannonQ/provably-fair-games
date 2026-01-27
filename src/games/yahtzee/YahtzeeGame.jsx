@@ -233,7 +233,9 @@ function YahtzeeGame() {
       anchor,
       rollHistory,
       scorecard,
-      verificationTrail: buildVerificationTrail(rollHistory)
+      serverSecret: revealedSecret,
+      secretHash: secretHash,
+      sessionId: sessionId
     };
 
     sessionStorage.setItem('yahtzeeVerification', JSON.stringify(verificationData));
@@ -270,6 +272,9 @@ function YahtzeeGame() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  // Store revealed secret for verification
+  const [revealedSecret, setRevealedSecret] = useState(null);
+
   // End secure session and reveal secret when game ends
   useEffect(() => {
     if (phase === 'gameOver' && sessionId && anchor) {
@@ -284,6 +289,8 @@ function YahtzeeGame() {
         if (revealData.verified) {
           console.log('🔐 Server secret revealed and verified!');
         }
+        // Store revealed secret for verification page
+        setRevealedSecret(revealData.serverSecret);
       }).catch(error => {
         console.error('❌ Failed to end secure session:', error);
       });

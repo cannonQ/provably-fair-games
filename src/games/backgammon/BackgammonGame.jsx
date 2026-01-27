@@ -60,6 +60,7 @@ const BackgammonGame = () => {
   // Secure RNG session
   const [sessionId, setSessionId] = useState(null);
   const [secretHash, setSecretHash] = useState(null);
+  const [revealedSecret, setRevealedSecret] = useState(null);
 
   // Refs for cleanup
   const aiTimeoutRef = useRef(null);
@@ -198,6 +199,7 @@ const BackgammonGame = () => {
         if (revealData.verified) {
           console.log('🔐 Server secret revealed and verified!');
         }
+        setRevealedSecret(revealData.serverSecret);
       }).catch(error => {
         console.error('❌ Failed to end secure session:', error);
       });
@@ -531,7 +533,10 @@ const BackgammonGame = () => {
     navigate(`/verify/backgammon/${state.gameId}`, {
       state: {
         gameState: state,
-        rollHistory: state.rollHistory
+        rollHistory: state.rollHistory,
+        serverSecret: revealedSecret,
+        secretHash: secretHash,
+        sessionId: sessionId
       }
     });
   };

@@ -1,12 +1,13 @@
 /**
- * Yahtzee Verification Page
- * Uses the unified verification component with game-specific rendering
+ * Yahtzee Verification Page - Commit-Reveal System
+ * Verifies dice rolls using server secret + blockchain data
  */
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import UnifiedVerification from '../../components/UnifiedVerification';
-import { generateSeedFromSource, calculateDieValue } from './diceLogic';
+import { Link } from 'react-router-dom';
+import CryptoJS from 'crypto-js';
+import { calculateDieValue } from './diceLogic';
 
 // ============================================
 // DICE DISPLAY HELPERS
@@ -31,34 +32,45 @@ const DiceValue = ({ value }) => (
 );
 
 // ============================================
-// SOURCE STYLES
+// COMMIT-REVEAL VERIFICATION FUNCTIONS
 // ============================================
-const getSourceStyle = (source) => {
-  switch (source) {
-    case 'anchor':
-      return { icon: '🔵', color: '#3b82f6', label: 'Anchor Block' };
-    case 'trace':
-      return { icon: '🟢', color: '#22c55e', label: 'Traced Block' };
-    case 'restart':
-      return { icon: '🟡', color: '#f59e0b', label: 'Restart Block' };
-    default:
-      return { icon: '⚪', color: '#94a3b8', label: 'Unknown' };
-  }
+
+/**
+ * Verify that the server secret matches the commitment hash
+ */
+function verifySecretCommitment(serverSecret, secretHash) {
+  const calculatedHash = CryptoJS.SHA256(serverSecret).toString();
+  return calculatedHash === secretHash;
+}
+
+/**
+ * Generate seed using commit-reveal formula
+ * Formula: SHA256(serverSecret + blockHash + timestamp + purpose)
+ */
+function generateCommitRevealSeed(serverSecret, blockHash, timestamp, purpose) {
+  const input = serverSecret + blockHash + timestamp.toString() + purpose;
+  return CryptoJS.SHA256(input).toString();
+}
+
+const truncateHash = (hash, len = 12) => {
+  if (!hash) return 'N/A';
+  return `${hash.slice(0, len)}...${hash.slice(-6)}`;
 };
 
 // ============================================
 // ROLL BREAKDOWN COMPONENT
 // ============================================
-function RollBreakdown({ roll, gameId, onVerify, verificationResult }) {
+function RollBreakdown({ roll, serverSecret, blockHash, timestamp, onVerify, verificationResult }) {
   const [expanded, setExpanded] = useState(false);
-  const sourceStyle = getSourceStyle(roll.source);
 
   return (
     <div style={rollStyles.container}>
       <div style={rollStyles.header} onClick={() => setExpanded(!expanded)}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ color: sourceStyle.color, fontSize: 16 }}>{sourceStyle.icon}</span>
-          <span style={{ color: '#94a3b8', fontSize: 12 }}>Roll {roll.roll}</span>
+          <span style={{ color: '#22c55e', fontSize: 16 }}>🎲</span>
+          <span style={{ color: '#94a3b8', fontSize: 12 }}>
+            Turn {roll.turn}, Roll {roll.roll}
+          </span>
           <div>
             {roll.diceValues?.map((v, i) => <DiceValue key={i} value={v} />)}
           </div>
@@ -67,7 +79,8 @@ function RollBreakdown({ roll, gameId, onVerify, verificationResult }) {
           {verificationResult !== undefined && (
             <span style={{
               color: verificationResult.matches ? '#22c55e' : '#ef4444',
-              fontSize: 12
+              fontSize: 12,
+              fontWeight: 'bold'
             }}>
               {verificationResult.matches ? '✓ Verified' : '✗ Mismatch'}
             </span>
@@ -78,45 +91,26 @@ function RollBreakdown({ roll, gameId, onVerify, verificationResult }) {
 
       {expanded && (
         <div style={rollStyles.details}>
-          {roll.source === 'restart' && (
-            <div style={rollStyles.restartWarning}>
-              ⚠️ <strong>Restart occurred:</strong> Coinbase transaction hit (no inputs to trace).
-              Fresh block fetched with player's click timestamp.
-            </div>
-          )}
-
           <div style={rollStyles.row}>
-            <span style={rollStyles.label}>Source:</span>
-            <span style={{ color: sourceStyle.color }}>{sourceStyle.label}</span>
+            <span style={rollStyles.label}>Purpose:</span>
+            <span style={rollStyles.mono}>{roll.purpose || `turn-${roll.turn}-roll-${roll.roll}`}</span>
           </div>
           <div style={rollStyles.row}>
-            <span style={rollStyles.label}>Block:</span>
-            <span style={rollStyles.mono}>#{roll.blockHeight?.toLocaleString()}</span>
-            <a
-              href={`https://explorer.ergoplatform.com/en/blocks/${roll.blockHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={rollStyles.link}
-            >
-              View ↗
-            </a>
-          </div>
-          <div style={rollStyles.row}>
-            <span style={rollStyles.label}>TX Hash:</span>
-            <span style={rollStyles.mono}>{truncateHash(roll.txHash)}</span>
-            <span style={{ color: '#64748b', fontSize: 11 }}>(index: {roll.txIndex})</span>
-          </div>
-          <div style={rollStyles.row}>
-            <span style={rollStyles.label}>Trace Depth:</span>
-            <span style={rollStyles.mono}>{roll.traceDepth}</span>
+            <span style={rollStyles.label}>Session ID:</span>
+            <span style={rollStyles.mono}>{truncateHash(roll.sessionId)}</span>
           </div>
 
           {/* Seed Formula */}
           <div style={rollStyles.formula}>
-            <div style={{ color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>Seed Formula:</div>
-            <code style={{ color: '#22c55e', fontSize: 11 }}>
-              SHA256(blockHash + txHash + timestamp + gameId + txIndex + "T{roll.turn}R{roll.roll}")
+            <div style={{ color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>🔐 Commit-Reveal Formula:</div>
+            <code style={{ color: '#22c55e', fontSize: 11, display: 'block', marginBottom: 8 }}>
+              seed = SHA256(serverSecret + blockHash + timestamp + purpose)
             </code>
+            <div style={{ fontSize: 10, color: '#64748b' }}>
+              <div>• Server commits hash BEFORE blockchain data</div>
+              <div>• Secret revealed after game ends</div>
+              <div>• Players cannot manipulate results</div>
+            </div>
           </div>
 
           {/* Verify Button */}
@@ -130,7 +124,8 @@ function RollBreakdown({ roll, gameId, onVerify, verificationResult }) {
                 color: '#fff',
                 border: 'none',
                 borderRadius: 6,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                fontWeight: 'bold'
               }}
               onClick={() => onVerify(roll)}
             >
@@ -149,11 +144,6 @@ function RollBreakdown({ roll, gameId, onVerify, verificationResult }) {
     </div>
   );
 }
-
-const truncateHash = (hash, len = 12) => {
-  if (!hash) return 'N/A';
-  return `${hash.slice(0, len)}...${hash.slice(-6)}`;
-};
 
 const rollStyles = {
   container: {
@@ -183,18 +173,14 @@ const rollStyles = {
   },
   label: {
     color: '#94a3b8',
-    minWidth: 80
+    minWidth: 100
   },
   mono: {
     fontFamily: 'monospace',
     backgroundColor: 'rgba(0,0,0,0.3)',
     padding: '2px 6px',
     borderRadius: 4,
-    color: '#a5b4fc'
-  },
-  link: {
-    color: '#3b82f6',
-    textDecoration: 'none',
+    color: '#a5b4fc',
     fontSize: 11
   },
   formula: {
@@ -202,22 +188,13 @@ const rollStyles = {
     padding: 10,
     backgroundColor: 'rgba(0,0,0,0.3)',
     borderRadius: 6
-  },
-  restartWarning: {
-    backgroundColor: 'rgba(245, 158, 11, 0.2)',
-    border: '1px solid #f59e0b',
-    borderRadius: 6,
-    padding: 10,
-    marginBottom: 10,
-    fontSize: 12,
-    color: '#fbbf24'
   }
 };
 
 // ============================================
 // TURN GROUP COMPONENT
 // ============================================
-function TurnGroup({ turn, rolls, gameId, verificationResults, onVerifyRoll }) {
+function TurnGroup({ turn, rolls, serverSecret, blockHash, timestamp, verificationResults, onVerifyRoll }) {
   const [expanded, setExpanded] = useState(turn === 1);
 
   return (
@@ -255,7 +232,9 @@ function TurnGroup({ turn, rolls, gameId, verificationResults, onVerifyRoll }) {
             <RollBreakdown
               key={idx}
               roll={roll}
-              gameId={gameId}
+              serverSecret={serverSecret}
+              blockHash={blockHash}
+              timestamp={timestamp}
               onVerify={onVerifyRoll}
               verificationResult={verificationResults[`${roll.turn}-${roll.roll}`]}
             />
@@ -276,73 +255,56 @@ export default function YahtzeeVerificationPage() {
   const gameId = urlGameId || queryGameId;
 
   const [verificationData, setVerificationData] = useState(null);
-  const [isVerified, setIsVerified] = useState(false);
+  const [commitmentVerified, setCommitmentVerified] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
   const [verificationResults, setVerificationResults] = useState({});
 
-  const backLink = gameId ? '/leaderboard?game=yahtzee' : '/yahtzee';
-  const backText = gameId ? '← Back to Leaderboard' : '← Back to Yahtzee';
+  const backLink = '/yahtzee';
+  const backText = '← Back to Yahtzee';
 
   // Load verification data
   useEffect(() => {
-    if (!gameId) {
-      // Try sessionStorage
-      const stored = sessionStorage.getItem('yahtzeeVerification');
-      if (stored) {
-        const data = JSON.parse(stored);
-        setVerificationData(data);
-        setIsVerified(true);
-      }
-      setLoading(false);
-      return;
-    }
-
     const loadData = async () => {
+      console.log('Loading verification data, gameId:', gameId);
+
       // Try sessionStorage first
       const stored = sessionStorage.getItem('yahtzeeVerification');
+      console.log('SessionStorage data:', stored ? 'Found' : 'Not found');
+
       if (stored) {
-        const data = JSON.parse(stored);
-        if (data.gameId === gameId) {
+        try {
+          const data = JSON.parse(stored);
+          console.log('Parsed data:', data);
+
+          // If gameId provided in URL, verify it matches
+          if (gameId && data.gameId !== gameId) {
+            console.warn('GameId mismatch:', gameId, 'vs', data.gameId);
+          }
+
           setVerificationData(data);
-          setIsVerified(true);
+
+          // Verify commitment if we have the server secret
+          if (data.serverSecret && data.secretHash) {
+            const verified = verifySecretCommitment(data.serverSecret, data.secretHash);
+            setCommitmentVerified(verified);
+            console.log('Commitment verified:', verified);
+          } else {
+            console.warn('Missing serverSecret or secretHash:', {
+              hasSecret: !!data.serverSecret,
+              hasHash: !!data.secretHash
+            });
+          }
           setLoading(false);
           return;
+        } catch (err) {
+          console.error('Failed to parse verification data:', err);
         }
       }
 
-      // Fetch from API
-      try {
-        const response = await fetch(`/api/leaderboard?game=yahtzee&gameId=${gameId}`);
-        if (!response.ok) throw new Error('Not found');
-
-        const apiResult = await response.json();
-        const entry = apiResult.entries?.find(e => e.game_id === gameId);
-
-        if (!entry || !entry.roll_history) {
-          throw new Error('No roll history');
-        }
-
-        setVerificationData({
-          gameId: entry.game_id,
-          playerName: entry.player_name,
-          finalScore: entry.score,
-          anchor: {
-            blockHeight: entry.block_height,
-            blockHash: entry.block_hash,
-            txHash: entry.tx_hash,
-            timestamp: entry.block_timestamp
-          },
-          rollHistory: entry.roll_history,
-          source: 'database'
-        });
-        setIsVerified(true);
-      } catch (err) {
-        console.error('Failed to load game data:', err);
-        setNotFound(true);
-      } finally {
-        setLoading(false);
-      }
+      console.error('No verification data found in sessionStorage');
+      setNotFound(true);
+      setLoading(false);
     };
 
     loadData();
@@ -350,14 +312,19 @@ export default function YahtzeeVerificationPage() {
 
   // Verify a single roll
   const verifyRoll = (roll) => {
-    const rollSource = {
-      blockHash: roll.blockHash,
-      txHash: roll.txHash,
-      timestamp: roll.timestamp,
-      txIndex: roll.txIndex
-    };
+    if (!verificationData.serverSecret) {
+      alert('Server secret not available for verification');
+      return;
+    }
 
-    const seed = generateSeedFromSource(rollSource, verificationData.gameId, roll.turn, roll.roll);
+    const purpose = roll.purpose || `turn-${roll.turn}-roll-${roll.roll}`;
+    const seed = generateCommitRevealSeed(
+      verificationData.serverSecret,
+      verificationData.anchor.blockHash,
+      verificationData.anchor.timestamp,
+      purpose
+    );
+
     const calculatedDice = [0, 1, 2, 3, 4].map(i => calculateDieValue(seed, i));
     const matches = JSON.stringify(calculatedDice) === JSON.stringify(roll.diceValues);
 
@@ -378,173 +345,227 @@ export default function YahtzeeVerificationPage() {
     return byTurn;
   };
 
-  // Calculate statistics
-  const getStats = () => {
-    const rollHistory = verificationData?.rollHistory || [];
-    const totalRolls = rollHistory.length;
-    const turns = Object.keys(getRollsByTurn()).length;
-
-    // Count by source type
-    const sources = { anchor: 0, trace: 0, restart: 0 };
-    rollHistory.forEach(r => {
-      if (sources[r.source] !== undefined) sources[r.source]++;
-    });
-
-    return { totalRolls, turns, sources };
-  };
-
-  // Render game summary
-  const renderGameSummary = () => {
-    if (!verificationData) return null;
-
-    const stats = getStats();
-
+  if (loading) {
     return (
-      <div>
-        {verificationData.source === 'database' && (
-          <div style={{ marginBottom: 12, padding: 12, backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: 8 }}>
+      <div style={styles.container}>
+        <div style={styles.wrapper}>
+          <p style={{ color: '#94a3b8' }}>Loading verification data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !verificationData) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.wrapper}>
+          <h2 style={{ color: '#ef4444' }}>Verification Data Not Found</h2>
+          <p style={{ color: '#94a3b8' }}>
+            No verification data available. Please complete a game first.
+          </p>
+          <Link to={backLink} style={styles.backLink}>{backText}</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const rollsByTurn = getRollsByTurn();
+  const totalRolls = verificationData.rollHistory?.length || 0;
+  const totalTurns = Object.keys(rollsByTurn).length;
+
+  return (
+    <div style={styles.container}>
+      <div style={styles.wrapper}>
+        {/* Header */}
+        <div style={styles.header}>
+          <h1 style={styles.title}>🎲 Yahtzee Verification</h1>
+          <Link to={backLink} style={styles.backLink}>{backText}</Link>
+        </div>
+
+        {/* Commitment Verification Banner */}
+        {verificationData.serverSecret && (
+          <div style={{
+            ...styles.banner,
+            backgroundColor: commitmentVerified ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            borderColor: commitmentVerified ? '#22c55e' : '#ef4444'
+          }}>
+            <h3 style={{
+              margin: '0 0 10px 0',
+              color: commitmentVerified ? '#22c55e' : '#ef4444',
+              fontSize: 14
+            }}>
+              {commitmentVerified ? '✓ Server Commitment Verified' : '✗ Commitment Verification Failed'}
+            </h3>
             <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>
-              Loaded from leaderboard database
+              <div><strong>Secret Hash (Commitment):</strong></div>
+              <div style={styles.mono}>{verificationData.secretHash}</div>
             </div>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13 }}>
-              <span>Player: <strong>{verificationData.playerName}</strong></span>
-              <span>Final Score: <strong style={{ color: '#22c55e' }}>{verificationData.finalScore}</strong></span>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              <div><strong>Server Secret (Revealed):</strong></div>
+              <div style={styles.mono}>{verificationData.serverSecret}</div>
+            </div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 10 }}>
+              SHA256(secret) {commitmentVerified ? '===' : '!=='} hash ✓
             </div>
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-          <div style={summaryBoxStyle}>
-            <div style={{ color: '#fbbf24', fontSize: 24, fontWeight: 'bold' }}>{stats.turns}</div>
-            <div style={{ color: '#94a3b8', fontSize: 11 }}>Turns</div>
+        {!verificationData.serverSecret && (
+          <div style={{ ...styles.banner, backgroundColor: 'rgba(245, 158, 11, 0.1)', borderColor: '#f59e0b' }}>
+            <h3 style={{ margin: '0 0 8px 0', color: '#f59e0b', fontSize: 14 }}>
+              ⚠️ Server Secret Not Available
+            </h3>
+            <p style={{ margin: 0, fontSize: 12, color: '#94a3b8' }}>
+              The server secret has not been revealed yet. Complete the game to enable full verification.
+            </p>
           </div>
-          <div style={summaryBoxStyle}>
-            <div style={{ color: '#fbbf24', fontSize: 24, fontWeight: 'bold' }}>{stats.totalRolls}</div>
-            <div style={{ color: '#94a3b8', fontSize: 11 }}>Total Rolls</div>
-          </div>
-          <div style={summaryBoxStyle}>
-            <div style={{ color: '#22c55e', fontSize: 24, fontWeight: 'bold' }}>{verificationData.finalScore}</div>
-            <div style={{ color: '#94a3b8', fontSize: 11 }}>Final Score</div>
+        )}
+
+        {/* Game Summary */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>Game Summary</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+            <div style={styles.statBox}>
+              <div style={{ color: '#fbbf24', fontSize: 28, fontWeight: 'bold' }}>{totalTurns}</div>
+              <div style={{ color: '#94a3b8', fontSize: 12 }}>Turns</div>
+            </div>
+            <div style={styles.statBox}>
+              <div style={{ color: '#3b82f6', fontSize: 28, fontWeight: 'bold' }}>{totalRolls}</div>
+              <div style={{ color: '#94a3b8', fontSize: 12 }}>Total Rolls</div>
+            </div>
+            <div style={styles.statBox}>
+              <div style={{ color: '#22c55e', fontSize: 28, fontWeight: 'bold' }}>{verificationData.finalScore}</div>
+              <div style={{ color: '#94a3b8', fontSize: 12 }}>Final Score</div>
+            </div>
           </div>
         </div>
 
-        {/* Anti-Spoofing Note */}
-        <div style={{
-          marginTop: 16,
-          padding: 12,
-          backgroundColor: 'rgba(245, 158, 11, 0.1)',
-          border: '1px solid rgba(245, 158, 11, 0.3)',
-          borderRadius: 8
-        }}>
-          <h4 style={{ margin: '0 0 8px 0', color: '#fbbf24', fontSize: 13 }}>🔒 Anti-Spoofing Mechanism</h4>
-          <p style={{ margin: 0, fontSize: 12, color: '#94a3b8', lineHeight: 1.5 }}>
-            This game uses <strong style={{ color: '#f1f5f9' }}>block traversal</strong> instead of fetching
-            new blocks for each roll. The anchor block is committed at game start, subsequent rolls
-            trace backwards through transaction inputs. Players cannot manipulate results.
+        {/* Blockchain Anchor */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>⚓ Blockchain Anchor</h2>
+          <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.8 }}>
+            <div><strong>Block Height:</strong> #{verificationData.anchor?.blockHeight?.toLocaleString()}</div>
+            <div><strong>Block Hash:</strong> <span style={styles.mono}>{verificationData.anchor?.blockHash}</span></div>
+            <div><strong>Timestamp:</strong> {new Date(verificationData.anchor?.timestamp).toLocaleString()}</div>
+            <div><strong>Session ID:</strong> <span style={styles.mono}>{verificationData.sessionId}</span></div>
+          </div>
+          <a
+            href={`https://explorer.ergoplatform.com/en/blocks/${verificationData.anchor?.blockHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.explorerLink}
+          >
+            View on Ergo Explorer ↗
+          </a>
+        </div>
+
+        {/* Roll History */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>🎯 Roll History</h2>
+          <p style={{ color: '#94a3b8', fontSize: 12, marginBottom: 15 }}>
+            Click any turn to expand and verify individual rolls.
           </p>
+
+          {Object.entries(rollsByTurn).map(([turn, rolls]) => (
+            <TurnGroup
+              key={turn}
+              turn={parseInt(turn)}
+              rolls={rolls}
+              serverSecret={verificationData.serverSecret}
+              blockHash={verificationData.anchor?.blockHash}
+              timestamp={verificationData.anchor?.timestamp}
+              verificationResults={verificationResults}
+              onVerifyRoll={verifyRoll}
+            />
+          ))}
+        </div>
+
+        {/* How It Works */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>🔐 How Commit-Reveal Works</h2>
+          <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.8 }}>
+            <ol style={{ paddingLeft: 20, margin: 0 }}>
+              <li><strong>Commit Phase:</strong> Server generates secret and commits SHA256(secret) before game starts</li>
+              <li><strong>Play Phase:</strong> Each roll combines: secret + blockchain + timestamp + purpose</li>
+              <li><strong>Reveal Phase:</strong> After game ends, server reveals secret for verification</li>
+              <li><strong>Verification:</strong> Anyone can verify SHA256(secret) matches commitment and recalculate all rolls</li>
+            </ol>
+            <div style={{ marginTop: 12, padding: 10, backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: 6 }}>
+              <strong style={{ color: '#22c55e' }}>Why this prevents cheating:</strong> Players cannot manipulate results because
+              the secret was committed before the blockchain data was known.
+            </div>
+          </div>
         </div>
       </div>
-    );
-  };
-
-  const summaryBoxStyle = {
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    padding: 12,
-    borderRadius: 6,
-    textAlign: 'center'
-  };
-
-  // Render replay/history
-  const renderReplay = () => {
-    const rollsByTurn = getRollsByTurn();
-    const totalTurns = Object.keys(rollsByTurn).length;
-
-    if (totalTurns === 0) {
-      return <p style={{ color: '#94a3b8' }}>No roll history available</p>;
-    }
-
-    return (
-      <div>
-        <p style={{ color: '#94a3b8', fontSize: 12, marginBottom: 15 }}>
-          Click any turn to expand and see detailed blockchain proof for each roll.
-        </p>
-
-        {Object.entries(rollsByTurn).map(([turn, rolls]) => (
-          <TurnGroup
-            key={turn}
-            turn={parseInt(turn)}
-            rolls={rolls}
-            gameId={verificationData.gameId}
-            verificationResults={verificationResults}
-            onVerifyRoll={verifyRoll}
-          />
-        ))}
-      </div>
-    );
-  };
-
-  // Render statistics
-  const renderStatistics = () => {
-    const stats = getStats();
-
-    return (
-      <div style={{ display: 'flex', gap: 15, flexWrap: 'wrap' }}>
-        <div style={statStyle}>
-          <span style={{ color: '#3b82f6' }}>🔵</span>
-          <span style={{ marginLeft: 8 }}>Anchor: {stats.sources.anchor}</span>
-        </div>
-        <div style={statStyle}>
-          <span style={{ color: '#22c55e' }}>🟢</span>
-          <span style={{ marginLeft: 8 }}>Traced: {stats.sources.trace}</span>
-        </div>
-        <div style={statStyle}>
-          <span style={{ color: '#f59e0b' }}>🟡</span>
-          <span style={{ marginLeft: 8 }}>Restart: {stats.sources.restart}</span>
-        </div>
-      </div>
-    );
-  };
-
-  const statStyle = {
-    backgroundColor: 'rgba(0,0,0,0.2)',
-    padding: '8px 12px',
-    borderRadius: 6,
-    fontSize: 13,
-    display: 'flex',
-    alignItems: 'center'
-  };
-
-  // Build data for unified component
-  // Use first roll's data for Python script since that's what we verify against
-  const firstRoll = verificationData?.rollHistory?.[0];
-  const unifiedData = verificationData ? {
-    gameId: verificationData.gameId,
-    // Support both session-based (new) and legacy formats
-    blockHash: verificationData.blockchainData?.blockHash || firstRoll?.blockHash || verificationData.anchor?.blockHash,
-    blockHeight: verificationData.blockchainData?.blockHeight || firstRoll?.blockHeight || verificationData.anchor?.blockHeight,
-    timestamp: verificationData.blockchainData?.timestamp || firstRoll?.timestamp || verificationData.anchor?.timestamp,
-    txHash: verificationData.blockchainData?.txHash || firstRoll?.txHash || verificationData.anchor?.txHash,
-    txIndex: verificationData.blockchainData?.txIndex ?? firstRoll?.txIndex ?? 0,
-    rollHistory: verificationData.rollHistory,
-    // Include session data if available
-    sessionId: verificationData.blockchainData?.sessionId,
-    secretHash: verificationData.blockchainData?.secretHash
-  } : null;
-
-  return (
-    <UnifiedVerification
-      game="yahtzee"
-      gameId={verificationData?.gameId || gameId}
-      data={unifiedData}
-      verified={isVerified}
-      eventCount={verificationData?.rollHistory?.length || 0}
-      backLink={backLink}
-      backText={backText}
-      loading={loading}
-      notFound={notFound}
-      renderGameSummary={renderGameSummary}
-      renderReplay={renderReplay}
-      renderStatistics={renderStatistics}
-    />
+    </div>
   );
 }
+
+const styles = {
+  container: {
+    minHeight: '100vh',
+    backgroundColor: '#0f172a',
+    color: '#f1f5f9',
+    padding: 20
+  },
+  wrapper: {
+    maxWidth: 900,
+    margin: '0 auto'
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    margin: 0
+  },
+  backLink: {
+    color: '#3b82f6',
+    textDecoration: 'none',
+    fontSize: 14
+  },
+  banner: {
+    padding: 16,
+    borderRadius: 8,
+    border: '1px solid',
+    marginBottom: 24
+  },
+  section: {
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 0,
+    marginBottom: 16,
+    color: '#f1f5f9'
+  },
+  statBox: {
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    padding: 16,
+    borderRadius: 8,
+    textAlign: 'center'
+  },
+  mono: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    padding: '2px 6px',
+    borderRadius: 4,
+    wordBreak: 'break-all'
+  },
+  explorerLink: {
+    display: 'inline-block',
+    marginTop: 12,
+    color: '#3b82f6',
+    textDecoration: 'none',
+    fontSize: 13
+  }
+};

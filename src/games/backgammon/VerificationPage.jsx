@@ -1,13 +1,70 @@
 /**
- * Backgammon Verification Page
- * Uses the unified verification component with game-specific rendering
+ * Backgammon Verification Page - Commit-Reveal System
+ * Verifies dice rolls using server secret + blockchain data
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import CryptoJS from 'crypto-js';
-import UnifiedVerification from '../../components/UnifiedVerification';
 import BackgammonReplay from './BackgammonReplay';
+
+// ============================================
+// COMMIT-REVEAL VERIFICATION FUNCTIONS
+// ============================================
+
+/**
+ * Verify that the server secret matches the commitment hash
+ */
+function verifySecretCommitment(serverSecret, secretHash) {
+  const calculatedHash = CryptoJS.SHA256(serverSecret).toString();
+  return calculatedHash === secretHash;
+}
+
+/**
+ * Generate seed using commit-reveal formula
+ * Formula: SHA256(serverSecret + blockHash + timestamp + purpose)
+ */
+function generateCommitRevealSeed(serverSecret, blockHash, timestamp, purpose) {
+  const input = serverSecret + blockHash + timestamp.toString() + purpose;
+  return CryptoJS.SHA256(input).toString();
+}
+
+/**
+ * Calculate dice using rejection sampling (matches game logic)
+ */
+function calculateDiceFromSeed(seed) {
+  const dice = [];
+  let byteIndex = 0;
+
+  // Use rejection sampling to eliminate modulo bias
+  // Reject values >= 252 (252 = 42 * 6, evenly divisible)
+  while (dice.length < 2 && byteIndex < seed.length - 1) {
+    const byte = parseInt(seed.substring(byteIndex, byteIndex + 2), 16);
+    byteIndex += 2;
+
+    // Only accept values that don't introduce bias
+    if (byte < 252) {
+      dice.push((byte % 6) + 1);
+    }
+  }
+
+  // Fallback if we run out of bytes (extremely unlikely)
+  while (dice.length < 2) {
+    const extraHash = CryptoJS.SHA256(seed + dice.length).toString();
+    const byte = parseInt(extraHash.substring(0, 2), 16);
+    if (byte < 252) {
+      dice.push((byte % 6) + 1);
+    }
+  }
+
+  return [dice[0], dice[1]];
+}
+
+const truncateHash = (hash, len = 12) => {
+  if (!hash) return 'N/A';
+  return `${hash.slice(0, len)}...${hash.slice(-6)}`;
+};
 
 // ============================================
 // DICE DISPLAY
@@ -27,33 +84,32 @@ const DiceDisplay = ({ dice }) => (
 );
 
 // ============================================
-// ROLL VERIFICATION
+// ROLL VERIFICATION (COMMIT-REVEAL)
 // ============================================
-const generateRollVerification = (roll, index, gameId) => {
-  const seedInput = `${roll.blockHash}${gameId}${index + 1}`;
-  const hash = CryptoJS.SHA256(seedInput).toString(CryptoJS.enc.Hex);
-  const byte1 = parseInt(hash.substring(0, 2), 16);
-  const byte2 = parseInt(hash.substring(2, 4), 16);
-  const die1 = (byte1 % 6) + 1;
-  const die2 = (byte2 % 6) + 1;
+const generateRollVerification = (roll, index, serverSecret, blockHash, timestamp) => {
+  if (!serverSecret) {
+    return { verified: null, error: 'Server secret not available' };
+  }
+
+  // Purpose matches game logic: roll-1, roll-2, roll-3, etc.
+  const purpose = `roll-${index + 1}`;
+  const seed = generateCommitRevealSeed(serverSecret, blockHash, timestamp, purpose);
+  const calculatedDice = calculateDiceFromSeed(seed);
 
   return {
-    seedInput,
-    hash,
-    byte1,
-    byte2,
-    die1,
-    die2,
-    verified: die1 === roll.dice[0] && die2 === roll.dice[1]
+    purpose,
+    seed,
+    calculatedDice,
+    verified: calculatedDice[0] === roll.dice[0] && calculatedDice[1] === roll.dice[1]
   };
 };
 
 // ============================================
 // ROLL ITEM COMPONENT
 // ============================================
-function RollItem({ roll, index, gameId }) {
+function RollItem({ roll, index, serverSecret, blockHash, timestamp }) {
   const [expanded, setExpanded] = useState(false);
-  const verification = generateRollVerification(roll, index, gameId);
+  const verification = generateRollVerification(roll, index, serverSecret, blockHash, timestamp);
 
   return (
     <div style={rollStyles.container}>
@@ -69,52 +125,50 @@ function RollItem({ roll, index, gameId }) {
           <DiceDisplay dice={roll.dice} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{
-            color: verification.verified ? '#22c55e' : '#ef4444',
-            fontSize: 12
-          }}>
-            {verification.verified ? '✓ Verified' : '✗ Mismatch'}
-          </span>
+          {verification.verified !== null && (
+            <span style={{
+              color: verification.verified ? '#22c55e' : '#ef4444',
+              fontSize: 12,
+              fontWeight: 'bold'
+            }}>
+              {verification.verified ? '✓ Verified' : '✗ Mismatch'}
+            </span>
+          )}
           <span style={{ color: '#64748b', fontSize: 12 }}>{expanded ? '▼' : '▶'}</span>
         </div>
       </div>
 
       {expanded && (
         <div style={rollStyles.details}>
-          {/* Block Info */}
+          {/* Purpose */}
           <div style={rollStyles.row}>
-            <span style={rollStyles.label}>Block Hash:</span>
-            <span style={{ ...rollStyles.mono, fontSize: 10, wordBreak: 'break-all' }}>
-              {roll.blockHash}
-            </span>
-          </div>
-          <div style={{ marginBottom: 8 }}>
-            <a
-              href={`https://explorer.ergoplatform.com/blocks/${roll.blockHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={rollStyles.link}
-            >
-              View on Ergo Explorer →
-            </a>
+            <span style={rollStyles.label}>Purpose:</span>
+            <span style={rollStyles.mono}>{verification.purpose || `roll-${index + 1}`}</span>
           </div>
 
-          {/* Seed Calculation */}
+          {/* Commit-Reveal Formula */}
           <div style={rollStyles.formula}>
-            <div style={{ color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>Seed Formula:</div>
-            <code style={{ color: '#a5b4fc', fontSize: 10, wordBreak: 'break-all' }}>
-              SHA256(blockHash + gameId + turnNumber)
+            <div style={{ color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>🔐 Commit-Reveal Formula:</div>
+            <code style={{ color: '#22c55e', fontSize: 11, display: 'block', marginBottom: 8 }}>
+              seed = SHA256(serverSecret + blockHash + timestamp + purpose)
             </code>
+            <div style={{ fontSize: 10, color: '#64748b' }}>
+              <div>• Server commits hash BEFORE blockchain data</div>
+              <div>• Secret revealed after game ends</div>
+              <div>• Players cannot manipulate results</div>
+            </div>
           </div>
 
           {/* Dice Calculation */}
-          <div style={rollStyles.formula}>
-            <div style={{ color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>Dice Calculation:</div>
-            <div style={{ fontSize: 11, color: '#f1f5f9' }}>
-              <div>Byte 1: 0x{verification.hash.substring(0, 2)} = {verification.byte1} → {verification.byte1} mod 6 + 1 = <strong style={{ color: '#22c55e' }}>{verification.die1}</strong></div>
-              <div>Byte 2: 0x{verification.hash.substring(2, 4)} = {verification.byte2} → {verification.byte2} mod 6 + 1 = <strong style={{ color: '#22c55e' }}>{verification.die2}</strong></div>
+          {verification.calculatedDice && (
+            <div style={rollStyles.formula}>
+              <div style={{ color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>Dice Calculation (Rejection Sampling):</div>
+              <div style={{ fontSize: 11, color: '#f1f5f9' }}>
+                <div>Calculated: <strong style={{ color: '#22c55e' }}>[{verification.calculatedDice[0]}, {verification.calculatedDice[1]}]</strong></div>
+                <div style={{ marginTop: 4, color: '#64748b' }}>Using rejection sampling to eliminate modulo bias</div>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Result */}
           <div style={{
@@ -125,7 +179,7 @@ function RollItem({ roll, index, gameId }) {
             border: `1px solid ${verification.verified ? '#22c55e' : '#ef4444'}`
           }}>
             <span style={{ color: verification.verified ? '#22c55e' : '#ef4444', fontSize: 13 }}>
-              {verification.verified ? '✓ Dice values match!' : '✗ Verification failed'}
+              {verification.verified ? '✓ Dice values match!' : verification.error || '✗ Verification failed'}
             </span>
           </div>
         </div>
@@ -224,37 +278,59 @@ export default function BackgammonVerificationPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showReplay, setShowReplay] = useState(false);
+  const [commitmentVerified, setCommitmentVerified] = useState(null);
 
-  const backLink = gameId ? '/leaderboard?game=backgammon' : '/backgammon';
-  const backText = gameId ? '← Back to Leaderboard' : '← Back to Backgammon';
+  const backLink = '/backgammon';
+  const backText = '← Back to Backgammon';
 
   // Load game data
   useEffect(() => {
+    // First check location.state (passed from game)
     if (location.state?.gameState) {
-      setGameData(location.state.gameState);
-      setLoading(false);
-    } else {
-      // Try localStorage - check verification data first, then game state
-      const verifyData = localStorage.getItem(`backgammon_verify_${gameId}`);
-      if (verifyData) {
-        setGameData(JSON.parse(verifyData));
-        setLoading(false);
-        return;
-      }
+      const data = {
+        ...location.state.gameState,
+        serverSecret: location.state.serverSecret,
+        secretHash: location.state.secretHash,
+        sessionId: location.state.sessionId
+      };
+      setGameData(data);
 
-      // Fallback to game state storage (uses backgammon_game_ prefix)
-      const savedGame = localStorage.getItem(`backgammon_game_${gameId}`);
-      if (savedGame) {
-        const parsed = JSON.parse(savedGame);
-        // Game state is wrapped in { state, savedAt, version }
-        setGameData(parsed.state || parsed);
-        setLoading(false);
-        return;
+      // Verify commitment if we have the server secret
+      if (data.serverSecret && data.secretHash) {
+        const verified = verifySecretCommitment(data.serverSecret, data.secretHash);
+        setCommitmentVerified(verified);
       }
-
-      setNotFound(true);
       setLoading(false);
+      return;
     }
+
+    // Try localStorage - check verification data first, then game state
+    const verifyData = localStorage.getItem(`backgammon_verify_${gameId}`);
+    if (verifyData) {
+      const data = JSON.parse(verifyData);
+      setGameData(data);
+
+      // Verify commitment if available
+      if (data.serverSecret && data.secretHash) {
+        const verified = verifySecretCommitment(data.serverSecret, data.secretHash);
+        setCommitmentVerified(verified);
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Fallback to game state storage (uses backgammon_game_ prefix)
+    const savedGame = localStorage.getItem(`backgammon_game_${gameId}`);
+    if (savedGame) {
+      const parsed = JSON.parse(savedGame);
+      // Game state is wrapped in { state, savedAt, version }
+      setGameData(parsed.state || parsed);
+      setLoading(false);
+      return;
+    }
+
+    setNotFound(true);
+    setLoading(false);
   }, [gameId, location.state]);
 
   // Calculate dice statistics
@@ -400,12 +476,19 @@ export default function BackgammonVerificationPage() {
           Roll-by-Roll Verification ({gameData.rollHistory.length} turns)
         </h4>
         <p style={{ color: '#94a3b8', fontSize: 12, marginBottom: 15 }}>
-          Click any roll to see detailed blockchain proof
+          Click any roll to see detailed commit-reveal proof
         </p>
 
         <div style={{ maxHeight: 400, overflowY: 'auto' }}>
           {gameData.rollHistory.map((roll, index) => (
-            <RollItem key={index} roll={roll} index={index} gameId={gameId} />
+            <RollItem
+              key={index}
+              roll={roll}
+              index={index}
+              serverSecret={gameData.serverSecret}
+              blockHash={gameData.blockchainData?.blockHash}
+              timestamp={gameData.blockchainData?.timestamp}
+            />
           ))}
         </div>
       </div>
@@ -468,32 +551,199 @@ export default function BackgammonVerificationPage() {
     flex: '1 1 100px'
   };
 
-  // Build unified data
-  const unifiedData = gameData ? {
-    gameId,
-    // Support both session-based (new) and legacy games
-    blockHash: gameData.blockchainData?.blockHash || gameData.rollHistory?.[0]?.blockHash,
-    blockHeight: gameData.blockchainData?.blockHeight || gameData.rollHistory?.[0]?.blockHeight,
-    timestamp: gameData.gameStartTime,
-    // Include session data if available
-    sessionId: gameData.blockchainData?.sessionId,
-    secretHash: gameData.blockchainData?.secretHash
-  } : null;
+  if (loading) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.wrapper}>
+          <p style={{ color: '#94a3b8' }}>Loading verification data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !gameData) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.wrapper}>
+          <h2 style={{ color: '#ef4444' }}>Verification Data Not Found</h2>
+          <p style={{ color: '#94a3b8' }}>
+            No verification data available. Please complete a game first.
+          </p>
+          <Link to={backLink} style={styles.backLink}>{backText}</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <UnifiedVerification
-      game="backgammon"
-      gameId={gameId}
-      data={unifiedData}
-      verified={true}
-      eventCount={gameData?.rollHistory?.length || 0}
-      backLink={backLink}
-      backText={backText}
-      loading={loading}
-      notFound={notFound}
-      renderGameSummary={renderGameSummary}
-      renderReplay={renderReplay}
-      renderStatistics={renderStatistics}
-    />
+    <div style={styles.container}>
+      <div style={styles.wrapper}>
+        {/* Header */}
+        <div style={styles.header}>
+          <h1 style={styles.title}>🎲 Backgammon Verification</h1>
+          <Link to={backLink} style={styles.backLink}>{backText}</Link>
+        </div>
+
+        {/* Commitment Verification Banner */}
+        {gameData.serverSecret && gameData.secretHash && (
+          <div style={{
+            ...styles.banner,
+            backgroundColor: commitmentVerified ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            borderColor: commitmentVerified ? '#22c55e' : '#ef4444'
+          }}>
+            <h3 style={{
+              margin: '0 0 10px 0',
+              color: commitmentVerified ? '#22c55e' : '#ef4444',
+              fontSize: 14
+            }}>
+              {commitmentVerified ? '✓ Server Commitment Verified' : '✗ Commitment Verification Failed'}
+            </h3>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>
+              <div><strong>Secret Hash (Commitment):</strong></div>
+              <div style={styles.mono}>{gameData.secretHash}</div>
+            </div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              <div><strong>Server Secret (Revealed):</strong></div>
+              <div style={styles.mono}>{gameData.serverSecret}</div>
+            </div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 10 }}>
+              SHA256(secret) {commitmentVerified ? '===' : '!=='} hash ✓
+            </div>
+          </div>
+        )}
+
+        {!gameData.serverSecret && (
+          <div style={{ ...styles.banner, backgroundColor: 'rgba(245, 158, 11, 0.1)', borderColor: '#f59e0b' }}>
+            <h3 style={{ margin: '0 0 8px 0', color: '#f59e0b', fontSize: 14 }}>
+              ⚠️ Server Secret Not Available
+            </h3>
+            <p style={{ margin: 0, fontSize: 12, color: '#94a3b8' }}>
+              The server secret has not been revealed yet. Complete the game to enable full verification.
+            </p>
+          </div>
+        )}
+
+        {/* Game Summary */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>Game Summary</h2>
+          {renderGameSummary()}
+        </div>
+
+        {/* Blockchain Anchor */}
+        {gameData.blockchainData && (
+          <div style={styles.section}>
+            <h2 style={styles.sectionTitle}>⚓ Blockchain Anchor</h2>
+            <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.8 }}>
+              <div><strong>Block Height:</strong> #{gameData.blockchainData.blockHeight?.toLocaleString()}</div>
+              <div><strong>Block Hash:</strong> <span style={styles.mono}>{truncateHash(gameData.blockchainData.blockHash, 16)}</span></div>
+              <div><strong>Timestamp:</strong> {new Date(gameData.blockchainData.timestamp).toLocaleString()}</div>
+              {gameData.sessionId && (
+                <div><strong>Session ID:</strong> <span style={styles.mono}>{truncateHash(gameData.sessionId, 16)}</span></div>
+              )}
+            </div>
+            <a
+              href={`https://explorer.ergoplatform.com/en/blocks/${gameData.blockchainData.blockHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.explorerLink}
+            >
+              View on Ergo Explorer ↗
+            </a>
+          </div>
+        )}
+
+        {/* Roll History */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>🎯 Roll History & Replay</h2>
+          {renderReplay()}
+        </div>
+
+        {/* Statistics */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>📊 Statistics</h2>
+          {renderStatistics()}
+        </div>
+
+        {/* How It Works */}
+        <div style={styles.section}>
+          <h2 style={styles.sectionTitle}>🔐 How Commit-Reveal Works</h2>
+          <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.8 }}>
+            <ol style={{ paddingLeft: 20, margin: 0 }}>
+              <li><strong>Commit Phase:</strong> Server generates secret and commits SHA256(secret) before game starts</li>
+              <li><strong>Play Phase:</strong> Each roll combines: secret + blockchain + timestamp + purpose</li>
+              <li><strong>Reveal Phase:</strong> After game ends, server reveals secret for verification</li>
+              <li><strong>Verification:</strong> Anyone can verify SHA256(secret) matches commitment and recalculate all rolls</li>
+            </ol>
+            <div style={{ marginTop: 12, padding: 10, backgroundColor: 'rgba(34, 197, 94, 0.1)', borderRadius: 6 }}>
+              <strong style={{ color: '#22c55e' }}>Why this prevents cheating:</strong> Players cannot manipulate results because
+              the secret was committed before the blockchain data was known. The server cannot change the secret after committing.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
+
+const styles = {
+  container: {
+    minHeight: '100vh',
+    backgroundColor: '#0f172a',
+    color: '#f1f5f9',
+    padding: 20
+  },
+  wrapper: {
+    maxWidth: 900,
+    margin: '0 auto'
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    margin: 0
+  },
+  backLink: {
+    color: '#3b82f6',
+    textDecoration: 'none',
+    fontSize: 14
+  },
+  banner: {
+    padding: 16,
+    borderRadius: 8,
+    border: '1px solid',
+    marginBottom: 24
+  },
+  section: {
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 0,
+    marginBottom: 16,
+    color: '#f1f5f9'
+  },
+  mono: {
+    fontFamily: 'monospace',
+    fontSize: 11,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    padding: '2px 6px',
+    borderRadius: 4,
+    wordBreak: 'break-all'
+  },
+  explorerLink: {
+    display: 'inline-block',
+    marginTop: 12,
+    color: '#3b82f6',
+    textDecoration: 'none',
+    fontSize: 13
+  }
+};

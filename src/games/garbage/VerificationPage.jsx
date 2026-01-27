@@ -1,13 +1,40 @@
 /**
- * Garbage Verification Page
- * Uses the unified verification component with game-specific rendering
+ * Garbage Verification Page - Commit-Reveal System
+ * Verifies deck shuffle using server secret + blockchain data
  */
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import UnifiedVerification from '../../components/UnifiedVerification';
-import { generateSeed, shuffleDeckStrings } from '../../blockchain/shuffle';
+import CryptoJS from 'crypto-js';
+import { shuffleDeckStrings } from '../../blockchain/shuffle';
 import { dealInitialCards } from './game-logic';
+
+// ============================================
+// COMMIT-REVEAL VERIFICATION FUNCTIONS
+// ============================================
+
+/**
+ * Verify that the server secret matches the commitment hash
+ */
+function verifySecretCommitment(serverSecret, secretHash) {
+  const calculatedHash = CryptoJS.SHA256(serverSecret).toString();
+  return calculatedHash === secretHash;
+}
+
+/**
+ * Generate seed using commit-reveal formula
+ * Formula: SHA256(serverSecret + blockHash + timestamp + purpose)
+ */
+function generateCommitRevealSeed(serverSecret, blockHash, timestamp, purpose) {
+  const input = serverSecret + blockHash + timestamp.toString() + purpose;
+  return CryptoJS.SHA256(input).toString();
+}
+
+const truncateHash = (hash, len = 12) => {
+  if (!hash) return 'N/A';
+  return `${hash.slice(0, len)}...${hash.slice(-6)}`;
+};
 
 // ============================================
 // CARD DISPLAY
@@ -144,6 +171,7 @@ export default function GarbageVerificationPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [commitmentVerified, setCommitmentVerified] = useState(null);
   const [regeneratedDeal, setRegeneratedDeal] = useState(null);
 
   const backLink = gameId ? '/leaderboard?game=garbage' : '/garbage';
@@ -230,38 +258,70 @@ export default function GarbageVerificationPage() {
     }
   }, [gameId, location.state]);
 
-  // Verify game by regenerating deck
+  // Verify game by regenerating deck using commit-reveal
   const verifyGame = (data) => {
-    if (!data?.blockData || !data?.gameId) {
+    if (!data?.blockData) {
       setIsVerified(false);
+      setCommitmentVerified(null);
       return;
     }
 
     try {
-      // Regenerate seed
-      const seed = generateSeed(data.blockData, data.gameId);
+      const { serverSecret, secretHash, blockHash, timestamp } = data.blockData;
 
-      // Shuffle deck with same seed
-      const regeneratedDeck = shuffleDeckStrings(seed);
+      // Verify commitment if we have both secret and hash
+      if (serverSecret && secretHash) {
+        const verified = verifySecretCommitment(serverSecret, secretHash);
+        setCommitmentVerified(verified);
+        console.log('Commitment verified:', verified);
 
-      // Deal cards
-      const dealt = dealInitialCards(regeneratedDeck);
-      setRegeneratedDeal({
-        deck: regeneratedDeck,
-        ...dealt
-      });
-
-      // Verify matches stored deck (if available)
-      if (data.deck) {
-        const matches = regeneratedDeck.every((card, i) => card === data.deck[i]);
-        setIsVerified(matches);
+        if (!verified) {
+          console.error('Commitment verification failed!');
+          setIsVerified(false);
+          return;
+        }
       } else {
-        // If no stored deck, just verify we can regenerate
-        setIsVerified(regeneratedDeck.length === 52);
+        console.warn('Missing serverSecret or secretHash:', {
+          hasSecret: !!serverSecret,
+          hasHash: !!secretHash
+        });
+        setCommitmentVerified(null);
+      }
+
+      // Generate seed using commit-reveal formula
+      // Purpose is 'deck-shuffle' for Garbage (single deck shuffle at game start)
+      if (serverSecret && blockHash && timestamp) {
+        const seed = generateCommitRevealSeed(serverSecret, blockHash, timestamp, 'deck-shuffle');
+        console.log('Generated commit-reveal seed for deck-shuffle');
+
+        // Shuffle deck with same seed
+        const regeneratedDeck = shuffleDeckStrings(seed);
+
+        // Deal cards
+        const dealt = dealInitialCards(regeneratedDeck);
+        setRegeneratedDeal({
+          deck: regeneratedDeck,
+          ...dealt
+        });
+
+        // Verify matches stored deck (if available)
+        if (data.deck) {
+          const matches = regeneratedDeck.every((card, i) => card === data.deck[i]);
+          setIsVerified(matches);
+          console.log('Deck verification:', matches ? 'PASS' : 'FAIL');
+        } else {
+          // If no stored deck, just verify we can regenerate
+          setIsVerified(regeneratedDeck.length === 52);
+          console.log('No stored deck, verified regeneration possible');
+        }
+      } else {
+        console.warn('Missing data for commit-reveal seed generation');
+        setIsVerified(false);
       }
     } catch (e) {
       console.error('Verification failed:', e);
       setIsVerified(false);
+      setCommitmentVerified(false);
     }
   };
 
@@ -270,9 +330,76 @@ export default function GarbageVerificationPage() {
     if (!gameData) return null;
 
     const isWin = gameData.winner === 'player';
+    const { serverSecret, secretHash } = gameData.blockData || {};
 
     return (
       <div>
+        {/* Commitment Verification Banner */}
+        {serverSecret && secretHash && (
+          <div style={{
+            marginBottom: 16,
+            padding: 16,
+            borderRadius: 8,
+            border: '1px solid',
+            backgroundColor: commitmentVerified ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            borderColor: commitmentVerified ? '#22c55e' : '#ef4444'
+          }}>
+            <h3 style={{
+              margin: '0 0 10px 0',
+              color: commitmentVerified ? '#22c55e' : '#ef4444',
+              fontSize: 14
+            }}>
+              {commitmentVerified ? '✓ Server Commitment Verified' : '✗ Commitment Verification Failed'}
+            </h3>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>
+              <div><strong>Secret Hash (Commitment):</strong></div>
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: 11,
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                padding: '2px 6px',
+                borderRadius: 4,
+                wordBreak: 'break-all'
+              }}>
+                {secretHash}
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              <div><strong>Server Secret (Revealed):</strong></div>
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: 11,
+                backgroundColor: 'rgba(0,0,0,0.3)',
+                padding: '2px 6px',
+                borderRadius: 4,
+                wordBreak: 'break-all'
+              }}>
+                {serverSecret}
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: '#64748b', marginTop: 10 }}>
+              SHA256(secret) {commitmentVerified ? '===' : '!=='} hash ✓
+            </div>
+          </div>
+        )}
+
+        {!serverSecret && !secretHash && (
+          <div style={{
+            marginBottom: 16,
+            padding: 16,
+            borderRadius: 8,
+            border: '1px solid #f59e0b',
+            backgroundColor: 'rgba(245, 158, 11, 0.1)'
+          }}>
+            <h3 style={{ margin: '0 0 8px 0', color: '#f59e0b', fontSize: 14 }}>
+              ⚠️ Server Secret Not Available
+            </h3>
+            <p style={{ margin: 0, fontSize: 12, color: '#94a3b8' }}>
+              The server secret has not been revealed yet. Complete the game to enable full verification.
+            </p>
+          </div>
+        )}
+
         {gameData.source === 'database' && (
           <div style={{ marginBottom: 12, padding: 12, backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: 8 }}>
             <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 8 }}>
@@ -313,9 +440,22 @@ export default function GarbageVerificationPage() {
         </div>
 
         <p style={{ marginTop: 16, fontSize: 13, color: '#f1f5f9' }}>
-          <strong>52 cards</strong> shuffled using blockchain randomness, then dealt to player,
-          AI, and draw pile.
+          <strong>52 cards</strong> shuffled using commit-reveal system (server secret + blockchain data).
+          Deck is shuffled once at game start, then dealt to player, AI, and draw pile.
         </p>
+        <div style={{
+          marginTop: 12,
+          padding: 10,
+          backgroundColor: 'rgba(0,0,0,0.2)',
+          borderRadius: 6,
+          fontSize: 11,
+          color: '#94a3b8'
+        }}>
+          <strong style={{ color: '#22c55e' }}>Commit-Reveal Formula:</strong>
+          <code style={{ display: 'block', marginTop: 6, color: '#a5b4fc', fontSize: 10 }}>
+            seed = SHA256(serverSecret + blockHash + timestamp + "deck-shuffle")
+          </code>
+        </div>
       </div>
     );
   };
@@ -336,9 +476,26 @@ export default function GarbageVerificationPage() {
     return (
       <div>
         <p style={{ color: '#94a3b8', fontSize: 12, marginBottom: 16 }}>
-          The deck was deterministically shuffled using the blockchain seed.
-          Below is how the cards were dealt at game start.
+          The deck was deterministically shuffled using the commit-reveal seed (purpose: "deck-shuffle").
+          Below is how the 52 cards were dealt at game start.
         </p>
+
+        {isVerified && (
+          <div style={{
+            marginBottom: 16,
+            padding: 10,
+            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            borderRadius: 6,
+            border: '1px solid #22c55e'
+          }}>
+            <span style={{ color: '#22c55e', fontSize: 12, fontWeight: 'bold' }}>
+              ✓ Deck Order Verified
+            </span>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+              Regenerated deck matches the original shuffle
+            </div>
+          </div>
+        )}
 
         {/* Initial Player Hand (hidden) */}
         <PositionGrid
@@ -421,15 +578,16 @@ export default function GarbageVerificationPage() {
   // Build unified data
   const unifiedData = gameData ? {
     gameId: gameData.gameId || gameId,
-    // Support both session-based (new) and legacy formats
+    // Support both blockchainData and blockData structures
     blockHash: gameData.blockchainData?.blockHash || gameData.blockData?.blockHash,
     blockHeight: gameData.blockchainData?.blockHeight || gameData.blockData?.blockHeight,
     txHash: gameData.blockchainData?.txHash || gameData.blockData?.txHash,
     timestamp: gameData.blockchainData?.timestamp || gameData.blockData?.timestamp,
-    txIndex: gameData.blockchainData?.txIndex,
-    // Include session data if available
-    sessionId: gameData.blockchainData?.sessionId,
-    secretHash: gameData.blockchainData?.secretHash
+    txIndex: gameData.blockchainData?.txIndex || gameData.blockData?.txIndex,
+    // Include commit-reveal data from blockData
+    sessionId: gameData.blockData?.sessionId || gameData.blockchainData?.sessionId,
+    secretHash: gameData.blockData?.secretHash || gameData.blockchainData?.secretHash,
+    serverSecret: gameData.blockData?.serverSecret || gameData.blockchainData?.serverSecret
   } : null;
 
   return (
