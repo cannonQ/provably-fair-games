@@ -8,6 +8,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import UnifiedVerification from '../../components/UnifiedVerification';
 import { verifySpawn } from './spawnLogic';
 import { formatScore } from './scoreLogic';
+import { encodeMoveHistory } from './gameState';
 import GameReplay from './GameReplay';
 
 // ============================================
@@ -335,7 +336,9 @@ export default function VerificationPage2048() {
           blockHeight: leaderboardData.block_height,
           timestamp: leaderboardData.block_timestamp,
           txHash: leaderboardData.tx_hash,
-          txIndex: leaderboardData.tx_index
+          txIndex: leaderboardData.tx_index,
+          moveHistory: leaderboardData.move_history || '',
+          score: leaderboardData.score
         }}
         verified={hasReplayData}
         eventCount={leaderboardData.moves || 0}
@@ -500,7 +503,11 @@ export default function VerificationPage2048() {
         txIndex: anchorBlock?.txIndex,
         // Include session data if available
         sessionId: anchorBlock?.sessionId,
-        secretHash: anchorBlock?.secretHash
+        secretHash: anchorBlock?.secretHash,
+        moveHistory: moveHistory
+          ? (Array.isArray(moveHistory) ? encodeMoveHistory(moveHistory) : moveHistory)
+          : '',
+        score
       }}
       verified={allValid}
       eventCount={spawnHistory.length}

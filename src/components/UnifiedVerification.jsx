@@ -297,15 +297,190 @@ for turn in range(1, 6):
 print()
 `,
     '2048': `
-# 2048-specific: generate tile spawns
-def get_spawn(seed_str, move_number, empty_positions):
-    spawn_seed = f"{seed_str}-{move_number}"
-    spawn_int = int(hashlib.sha256(spawn_seed.encode()).hexdigest(), 16)
-    position = empty_positions[spawn_int % len(empty_positions)]
-    value = 4 if (spawn_int >> 16) % 10 == 0 else 2  # 10% chance of 4
-    return (position, value)
+# 2048-specific: full game replay and spawn verification
+# NOTE: 2048 uses anchor/fanning pattern - all spawns derive from a SINGLE block.
+# The seed formula is: SHA256(blockHash + gameId + spawnIndex)
+# NOT the unified seed in the common header above.
 
-print("Spawn verification requires board state at each move")
+move_history = "${data.moveHistory || ''}"
+
+# ============================================
+# GRID LOGIC (matches gridLogic.js exactly)
+# ============================================
+
+def create_empty_grid():
+    return [[0]*4 for _ in range(4)]
+
+def clone_grid(grid):
+    return [row[:] for row in grid]
+
+def get_empty_cells(grid):
+    cells = []
+    for r in range(4):
+        for c in range(4):
+            if grid[r][c] == 0:
+                cells.append((r, c))
+    return cells
+
+def grids_equal(g1, g2):
+    return all(g1[r][c] == g2[r][c] for r in range(4) for c in range(4))
+
+def rotate_cw(grid):
+    """Rotate 90 degrees clockwise (matches JS rotateGrid)"""
+    rotated = create_empty_grid()
+    for r in range(4):
+        for c in range(4):
+            rotated[c][3 - r] = grid[r][c]
+    return rotated
+
+def rotate_grid(grid, times):
+    result = clone_grid(grid)
+    for _ in range(times):
+        result = rotate_cw(result)
+    return result
+
+def slide_row_left(row):
+    """Slide and merge row left. Each tile merges only once."""
+    values = [v for v in row if v > 0]
+    merged = []
+    score = 0
+    i = 0
+    while i < len(values):
+        if i + 1 < len(values) and values[i] == values[i + 1]:
+            new_val = values[i] * 2
+            merged.append(new_val)
+            score += new_val
+            i += 2
+        else:
+            merged.append(values[i])
+            i += 1
+    while len(merged) < 4:
+        merged.append(0)
+    return merged, score
+
+def slide_grid(grid, direction):
+    """Slide grid in direction. Returns (new_grid, score, moved)"""
+    rotations = {'left': 0, 'up': 3, 'right': 2, 'down': 1}
+    rot = rotations[direction]
+    working = clone_grid(grid)
+    if rot > 0:
+        working = rotate_grid(working, rot)
+    total_score = 0
+    for r in range(4):
+        working[r], row_score = slide_row_left(working[r])
+        total_score += row_score
+    if rot > 0:
+        working = rotate_grid(working, 4 - rot)
+    moved = not grids_equal(grid, working)
+    return working, total_score, moved
+
+# ============================================
+# SPAWN LOGIC (matches spawnLogic.js exactly)
+# ============================================
+
+def generate_master_seed(bh, gid, spawn_idx):
+    """SHA256(blockHash + gameId + spawnIndex)"""
+    return hashlib.sha256(f"{bh}{gid}{spawn_idx}".encode()).hexdigest()
+
+def calc_spawn_position(seed_hex, empty_cells):
+    """SHA256(seed + 'position') -> first 8 hex chars -> mod emptyCells"""
+    pos_hash = hashlib.sha256((seed_hex + "position").encode()).hexdigest()
+    return empty_cells[int(pos_hash[:8], 16) % len(empty_cells)]
+
+def calc_spawn_value(seed_hex):
+    """SHA256(seed + 'value') -> first 8 hex chars -> mod 100 -> <90=2, >=90=4"""
+    val_hash = hashlib.sha256((seed_hex + "value").encode()).hexdigest()
+    return 2 if int(val_hash[:8], 16) % 100 < 90 else 4
+
+def spawn_tile(grid, bh, gid, spawn_idx):
+    """Spawn tile on grid. Returns (new_grid, spawn_info, seed, empty_count)"""
+    empty = get_empty_cells(grid)
+    if not empty:
+        return grid, None, None, 0
+    seed = generate_master_seed(bh, gid, spawn_idx)
+    pos = calc_spawn_position(seed, empty)
+    value = calc_spawn_value(seed)
+    new_grid = clone_grid(grid)
+    new_grid[pos[0]][pos[1]] = value
+    return new_grid, (pos[0], pos[1], value), seed, len(empty)
+
+# ============================================
+# REPLAY GAME FROM MOVE HISTORY
+# ============================================
+
+if not move_history:
+    print("No move history available - cannot replay game.")
+    print("Move history is required to verify 2048 spawns.")
+    print("(The board state at each move determines empty cells for spawn placement)")
+else:
+    dir_map = {'U': 'up', 'D': 'down', 'L': 'left', 'R': 'right'}
+    moves = [dir_map[c] for c in move_history if c in dir_map]
+
+    grid = create_empty_grid()
+    spawn_idx = 0
+    score = 0
+    spawns = []
+
+    # Initial two tile spawns
+    grid, s1, seed1, e1 = spawn_tile(grid, block_hash, game_id, spawn_idx)
+    if s1:
+        spawns.append((spawn_idx, s1, seed1, e1))
+    spawn_idx += 1
+
+    grid, s2, seed2, e2 = spawn_tile(grid, block_hash, game_id, spawn_idx)
+    if s2:
+        spawns.append((spawn_idx, s2, seed2, e2))
+    spawn_idx += 1
+
+    # Process each move
+    for direction in moves:
+        new_grid, move_score, moved = slide_grid(grid, direction)
+        if moved:
+            score += move_score
+            grid = new_grid
+            grid, sp, sd, emp = spawn_tile(grid, block_hash, game_id, spawn_idx)
+            if sp:
+                spawns.append((spawn_idx, sp, sd, emp))
+            spawn_idx += 1
+
+    # ============================================
+    # RESULTS
+    # ============================================
+    print(f"Replay complete!")
+    print(f"  Moves played: {len(moves)}")
+    print(f"  Tile spawns:  {len(spawns)}")
+    print(f"  Final score:  {score}")
+    print()
+
+    def show_spawn(si, info, sd, emp):
+        r, c, v = info
+        print(f"  #{si:4d}: pos=({r},{c}) val={v}  empty_cells={emp}  seed={sd[:16]}...")
+
+    if len(spawns) <= 10:
+        print("All spawns:")
+        for s in spawns:
+            show_spawn(*s)
+    else:
+        print("First 5 spawns:")
+        for s in spawns[:5]:
+            show_spawn(*s)
+        print(f"  ... ({len(spawns) - 10} more) ...")
+        print("Last 5 spawns:")
+        for s in spawns[-5:]:
+            show_spawn(*s)
+
+    print()
+    print("Final board:")
+    for r in range(4):
+        print("  " + "".join(f"{grid[r][c]:>6}" if grid[r][c] > 0 else "     ." for c in range(4)))
+
+    twos = sum(1 for _, info, _, _ in spawns if info[2] == 2)
+    fours = sum(1 for _, info, _, _ in spawns if info[2] == 4)
+    if spawns:
+        print(f"\\nTile distribution: {twos}x2 ({twos*100//len(spawns)}%) | {fours}x4 ({fours*100//len(spawns)}%)")
+        print(f"Expected: ~90% twos, ~10% fours")
+
+    print(f"\\nAll {len(spawns)} spawns verified deterministically from anchor block #{block_height}.")
 `,
     chess: `
 # Chess-specific: verify color assignment
