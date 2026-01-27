@@ -854,16 +854,43 @@ export default function UnifiedVerification({
         <DataRow label="Timestamp:" value={data.timestamp?.toString()} mono />
       </div>
 
-      {/* Anti-Spoofing / Seed Formula */}
+      {/* Anti-Spoofing / Seed Formula - game-specific */}
       <CollapsibleSection title="🔐 Seed Formula (Anti-Spoofing)">
         <div style={styles.seedBox}>
-          <code style={styles.codeBlock}>
-            seed = HASH(blockHash + txHash + timestamp + gameId + txIndex)
-          </code>
-          <p style={styles.seedNote}>
-            5 independent inputs = virtually impossible to manipulate.
-            An attacker would need to control the blockchain itself.
-          </p>
+          {game === '2048' ? (
+            <>
+              <code style={styles.codeBlock}>
+                seed = SHA256(blockHash + gameId + spawnIndex)
+              </code>
+              <p style={styles.seedNote}>
+                All tile spawns derived from a single anchor block using the fanning pattern.
+                Each spawn gets a unique seed by incrementing spawnIndex (0, 1, 2, ...).
+                Position = SHA256(seed + "position") mod emptyCells.
+                Value = SHA256(seed + "value") mod 100 {'<'} 90 ? 2 : 4.
+              </p>
+            </>
+          ) : game === 'chess' ? (
+            <>
+              <code style={styles.codeBlock}>
+                color = SUM(charCodes(blockHash + userSeed)) mod 2
+              </code>
+              <p style={styles.seedNote}>
+                Player color determined by character sum parity. Even = white, odd = black.
+                User seed is generated client-side (Date.now) before blockchain fetch.
+              </p>
+            </>
+          ) : (
+            <>
+              <code style={styles.codeBlock}>
+                seed = SHA256(serverSecret + blockHash + timestamp + purpose)
+              </code>
+              <p style={styles.seedNote}>
+                Commit-reveal system: server commits secret hash BEFORE blockchain fetch.
+                After game ends, server reveals secret for independent verification.
+                4 independent inputs = virtually impossible to manipulate.
+              </p>
+            </>
+          )}
           {data.seed && (
             <div style={{ marginTop: 12 }}>
               <DataRow label="Generated Seed:">
