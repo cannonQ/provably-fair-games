@@ -92,30 +92,34 @@ export default function SolitaireVerificationPage() {
           const data = JSON.parse(stored);
           console.log('Parsed data:', data);
 
+          // Handle both flat and nested data structures
+          const blockchainData = data.blockchainData || data;
+
           setVerificationData({
-            gameId: data.gameId || gameId,
+            gameId: data.gameId || blockchainData.gameId || gameId,
             serverSecret: data.serverSecret,
-            secretHash: data.secretHash,
-            sessionId: data.sessionId,
+            secretHash: data.secretHash || blockchainData.secretHash,
+            sessionId: data.sessionId || blockchainData.sessionId,
             anchor: {
-              blockHash: data.blockHash,
-              blockHeight: data.blockHeight,
-              timestamp: data.timestamp
+              blockHash: blockchainData.blockHash,
+              blockHeight: blockchainData.blockHeight,
+              timestamp: blockchainData.timestamp
             },
-            deck: data.deck,
-            finalScore: data.score,
-            moves: data.moves
+            deck: data.deck || data.shuffledDeck || [],
+            finalScore: data.score || data.foundationCount || 0,
+            moves: data.moves || 0
           });
 
           // Verify commitment if we have the server secret
-          if (data.serverSecret && data.secretHash) {
-            const verified = verifySecretCommitment(data.serverSecret, data.secretHash);
+          if (data.serverSecret && (data.secretHash || blockchainData.secretHash)) {
+            const hashToVerify = data.secretHash || blockchainData.secretHash;
+            const verified = verifySecretCommitment(data.serverSecret, hashToVerify);
             setCommitmentVerified(verified);
             console.log('Commitment verified:', verified);
           } else {
             console.warn('Missing serverSecret or secretHash:', {
               hasSecret: !!data.serverSecret,
-              hasHash: !!data.secretHash
+              hasHash: !!(data.secretHash || blockchainData.secretHash)
             });
           }
 

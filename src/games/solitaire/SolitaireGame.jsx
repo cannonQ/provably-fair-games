@@ -129,14 +129,18 @@ export default function SolitaireGame() {
       const gameId = state.blockchainData.gameId;
       const existingData = JSON.parse(localStorage.getItem(`solitaire-${gameId}`) || '{}');
       const verificationData = {
-        ...existingData,
+        ...existingData,  // Preserves deck, blockchainData, etc.
         serverSecret: revealedSecret,
         secretHash: secretHash,
-        sessionId: sessionId
+        sessionId: sessionId,
+        // Also save game stats
+        moves: state.moves,
+        foundationCount: getFoundationCount(state.foundations),
+        gameStatus: state.gameStatus
       };
       localStorage.setItem(`solitaire-${gameId}`, JSON.stringify(verificationData));
     }
-  }, [revealedSecret, state.blockchainData, secretHash, sessionId]);
+  }, [revealedSecret, state.blockchainData, secretHash, sessionId, state.moves, state.foundations, state.gameStatus]);
 
   const foundationCount = getFoundationCount(state.foundations);
 
@@ -202,7 +206,13 @@ export default function SolitaireGame() {
       setSessionId(sessionId);
       setSecretHash(secretHash);
 
-      localStorage.setItem(`solitaire-${gameId}`, JSON.stringify(blockchainData));
+      // Save to localStorage with deck for verification
+      const verificationData = {
+        ...blockchainData,
+        deck: shuffledDeck,  // Include the shuffled deck!
+        scoringMode
+      };
+      localStorage.setItem(`solitaire-${gameId}`, JSON.stringify(verificationData));
 
       dispatch({
         type: 'INIT_GAME',
