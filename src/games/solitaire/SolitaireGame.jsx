@@ -52,6 +52,13 @@ export default function SolitaireGame() {
   const [revealedSecret, setRevealedSecret] = useState(null);
 
   const gameAreaRef = useRef(null);
+  const autoCompleteInProgress = useRef(false);
+  const stateRef = useRef(state);
+
+  // Keep stateRef updated with latest state
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   // Prevent default touch behavior on game area
   useEffect(() => {
@@ -185,6 +192,7 @@ export default function SolitaireGame() {
     setIsStuck(false);
     setShowGameOver(true);
     setShowMenu(false);
+    autoCompleteInProgress.current = false;
 
     try {
       // Initialize secure session (server commits secret, then get blockchain data)
@@ -257,64 +265,85 @@ export default function SolitaireGame() {
   };
 
   const handleAutoComplete = useCallback(() => {
+    // Prevent multiple auto-complete runs
+    if (autoCompleteInProgress.current) return;
+    autoCompleteInProgress.current = true;
+
     const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+    const rankOrder = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
     const moveNext = () => {
-      if (state.gameStatus === 'won') return;
+      // Get FRESH state from ref, not stale closure
+      const currentState = stateRef.current;
 
+      if (currentState.gameStatus === 'won') {
+        autoCompleteInProgress.current = false;
+        return;
+      }
+
+      // Find the next valid card to move to foundation
       for (const suit of suits) {
-        const foundation = state.foundations[suit];
+        const foundation = currentState.foundations[suit];
+        const expectedRank = foundation.length === 0 ? 'A' : rankOrder[foundation.length];
 
-        if (state.waste.length > 0) {
-          const wasteTop = state.waste[state.waste.length - 1];
-          if (wasteTop.suit === suit) {
-            const canPlace = foundation.length === 0 ? wasteTop.rank === 'A' : true;
-            if (canPlace) {
-              dispatch({ type: 'SELECT_CARDS', payload: { cards: [wasteTop], source: { type: 'waste' } } });
-              setTimeout(() => {
-                dispatch({ type: 'MOVE_TO_FOUNDATION', payload: { suit } });
-                setTimeout(moveNext, 100);
-              }, 50);
-              return;
-            }
+        // If foundation is complete, skip this suit
+        if (foundation.length >= 13) continue;
+
+        // Check waste pile
+        if (currentState.waste.length > 0) {
+          const wasteTop = currentState.waste[currentState.waste.length - 1];
+          if (wasteTop.suit === suit && wasteTop.rank === expectedRank) {
+            dispatch({ type: 'SELECT_CARDS', payload: { cards: [wasteTop], source: { type: 'waste' } } });
+            setTimeout(() => {
+              dispatch({ type: 'MOVE_TO_FOUNDATION', payload: { suit } });
+              setTimeout(moveNext, 80);
+            }, 30);
+            return;
           }
         }
 
+        // Check tableau columns
         for (let col = 0; col < 7; col++) {
-          const column = state.tableau[col];
+          const column = currentState.tableau[col];
           if (column.length > 0) {
             const topCard = column[column.length - 1];
-            if (topCard.suit === suit && topCard.faceUp) {
+            if (topCard.suit === suit && topCard.rank === expectedRank && topCard.faceUp) {
               dispatch({ type: 'SELECT_CARDS', payload: { cards: [topCard], source: { type: 'tableau', index: col } } });
               setTimeout(() => {
                 dispatch({ type: 'MOVE_TO_FOUNDATION', payload: { suit } });
-                setTimeout(moveNext, 100);
-              }, 50);
+                setTimeout(moveNext, 80);
+              }, 30);
               return;
             }
           }
         }
       }
+
+      // No more moves found - auto-complete is done
+      autoCompleteInProgress.current = false;
     };
 
     moveNext();
-  }, [state, dispatch]);
+  }, [dispatch]);
 
   // Auto-trigger completion when all tableau cards are face-up
   useEffect(() => {
-    if (state.gameStatus === 'playing' && state.blockchainData) {
+    if (state.gameStatus === 'playing' && state.blockchainData && !autoCompleteInProgress.current) {
       const allTableauFaceUp = state.tableau.every(column =>
         column.every(card => card.faceUp)
       );
+      const stockEmpty = state.stock.length === 0;
+      const wasteEmpty = state.waste.length === 0;
 
-      if (allTableauFaceUp && !checkWinCondition(state.foundations)) {
+      // Only auto-trigger when all cards are revealed (tableau face-up and stock/waste processed or empty)
+      if (allTableauFaceUp && (stockEmpty || !wasteEmpty) && !checkWinCondition(state.foundations)) {
         const timer = setTimeout(() => {
           handleAutoComplete();
         }, 300);
         return () => clearTimeout(timer);
       }
     }
-  }, [state.tableau, state.foundations, state.gameStatus, state.blockchainData, handleAutoComplete]);
+  }, [state.tableau, state.foundations, state.stock.length, state.waste.length, state.gameStatus, state.blockchainData, handleAutoComplete]);
 
   // Submit score to leaderboard
   const handleSubmitScore = async () => {
